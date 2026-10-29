@@ -193,14 +193,18 @@ class Controller:
         if target is None or self.targets.get(entity_id) == target:
             return []
         retry = self.retry.get(entity_id)
-        if retry is not None:
-            if retry[0] == target and now < retry[1]:
-                return []  # Failed a moment ago: tried again once the delay is over.
-            if retry[0] != target:
-                del self.retry[entity_id]  # Another target goes now, and holding the failed one is over.
-        self.targets[entity_id] = target
+        if retry is not None and retry[0] != target:
+            del self.retry[entity_id]  # Another target goes now, and holding the failed one is over.
+            retry = None
         if satisfied(state):
+            self.targets[entity_id] = target
+            if retry is not None:
+                # The failed command was applied after all (slow cloud device timing out…): done.
+                self.command_succeeded(entity_id)
             return []
+        if retry is not None and now < retry[1]:
+            return []  # Failed a moment ago: tried again once the delay is over.
+        self.targets[entity_id] = target
         cmds = commands_for(state)
         for c in cmds:
             c.target, c.device = target, entity_id

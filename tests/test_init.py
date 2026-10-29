@@ -270,6 +270,36 @@ async def test_failed_command_is_retried(hass: HomeAssistant, notify, freezer) -
     assert len(calls) == sent + 1
 
 
+async def test_failed_command_applied_anyway_follows_manual_changes(hass: HomeAssistant, notify, freezer) -> None:
+    calls = []
+
+    async def failing(call) -> None:
+        calls.append(call)
+        raise RuntimeError("timeout")
+
+    hass.services.async_register("fan", "turn_on", failing)
+    for service in ("set_percentage", "set_preset_mode", "turn_off"):
+        async_mock_service(hass, "fan", service)
+    _states(hass, sejour=24.0)
+    entry = await _setup(hass)
+    controller = entry.runtime_data.controller
+    sent = len(calls)
+    # The command timed out but the fan turned on anyway: Smart Comfort's target, the room is handled.
+    freezer.tick(timedelta(minutes=2))
+    hass.states.async_set("fan.sejour", "on", {"percentage": 50})
+    await _evaluate(hass, entry)
+    assert controller.targets["fan.sejour"] == "on"
+    assert "sejour" in entry.runtime_data.handled
+    assert controller.failures == {}
+    # Turned off by hand during what was the retry delay: a manual override, not turned on again.
+    hass.states.async_set("fan.sejour", "off", {"percentage": 0})
+    await hass.async_block_till_done()
+    assert "fan.sejour" in controller.overrides
+    freezer.tick(timedelta(minutes=COMMAND_RETRY))
+    await _evaluate(hass, entry)
+    assert len(calls) == sent
+
+
 async def test_removed_outdoor_entity_ends_episodes(hass: HomeAssistant, notify, fan_calls) -> None:
     _states(hass, window="on")
     hass.states.async_set("sensor.out1", "5")

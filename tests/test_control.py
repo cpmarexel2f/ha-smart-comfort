@@ -247,6 +247,40 @@ def test_backoff_does_not_hold_another_target():
     assert c.evaluate(T0 + timedelta(seconds=30), NOON, room, ctx(24.0, opened=True), off) != []
 
 
+def test_failed_command_applied_anyway_is_the_target_during_the_retry_delay():
+    s = room_settings(climate="climate.ac")
+    c, room = Controller(s), s.rooms[0]
+    off = {"climate.ac": DeviceState(on=False, hvac_mode="off")}
+    cooling = {"climate.ac": DeviceState(on=True, hvac_mode="cool")}
+    for cmd in c.evaluate(T0, NOON, room, ctx(24.0), off):
+        c.command_failed(cmd, T0)
+    # Timed out but applied anyway (slow cloud air conditioner): it cools, on Smart Comfort's command.
+    assert c.evaluate(T0 + timedelta(seconds=30), NOON, room, ctx(24.0), cooling) == []
+    assert c.targets["climate.ac"] == "cool"
+    assert c.handled(room, cooling)
+    assert c.retry == {} and c.failures == {}
+    # The failures in a row start over: the next isolated failure waits the first delay, not twice as long.
+    c.targets.pop("climate.ac")
+    for cmd in c.evaluate(T0 + RETRY, NOON, room, ctx(24.0), off):
+        c.command_failed(cmd, T0 + RETRY)
+    assert c.failures == {"climate.ac": 1}
+    assert c.evaluate(T0 + 2 * RETRY, NOON, room, ctx(24.0), off) != []
+
+
+def test_retry_delay_still_holds_while_the_device_is_not_in_the_wanted_state():
+    s = room_settings(climate="climate.ac")
+    c, room = Controller(s), s.rooms[0]
+    off = {"climate.ac": DeviceState(on=False, hvac_mode="off")}
+    for cmd in c.evaluate(T0, NOON, room, ctx(24.0), off):
+        c.command_failed(cmd, T0)
+    assert c.evaluate(T0 + timedelta(minutes=1), NOON, room, ctx(24.0), off) == []
+    assert "climate.ac" not in c.targets and c.failures == {"climate.ac": 1}
+    # Unavailable meanwhile: nothing changes either.
+    gone = {"climate.ac": DeviceState(available=False)}
+    assert c.evaluate(T0 + timedelta(minutes=2), NOON, room, ctx(24.0), gone) == []
+    assert "climate.ac" not in c.targets and "climate.ac" in c.retry
+
+
 def test_keep_on_respects_manual_override():
     s = room_settings(purifiers=[{"entity_id": "fan.p", "keep_on": True}])
     c, room = Controller(s), s.rooms[0]

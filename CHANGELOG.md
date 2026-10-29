@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3
+
+### Fixes
+- A device that ends up in the wanted state although its command failed (cloud air conditioner answering too slowly…) is now considered controlled right away instead of only after the retry delay (up to one hour): its room's "too hot" alert stays hidden while it cools, turning it off by hand pauses its control instead of having it turned back on, and the retry delay starts over from 5 minutes.
+
 ## 0.1.2
 
 ### Fixes
