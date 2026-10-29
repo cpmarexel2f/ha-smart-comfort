@@ -165,7 +165,7 @@ Each alert also takes `enabled`, `hysteresis` (how far back past the threshold t
 
 ### Device control
 
-Set under `control:` for every room, under `rooms[].control:` for one room, and on the device item itself for one device.
+The first four rows (`enabled`, `start` / `end`, `manual_override`, `suppress_when_handled`) are global: set them under `control:` only. The `climate.*`, `fans.*` and `purifiers.*` options are set under `control:` for every room, under `rooms[].control:` for one room, and on the device item itself for one device (without the `climate.` / `fans.` / `purifiers.` prefix).
 
 | Option | Default | Description |
 |---|---|---|
