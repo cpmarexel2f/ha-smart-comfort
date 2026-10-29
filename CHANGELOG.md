@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0
+
+### What's new
+- **Configuration panel** in the sidebar (administrators): overview of the active alerts, rooms and devices with snooze / acknowledge buttons and the notification and control switches; editing of the rooms (sensors, openings, air conditioner, fans and purifiers with their own settings, alert overrides), the alerts, the notifications and the device control, saved in one go. Each tab has its own address (`/smart-comfort/rooms`…).
+- WebSocket commands `smart_comfort/config`, `smart_comfort/config/save` and `smart_comfort/subscribe`, used by the panel.
+
+### Fixes
+- Air conditioners are now switched to cooling with `climate.set_hvac_mode` followed by `climate.set_temperature`: some integrations (`generic_thermostat`…) ignored the mode given with the temperature and never started cooling.
+- Device changes while Home Assistant starts (entities settling on their first state) no longer count as manual changes pausing their control.
+- The `handled` flag of an alert in the attributes is now only set on the alerts a running device actually hides ("too hot"), not on every alert of its room.
+
 ## 0.1.4
 
 ### Fixes

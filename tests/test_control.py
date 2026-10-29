@@ -76,7 +76,8 @@ def test_climate_needs_closed_and_stops_on_open():
     # Closed only 1 min (2 required): nothing.
     assert c.evaluate(T0, NOON, room, ctx(24.0, minutes=1), off) == []
     assert calls(c.evaluate(T0, NOON, room, ctx(24.0, minutes=3), off)) == [
-        ("climate.ac", "climate.set_temperature", {"hvac_mode": "cool", "temperature": 22.0}),
+        ("climate.ac", "climate.set_hvac_mode", {"hvac_mode": "cool"}),
+        ("climate.ac", "climate.set_temperature", {"temperature": 22.0}),
         ("climate.ac", "climate.set_fan_mode", {"fan_mode": "silent"}),
     ]
     cooling = {"climate.ac": DeviceState(on=True, hvac_mode="cool")}

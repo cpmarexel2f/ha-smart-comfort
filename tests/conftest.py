@@ -10,6 +10,16 @@ from homeassistant.helpers import frame
 
 from custom_components.smart_comfort.const import DOMAIN
 
+# Recent pycares starts a process-wide shutdown thread with the first DNS resolver (the WebSocket
+# test client). Older pytest-homeassistant-custom-component (minimum Home Assistant job) reports it
+# as a lingering thread of that test: start it before any test.
+try:
+    import pycares
+
+    pycares._shutdown_manager.start()
+except (ImportError, AttributeError):
+    pass
+
 
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations):

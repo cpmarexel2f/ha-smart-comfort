@@ -15,6 +15,7 @@ from . import SmartComfortConfigEntry
 from .config import Room
 from .const import KINDS
 from .entity import SmartComfortEntity
+from .status import episode_info, room_info
 
 STATE_OK = "ok"
 
@@ -40,23 +41,6 @@ async def async_setup_entry(
     async_add_entities([*entities, *rooms])
 
 
-def _episode(manager: Any, ep: Any, now: datetime) -> dict[str, Any]:
-    room = manager.settings.room(ep.room)
-    return {
-        "room": ep.room,
-        "room_name": room.name if room else ep.room,
-        "kind": ep.kind,
-        "value": ep.value,
-        "since": ep.since.isoformat(),
-        "notified_at": ep.notified_at.isoformat() if ep.notified_at else None,
-        "snoozed": manager.engine.snoozed(ep, now),
-        "acknowledged": ep.acknowledged,
-        "handled": ep.room in manager.handled,
-        **{k: v for k, v in ep.details.items() if k != "openings"},
-        "openings": ep.details.get("openings", []),
-    }
-
-
 class ActiveAlertsSensor(SmartComfortEntity, SensorEntity):
     """Number of active problems (notified or not), listed in the attributes."""
 
@@ -72,7 +56,7 @@ class ActiveAlertsSensor(SmartComfortEntity, SensorEntity):
         now = dt_util.utcnow()
         engine = self.manager.engine
         return {
-            "alerts": [_episode(self.manager, ep, now) for ep in engine.active()],
+            "alerts": [episode_info(self.manager, ep, now) for ep in engine.active()],
             "snoozes": {k: v.isoformat() for k, v in engine.snoozes.items() if v > now},
             "outdoor_temperature": self.manager.outdoor(),
         }
@@ -102,28 +86,7 @@ class RoomSensor(SmartComfortEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        now = dt_util.utcnow()
-        reading, _ctx = self.manager.reading(self.room, now)
-        controller = self.manager.controller
-        return {
-            "room_id": self.room.id,
-            "temperature": reading.temperature,
-            "co2": reading.co2,
-            "humidity": reading.humidity,
-            "open": reading.open,
-            "ignored_openings": self.manager.ignored_openings(self.room, now),
-            "alerts": [e.kind for e in self._episodes()],
-            "handled": self.room.id in self.manager.handled,
-            "devices": {
-                d: {
-                    "target": controller.targets.get(d),
-                    "override_until": controller.overrides[d].isoformat()
-                    if d in controller.overrides and controller.overrides[d] > now
-                    else None,
-                }
-                for d in self.room.devices
-            },
-        }
+        return room_info(self.manager, self.room, dt_util.utcnow())
 
 
 class LastNotificationSensor(SmartComfortEntity, SensorEntity):

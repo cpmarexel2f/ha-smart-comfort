@@ -236,12 +236,9 @@ class Controller:
             if target in (TARGET_OFF, TARGET_OFF_OPEN):
                 return [Command(dev.entity_id, "climate", "turn_off")]
             cmds = [
-                Command(
-                    dev.entity_id,
-                    "climate",
-                    "set_temperature",
-                    {"hvac_mode": "cool", "temperature": dev.setpoint},
-                )
+                # Two actions: some integrations (generic_thermostat…) ignore hvac_mode in set_temperature.
+                Command(dev.entity_id, "climate", "set_hvac_mode", {"hvac_mode": "cool"}),
+                Command(dev.entity_id, "climate", "set_temperature", {"temperature": dev.setpoint}),
             ]
             if dev.fan_mode:
                 cmds.append(Command(dev.entity_id, "climate", "set_fan_mode", {"fan_mode": dev.fan_mode}))

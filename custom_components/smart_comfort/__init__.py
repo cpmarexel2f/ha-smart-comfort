@@ -12,10 +12,12 @@ from homeassistant.const import Platform
 from homeassistant.core import CoreState, HomeAssistant, ServiceCall, SupportsResponse, callback
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
+from . import websocket
 from .config import build_settings, slugify
 from .const import (
     DOMAIN,
@@ -25,10 +27,12 @@ from .const import (
     SERVICE_NOTIFY_NOW,
     SERVICE_SNOOZE,
     SERVICE_UNSNOOZE,
+    SIGNAL_UPDATE,
     STORAGE_KEY,
     STORAGE_VERSION,
 )
 from .manager import SmartComfort
+from .panel import async_register_panel, async_remove_panel
 from .schema import CONFIG_SCHEMA as _CONFIG_SCHEMA
 
 PLATFORMS = [Platform.BUTTON, Platform.SENSOR, Platform.SWITCH]
@@ -93,6 +97,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Import the YAML configuration and register the actions."""
     if (options := config.get(DOMAIN)) is not None:
         async_import_yaml(hass, options)
+    websocket.async_register(hass)
 
     async def snooze(call: ServiceCall) -> None:
         m = _manager(hass)
@@ -147,17 +152,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: SmartComfortConfigEntry)
 
     entry.async_on_unload(async_at_started(hass, first))
     entry.async_on_unload(entry.add_update_listener(_async_reload))
+    await async_register_panel(hass)
+    async_dispatcher_send(hass, SIGNAL_UPDATE)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: SmartComfortConfigEntry) -> bool:
     # Waits for an evaluation in progress, so that the next instance starts from its final state.
     await entry.runtime_data.async_stop()
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    async_dispatcher_send(hass, SIGNAL_UPDATE)
+    return unloaded
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: SmartComfortConfigEntry) -> None:
-    """Forget the episodes, snoozes and targets: a new entry starts afresh."""
+    """Forget the episodes, snoozes and targets: a new entry starts afresh. The panel goes too."""
+    async_remove_panel(hass)
     hass.data.get(DOMAIN, {}).pop("state", None)
     await Store(hass, STORAGE_VERSION, STORAGE_KEY).async_remove()
 

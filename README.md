@@ -31,7 +31,7 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
   - commands are sent only when the target changes and the device isn't already in that state; a device changed **by hand** is left alone for an hour (configurable)
   - a room whose air conditioner or fan Smart Comfort has turned on gets no "too hot" alert (a device turned on by hand doesn't count)
 - **No re-notification after a restart**: episodes, snoozes and device targets are stored; nothing is sent during the startup grace period
-- **YAML or UI**: configure everything in YAML (imported at startup) or in the integration options — rooms, alerts, control
+- **YAML or UI**: configure everything in YAML (imported at startup), in the **Smart Comfort panel** of the sidebar, or in the integration options — rooms, alerts, control
 - Sensors for the active alerts and the comfort of each room, switches to pause the notifications or the device control, buttons, actions and events
 - English, French, German and Spanish
 
@@ -67,9 +67,32 @@ Copy `custom_components/smart_comfort/` to `/config/custom_components/smart_comf
 Both ways can be used together:
 
 - **YAML**: add a `smart_comfort:` section (below). At startup it creates the integration, or replaces its options **if the YAML changed** since the last import. While the YAML stays the same, changes made in the UI are kept
-- **UI**: [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=smart_comfort) — **Settings → Devices & services → Add integration → Smart Comfort**, then **Configure** for the notifications, the alerts, the device control and the rooms
+- **UI**: [![Add integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=smart_comfort) — **Settings → Devices & services → Add integration → Smart Comfort**, then the **Smart Comfort** panel in the sidebar (below), or **Configure** for the same settings as forms
 
-Per-device settings (a preset for one fan only) are YAML only; editing a room in the UI keeps them.
+### Configuration panel
+
+Once set up, Smart Comfort adds a **Smart Comfort** page to the sidebar, for administrators:
+
+- **Overview**: the active alerts with their state (notified, snoozed, acknowledged, handled by a running device) and **Snooze** / **Got it** buttons, the readings and devices of each room with their targets and manual overrides, the last notification, and switches for the notifications and the device control
+- **Rooms**: add, remove and reorder rooms; their sensors and openings; their air conditioner, fans and purifiers, each with its own settings (presets offered from the device, mode select and its options); and alert overrides for the room
+- **Alerts**, **Notifications**, **Device control**: the global settings, with their defaults
+
+Changes are checked and saved with **Save** (or dropped with **Discard**); the integration reloads with them, and the page keeps following its status. Only the settings that differ from the defaults are stored. When the configuration comes from YAML, the page says so: what is saved there stays until the YAML changes.
+
+Each tab has its own address, e.g. `/smart-comfort/rooms`.
+
+![Overview of the Smart Comfort panel](screenshots/panel-overview.png)
+
+<details>
+<summary>More screenshots</summary>
+
+![A room in the Smart Comfort panel](screenshots/panel-room.png)
+
+![Alert settings in the Smart Comfort panel](screenshots/panel-alerts.png)
+
+![Overview in dark mode](screenshots/panel-overview-dark.png)
+
+</details>
 
 ### Example
 

@@ -11,6 +11,7 @@ from typing import Any
 
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_UNAVAILABLE, STATE_UNKNOWN, UnitOfTemperature
 from homeassistant.core import CALLBACK_TYPE, Context, CoreState, Event, HomeAssistant, State, callback
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later, async_track_state_change_event, async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.translation import async_get_translations
@@ -32,6 +33,7 @@ from .const import (
     SEVERITY_CRITICAL,
     SEVERITY_INFO,
     SEVERITY_WARNING,
+    SIGNAL_UPDATE,
     STORAGE_KEY,
     STORAGE_VERSION,
 )
@@ -177,6 +179,7 @@ class SmartComfort:
     def _update_listeners(self) -> None:
         for update in list(self._listeners):
             update()
+        async_dispatcher_send(self.hass, SIGNAL_UPDATE)
 
     @callback
     def save(self) -> None:
@@ -217,6 +220,9 @@ class SmartComfort:
         if new.context.id in self._contexts:
             return
         now = dt_util.utcnow()
+        # While Home Assistant starts, entities settle on their first state: not a manual change.
+        if not self._settled(now):
+            return
         if (sent := self._commanded.get(entity_id)) is not None and now - sent < COMMAND_GRACE:
             return
         keys = ("preset_mode", "percentage", "hvac_mode", "temperature", "fan_mode")

@@ -232,3 +232,8 @@ SERVICE_NOTIFY_NOW: Final = "notify_now"
 
 EVENT_NOTIFIED: Final = f"{DOMAIN}_notified"
 EVENT_CONTROL: Final = f"{DOMAIN}_control"
+
+PANEL_URL: Final = "smart-comfort"
+PANEL_ICON: Final = "mdi:home-thermometer"
+# Dispatched after every evaluation and setup/unload of the entry (configuration panel status).
+SIGNAL_UPDATE: Final = f"{DOMAIN}_update"

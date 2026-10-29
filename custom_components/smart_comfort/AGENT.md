@@ -19,6 +19,10 @@ custom_components/smart_comfort/
 ├── sensor.py        # alerts, room (enum per room), last_notification
 ├── switch.py        # notifications, control (restored)
 ├── button.py        # notify_now, unsnooze
+├── status.py        # episode_info / room_info / status: shared by the sensors and the panel
+├── websocket.py     # smart_comfort/config, smart_comfort/config/save (OPTIONS + unique room names), smart_comfort/subscribe (SIGNAL_UPDATE)
+├── panel.py         # Static path /smart_comfort_static (once per run) + custom panel "smart-comfort" (admin), removed with the entry
+├── frontend/smart-comfort-panel.js  # Plain web component (no build): tabs overview/rooms/alerts/notifications/control, ha-form
 ├── entity.py / icons.json / services.yaml / translations/{en,fr,de,es}.json / brand/
 ```
 
@@ -32,6 +36,13 @@ custom_components/smart_comfort/
 - Control: a target per device; commands only on a target change and when the device doesn't already satisfy it. Hysteresis band keeps the previous target. Climate in a mode other than cool/off is left alone, except by `off_open` (opening open for `off_on_open`). A purifier without closed preset/mode goes back to its pre-boost state (`before_boost`). A failed command forgets the target, retried after `COMMAND_RETRY` min doubled at each failure in a row (max `COMMAND_RETRY_MAX`, reset when all commands of the device succeed; another target is not held back); a failed pre-boost restore puts `before_boost` back. keep_on respects manual overrides. Manual change = device state/attribute change whose context isn't ours, outside 90 s after our last command → override `manual_override` min; when it ends the target is forgotten and applied again.
 - State (episodes, snoozes, last notified keys, targets, overrides, pre-boost states, last notification, switches) in `Store` `smart_comfort`, and in `hass.data[DOMAIN]["state"]` across entry reloads; `async_stop` waits for the evaluation in progress first. `async_remove_entry` deletes both.
 - Notification texts: translations `common.*` with `str.format`; a broken template falls back to English (message.FALLBACK).
+
+## Panel
+- Registered at entry setup when `frontend` is loaded, kept across entry reloads (saving reloads the entry; an open panel must not vanish), removed in `async_remove_entry`.
+- Labels come from the translations through `frontend/get_translations` (category `options`: the options flow steps general / alert / control (+ sections) / room (+ section overrides); category `selector`: kinds, severities, aggregates). Panel-only strings are in `STRINGS` of the JS (en/fr/de/es).
+- ha-form is lazy-loaded by Home Assistant: `loadHaForm()` loads it through the entities card editor.
+- The draft stores only what differs from the defaults (`diff`, `prune`); times "HH:MM" and "HH:MM:SS" compare equal. Device items with no own setting are stored as a bare entity id. Unknown keys of a room (room-level `control`, `id`) are kept.
+- The status subscription listens to `SIGNAL_UPDATE`, sent by `_update_listeners` and by setup/unload, so it survives reloads.
 
 ## Release
 Bump `version` in manifest.json and add its CHANGELOG.md section; pushing to main publishes `vX.Y.Z` with `smart_comfort.zip` when that tag doesn't exist yet.
