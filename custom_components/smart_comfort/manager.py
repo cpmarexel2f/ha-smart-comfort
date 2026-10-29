@@ -237,6 +237,11 @@ class SmartComfort:
             return round(sum(values) / len(values), 2)
         return min(values)
 
+    def _outdoor_gone(self, settled: bool) -> bool:
+        """Every outdoor temperature entity no longer exists (not just unavailable)."""
+        outdoor = self.settings.outdoor
+        return settled and bool(outdoor) and all(self.hass.states.get(e) is None for e in outdoor)
+
     def _settled(self, now: datetime) -> bool:
         """Home Assistant runs and the startup grace is over: an entity still missing is gone."""
         if self.hass.state is not CoreState.running:
@@ -275,18 +280,17 @@ class SmartComfort:
         opened, open_since, closed_since = self._openings(room, now)
         temperature = _temperature(self.hass.states.get(room.temperature)) if room.temperature else None
         settled = self._settled(now)
-        missing = frozenset(
-            name
-            for name, entity_id in (("temperature", room.temperature), ("co2", room.co2), ("humidity", room.humidity))
-            if entity_id and settled and self.hass.states.get(entity_id) is None
-        )
+        sources = (("temperature", room.temperature), ("co2", room.co2), ("humidity", room.humidity))
+        missing = {n for n, entity_id in sources if entity_id and settled and self.hass.states.get(entity_id) is None}
+        if self._outdoor_gone(settled):
+            missing.add("outdoor")
         reading = RoomReading(
             temperature=temperature,
             co2=_float(self.hass.states.get(room.co2)) if room.co2 else None,
             humidity=_float(self.hass.states.get(room.humidity)) if room.humidity else None,
             open=opened,
             has_openings=bool(room.openings),
-            missing=missing,
+            missing=frozenset(missing),
         )
         ctx = RoomContext(
             temperature=temperature,
@@ -352,8 +356,9 @@ class SmartComfort:
                 readings[room.id] = reading
             self.engine.evaluate(now, readings, self.outdoor())
             self.handled = handled
-            for command in commands:
-                await self._command(command, now)
+            failed = {c.device for c in commands if not await self._command(c, now)}
+            for device in {c.device for c in commands if c.device} - failed:
+                self.controller.command_succeeded(device)
             result = self.engine.step(now, self.gates(now), handled)
             if isinstance(result, Digest):
                 await self._send(result, now)
@@ -363,7 +368,7 @@ class SmartComfort:
         if not self._stopped:
             self._update_listeners()
 
-    async def _command(self, cmd: Command, now: datetime) -> None:
+    async def _command(self, cmd: Command, now: datetime) -> bool:
         context = Context()
         self._contexts.append(context.id)
         self._commanded[cmd.entity_id] = now
@@ -373,8 +378,8 @@ class SmartComfort:
                 await self.hass.services.async_call(cmd.domain, cmd.service, data, blocking=True, context=context)
         except Exception as err:  # noqa: BLE001 - one failing device doesn't stop the others
             _LOGGER.warning("%s.%s on %s failed: %s", cmd.domain, cmd.service, cmd.entity_id, err)
-            self.controller.command_failed(cmd)
-            return
+            self.controller.command_failed(cmd, now)
+            return False
         self.hass.bus.async_fire(
             EVENT_CONTROL,
             {
@@ -385,6 +390,7 @@ class SmartComfort:
             },
             context=context,
         )
+        return True
 
     # Notifications.
 

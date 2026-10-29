@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from .config import ClimateDevice, FanDevice, PurifierDevice, Room, Settings, in_window
-from .const import KEEP_ON_DELAY
+from .const import COMMAND_RETRY, COMMAND_RETRY_MAX, KEEP_ON_DELAY
 
 TARGET_COOL = "cool"
 TARGET_OFF = "off"
@@ -59,6 +59,8 @@ class Command:
     target: str | None = None
     # Controlled device the command is for (entity_id is the mode select for a purifier's option).
     device: str | None = None
+    # State before the boost that this command restores: kept for a retry when the command fails.
+    restores: dict[str, Any] | None = None
 
 
 def _fan_commands(entity_id: str, percentage: int | None, preset: str | None) -> list[Command]:
@@ -80,6 +82,9 @@ class Controller:
         self.keep_on_sent: dict[str, datetime] = {}
         # State of a purifier before its window boost, restored when the boost ends.
         self.before_boost: dict[str, dict[str, Any]] = {}
+        # Failed commands: (target, not retried before) and number of failures in a row, by device.
+        self.retry: dict[str, tuple[str, datetime]] = {}
+        self.failures: dict[str, int] = {}
 
     def update_settings(self, settings: Settings) -> None:
         self.settings = settings
@@ -88,6 +93,8 @@ class Controller:
         self.overrides = {k: v for k, v in self.overrides.items() if k in devices}
         self.keep_on_sent = {k: v for k, v in self.keep_on_sent.items() if k in devices}
         self.before_boost = {k: v for k, v in self.before_boost.items() if k in devices}
+        self.retry = {k: v for k, v in self.retry.items() if k in devices}
+        self.failures = {k: v for k, v in self.failures.items() if k in devices}
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -107,10 +114,28 @@ class Controller:
         self.before_boost = {str(k): dict(v) for k, v in saved.items() if isinstance(v, dict)}
         self.update_settings(self.settings)
 
-    def command_failed(self, cmd: Command) -> None:
-        """A command could not be sent: forget the target so that it is tried again."""
-        if cmd.target != "keep_on":
-            self.targets.pop(cmd.device or cmd.entity_id, None)
+    def command_failed(self, cmd: Command, now: datetime) -> None:
+        """A command could not be sent: forget the target so that it is tried again, after a delay.
+
+        The delay doubles at each failure in a row, so that a lasting error (unsupported preset…) is
+        not sent and logged again at every evaluation.
+        """
+        if cmd.target == "keep_on" or cmd.target is None:
+            return
+        device = cmd.device or cmd.entity_id
+        if self.targets.get(device) == cmd.target:
+            # First failed command of the device in this evaluation (it may have sent several).
+            self.targets.pop(device, None)
+            failures = self.failures[device] = self.failures.get(device, 0) + 1
+            delay = min(COMMAND_RETRY * 2 ** (failures - 1), COMMAND_RETRY_MAX)
+            self.retry[device] = (cmd.target, now + timedelta(minutes=delay))
+        if cmd.restores is not None:
+            self.before_boost.setdefault(device, cmd.restores)
+
+    def command_succeeded(self, device: str) -> None:
+        """Every command of the device was sent: failures in a row start over."""
+        self.failures.pop(device, None)
+        self.retry.pop(device, None)
 
     def manual_change(self, entity_id: str, now: datetime) -> None:
         """A device was changed by someone else than Smart Comfort."""
@@ -167,6 +192,12 @@ class Controller:
         target, commands_for, satisfied = decision
         if target is None or self.targets.get(entity_id) == target:
             return []
+        retry = self.retry.get(entity_id)
+        if retry is not None:
+            if retry[0] == target and now < retry[1]:
+                return []  # Failed a moment ago: tried again once the delay is over.
+            if retry[0] != target:
+                del self.retry[entity_id]  # Another target goes now, and holding the failed one is over.
         self.targets[entity_id] = target
         if satisfied(state):
             return []
@@ -305,14 +336,29 @@ class Controller:
                 if dev.closed_preset:
                     cmds.append(Command(dev.entity_id, "fan", "set_preset_mode", {"preset_mode": dev.closed_preset}))
                 if saved is not None:
+                    # Forgotten now, put back by command_failed() if the restore can't be sent.
                     self.before_boost.pop(dev.entity_id, None)
                     if saved.get("on") is False:
-                        cmds.append(Command(dev.entity_id, "fan", "turn_off"))
+                        cmds.append(Command(dev.entity_id, "fan", "turn_off", restores=saved))
                     elif saved.get("preset"):
-                        cmds.append(Command(dev.entity_id, "fan", "set_preset_mode", {"preset_mode": saved["preset"]}))
+                        cmds.append(
+                            Command(
+                                dev.entity_id,
+                                "fan",
+                                "set_preset_mode",
+                                {"preset_mode": saved["preset"]},
+                                restores=saved,
+                            )
+                        )
                     elif saved.get("percentage") is not None:
                         cmds.append(
-                            Command(dev.entity_id, "fan", "set_percentage", {"percentage": saved["percentage"]})
+                            Command(
+                                dev.entity_id,
+                                "fan",
+                                "set_percentage",
+                                {"percentage": saved["percentage"]},
+                                restores=saved,
+                            )
                         )
             return cmds
 

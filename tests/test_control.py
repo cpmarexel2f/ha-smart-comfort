@@ -5,11 +5,13 @@ from __future__ import annotations
 from datetime import UTC, datetime, time, timedelta
 
 from custom_components.smart_comfort.config import build_settings
+from custom_components.smart_comfort.const import COMMAND_RETRY
 from custom_components.smart_comfort.control import Controller, DeviceState, RoomContext
 
 T0 = datetime(2026, 7, 1, 12, 0, tzinfo=UTC)
 NOON = time(12, 0)
 NIGHT = time(23, 0)
+RETRY = timedelta(minutes=COMMAND_RETRY)
 
 
 def room_settings(**room):
@@ -171,9 +173,78 @@ def test_failed_command_is_retried():
     auto = {"fan.p": DeviceState(on=True, option="auto")}
     cmds = c.evaluate(T0, NOON, room, ctx(21.0, opened=True), auto)
     assert cmds[0].entity_id == "select.p_mode" and cmds[0].device == "fan.p"
-    c.command_failed(cmds[0])
+    c.command_failed(cmds[0], T0)
     assert "fan.p" not in c.targets
-    assert c.evaluate(T0, NOON, room, ctx(21.0, opened=True), auto) != []
+    assert c.evaluate(T0 + RETRY, NOON, room, ctx(21.0, opened=True), auto) != []
+
+
+def test_failed_restore_after_boost_is_retried():
+    s = room_settings(purifiers=["fan.p"])
+    c, room = Controller(s), s.rooms[0]
+    normal = {"fan.p": DeviceState(on=True, percentage=30)}
+    boosted = {"fan.p": DeviceState(on=True, percentage=100)}
+    c.evaluate(T0, NOON, room, ctx(21.0), normal)
+    c.evaluate(T0, NOON, room, ctx(21.0, opened=True), normal)
+    cmds = c.evaluate(T0, NOON, room, ctx(21.0), boosted)
+    assert calls(cmds) == [("fan.p", "fan.set_percentage", {"percentage": 30})]
+    for cmd in cmds:
+        c.command_failed(cmd, T0)
+    # The restore is not lost: it is sent again once the retry delay is over.
+    later = T0 + RETRY
+    assert calls(c.evaluate(later, NOON, room, ctx(21.0), boosted)) == [
+        ("fan.p", "fan.set_percentage", {"percentage": 30})
+    ]
+    assert c.before_boost == {}
+
+
+def test_failed_restore_then_new_boost_keeps_the_state_before_the_first_one():
+    s = room_settings(purifiers=["fan.p"])
+    c, room = Controller(s), s.rooms[0]
+    normal = {"fan.p": DeviceState(on=True, percentage=30)}
+    boosted = {"fan.p": DeviceState(on=True, percentage=100)}
+    c.evaluate(T0, NOON, room, ctx(21.0), normal)
+    c.evaluate(T0, NOON, room, ctx(21.0, opened=True), normal)
+    for cmd in c.evaluate(T0, NOON, room, ctx(21.0), boosted):
+        c.command_failed(cmd, T0)
+    # Opened again during the retry delay: the boost is not held back, already boosted.
+    assert c.evaluate(T0 + timedelta(seconds=30), NOON, room, ctx(21.0, opened=True), boosted) == []
+    # Closed: back to 30 %, not to the 100 % the purifier had when the second boost started.
+    assert calls(c.evaluate(T0 + timedelta(minutes=1), NOON, room, ctx(21.0), boosted)) == [
+        ("fan.p", "fan.set_percentage", {"percentage": 30})
+    ]
+
+
+def test_failing_command_backs_off():
+    s = room_settings(fans=["fan.f"])
+    c, room = Controller(s), s.rooms[0]
+    off = {"fan.f": DeviceState(on=False)}
+    now = T0
+    for delay in (RETRY, 2 * RETRY, 4 * RETRY):
+        cmds = c.evaluate(now, NOON, room, ctx(24.0), off)
+        assert cmds != []
+        for cmd in cmds:
+            c.command_failed(cmd, now)
+        # Not sent again at every evaluation: only once the delay, doubled at each failure, is over.
+        assert c.evaluate(now + timedelta(seconds=30), NOON, room, ctx(24.0), off) == []
+        assert c.evaluate(now + delay - timedelta(seconds=1), NOON, room, ctx(24.0), off) == []
+        now += delay
+    # A success resets the delay.
+    cmds = c.evaluate(now, NOON, room, ctx(24.0), off)
+    c.command_succeeded(cmds[0].device)
+    c.targets.pop("fan.f")
+    for cmd in c.evaluate(now, NOON, room, ctx(24.0), off):
+        c.command_failed(cmd, now)
+    assert c.evaluate(now + RETRY, NOON, room, ctx(24.0), off) != []
+
+
+def test_backoff_does_not_hold_another_target():
+    s = room_settings(fans=["fan.f"])
+    c, room = Controller(s), s.rooms[0]
+    off = {"fan.f": DeviceState(on=False)}
+    for cmd in c.evaluate(T0, NOON, room, ctx(24.0), off):
+        c.command_failed(cmd, T0)
+    # Window opened meanwhile: the boost is a different target, sent right away.
+    assert c.evaluate(T0 + timedelta(seconds=30), NOON, room, ctx(24.0, opened=True), off) != []
 
 
 def test_keep_on_respects_manual_override():

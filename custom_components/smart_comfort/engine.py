@@ -35,13 +35,13 @@ REASON_ONGOING = "ongoing"
 HANDLED_KINDS = frozenset({KIND_TOO_HOT})
 # Kinds that need the outdoor temperature.
 OUTDOOR_KINDS = frozenset({KIND_VENTILATE, KIND_CLOSE_WINDOWS, KIND_WINDOW_OPEN_COLD})
-# Room readings each kind is computed from (RoomReading field names).
+# Readings each kind is computed from (RoomReading field names, "outdoor" for the outdoor temperature).
 SOURCES: dict[str, tuple[str, ...]] = {
     KIND_TOO_HOT: ("temperature",),
     KIND_TOO_COLD: ("temperature",),
-    KIND_VENTILATE: ("temperature",),
-    KIND_CLOSE_WINDOWS: ("temperature",),
-    KIND_WINDOW_OPEN_COLD: (),
+    KIND_VENTILATE: ("temperature", "outdoor"),
+    KIND_CLOSE_WINDOWS: ("temperature", "outdoor"),
+    KIND_WINDOW_OPEN_COLD: ("outdoor",),
     KIND_CO2: ("co2",),
     KIND_HUMIDITY: ("humidity",),
 }
@@ -265,7 +265,7 @@ class Engine:
             return False
         if kind in (KIND_CLOSE_WINDOWS, KIND_WINDOW_OPEN_COLD) and not room.openings:
             return False
-        return all(getattr(room, field) for field in SOURCES[kind])
+        return all(getattr(room, field) for field in SOURCES[kind] if field != "outdoor")
 
     def as_dict(self) -> dict[str, Any]:
         return {

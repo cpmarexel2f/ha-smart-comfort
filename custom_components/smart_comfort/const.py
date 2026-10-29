@@ -215,6 +215,9 @@ SERVICE_TIMEOUT: Final = 15
 KEEP_ON_DELAY: Final = 10
 # Minutes after which an unavailable opening is left out of its room instead of blocking it.
 OPENING_UNAVAILABLE: Final = 10
+# Minutes before a failed device command is tried again, doubled at each new failure up to the maximum.
+COMMAND_RETRY: Final = 5
+COMMAND_RETRY_MAX: Final = 60
 
 STORAGE_VERSION: Final = 1
 STORAGE_KEY: Final = DOMAIN

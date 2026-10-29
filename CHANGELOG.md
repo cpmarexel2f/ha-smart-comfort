@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+### Fixes
+- Air purifiers go back to the speed or preset they had before the window boost even when the first try fails (device offline for a moment…), instead of staying at full speed.
+- A device command that keeps failing (unsupported preset or mode…) is no longer sent again and logged every 30 seconds: it is tried again after 5 minutes, then 10, 20… up to one hour, and right away when the device needs something else.
+- The ventilate, close windows and window open in the cold alerts end when every outdoor temperature entity is deleted, instead of staying active with reminders forever.
+
 ## 0.1.1
 
 ### Fixes

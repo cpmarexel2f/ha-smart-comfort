@@ -317,6 +317,35 @@ def test_removed_sensor_ends_its_episodes():
     assert "chambre_lea|co2_high" not in e.episodes
 
 
+def test_removed_outdoor_entity_ends_its_episodes():
+    e = Engine(settings(outdoor_temperature=["sensor.out"], alerts={"window_open_cold": {"enabled": True, "delay": 0}}))
+    opened = {"sejour": RoomReading(temperature=20.0, has_openings=True, open=["binary_sensor.w1"])}
+    run(e, 0, opened, outdoor=8.0)
+    assert "sejour|window_open_cold" in e.episodes
+    # Outdoor sensor unavailable: unknown, the episode holds.
+    run(e, 5, opened, outdoor=None)
+    assert "sejour|window_open_cold" in e.episodes
+    # Outdoor sensor deleted: the episode ends instead of holding for ever.
+    gone = {
+        "sejour": RoomReading(
+            temperature=20.0, has_openings=True, open=["binary_sensor.w1"], missing=frozenset({"outdoor"})
+        )
+    }
+    run(e, 10, gone, outdoor=None)
+    assert "sejour|window_open_cold" not in e.episodes
+    # A missing outdoor sensor doesn't end the problems that don't need it.
+    e = Engine(settings())
+    for m in (0, 15):
+        run(e, m, hot())
+    run(
+        e,
+        20,
+        {"sejour": RoomReading(temperature=28.0, has_openings=True, open=[], missing=frozenset({"outdoor"}))},
+        outdoor=None,
+    )
+    assert "sejour|too_hot" in e.episodes
+
+
 def test_window_open_cold_worsens_when_colder():
     e = Engine(settings(alerts={"window_open_cold": {"enabled": True, "delay": 0, "escalation": 2}}))
     opened = {"sejour": RoomReading(temperature=20.0, has_openings=True, open=["binary_sensor.w1"])}

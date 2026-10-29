@@ -19,7 +19,7 @@ from pytest_homeassistant_custom_component.common import (
 
 from custom_components.smart_comfort import async_import_yaml, yaml_hash
 from custom_components.smart_comfort.config import build_settings
-from custom_components.smart_comfort.const import ACTION_SNOOZE, DOMAIN
+from custom_components.smart_comfort.const import ACTION_SNOOZE, COMMAND_RETRY, DOMAIN
 
 OPTIONS = {
     "notify": ["notify.phone"],
@@ -247,7 +247,7 @@ async def test_failed_notification_is_sent_again(hass: HomeAssistant, fan_calls)
     assert len(calls) == 2
 
 
-async def test_failed_command_is_retried(hass: HomeAssistant, notify) -> None:
+async def test_failed_command_is_retried(hass: HomeAssistant, notify, freezer) -> None:
     calls = []
 
     async def failing(call) -> None:
@@ -262,8 +262,35 @@ async def test_failed_command_is_retried(hass: HomeAssistant, notify) -> None:
     sent = len(calls)
     assert sent >= 1
     assert "fan.sejour" not in entry.runtime_data.controller.targets
+    # Not at every evaluation (a lasting error would flood the log), but once the retry delay is over.
+    await _evaluate(hass, entry)
+    assert len(calls) == sent
+    freezer.tick(timedelta(minutes=COMMAND_RETRY))
     await _evaluate(hass, entry)
     assert len(calls) == sent + 1
+
+
+async def test_removed_outdoor_entity_ends_episodes(hass: HomeAssistant, notify, fan_calls) -> None:
+    _states(hass, window="on")
+    hass.states.async_set("sensor.out1", "5")
+    hass.states.async_set("sensor.out2", "6")
+    alerts = {**OPTIONS["alerts"], "window_open_cold": {"enabled": True, "delay": 0}}
+    entry = await _setup(hass, {**OPTIONS, "alerts": alerts})
+    await _evaluate(hass, entry)
+    episodes = entry.runtime_data.engine.episodes
+    assert "sejour|window_open_cold" in episodes
+    # One outdoor sensor deleted, the other one still there: still known.
+    hass.states.async_remove("sensor.out1")
+    await _evaluate(hass, entry)
+    assert "sejour|window_open_cold" in episodes
+    # The other one unavailable: unknown for now, the episode holds.
+    hass.states.async_set("sensor.out2", "unavailable")
+    await _evaluate(hass, entry)
+    assert "sejour|window_open_cold" in episodes
+    # Both deleted: gone for good, the episode ends.
+    hass.states.async_remove("sensor.out2")
+    await _evaluate(hass, entry)
+    assert "sejour|window_open_cold" not in episodes
 
 
 async def test_snooze_keys_survive_restart(hass: HomeAssistant, notify, fan_calls) -> None:
