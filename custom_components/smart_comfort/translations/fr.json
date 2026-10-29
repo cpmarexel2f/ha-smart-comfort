@@ -1,0 +1,392 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Smart Comfort",
+        "data": {
+          "notify": "Actions de notification",
+          "outdoor_temperature": "Température extérieure",
+          "outdoor_aggregate": "Combinaison des capteurs extérieurs"
+        },
+        "description": "Des alertes confort moins nombreuses et plus intelligentes, et le pilotage de vos climatiseurs, ventilateurs et purificateurs. Ajoutez ensuite les pièces dans les options, ou configurez tout en YAML.",
+        "data_description": {
+          "notify": "Où envoyer les alertes (notify.mobile_app_…, un groupe notify…).",
+          "outdoor_temperature": "Un ou plusieurs capteurs extérieurs ; ceux indisponibles sont ignorés.",
+          "outdoor_aggregate": "Le minimum évite un capteur au soleil."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Smart Comfort est déjà configuré.",
+      "single_instance_allowed": "Smart Comfort est déjà configuré."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options de Smart Comfort",
+        "description": "{rooms} pièce(s) configurée(s). Si vous utilisez le YAML, le modifier remplace ces options au prochain redémarrage.",
+        "menu_options": {
+          "general": "Notifications",
+          "alerts": "Alertes",
+          "control": "Pilotage des appareils",
+          "add_room": "Ajouter une pièce",
+          "edit_room": "Modifier une pièce",
+          "remove_room": "Supprimer des pièces"
+        }
+      },
+      "general": {
+        "title": "Notifications",
+        "data": {
+          "notify": "Actions de notification",
+          "outdoor_temperature": "Température extérieure",
+          "outdoor_aggregate": "Combinaison des capteurs extérieurs",
+          "digest_window": "Fenêtre de regroupement",
+          "reminder": "Rappel",
+          "snooze_duration": "Durée de mise en sourdine",
+          "startup_grace": "Délai au démarrage",
+          "quiet_start": "Début des heures calmes",
+          "quiet_end": "Fin des heures calmes",
+          "presence": "Présence",
+          "clear_when_resolved": "Effacer une fois résolu",
+          "critical_volume": "Volume des alertes critiques",
+          "url": "Action au toucher",
+          "tag": "Tag de notification"
+        },
+        "data_description": {
+          "notify": "Où envoyer les alertes (notify.mobile_app_…, un groupe notify…).",
+          "outdoor_temperature": "Un ou plusieurs capteurs extérieurs ; ceux indisponibles sont ignorés.",
+          "outdoor_aggregate": "Le minimum évite un capteur au soleil.",
+          "digest_window": "Minutes d'attente d'autres alertes avant d'envoyer une notification groupée. Les alertes critiques n'attendent pas.",
+          "reminder": "Minutes après lesquelles un problème toujours présent est renotifié. 0 : jamais (seulement s'il s'aggrave).",
+          "snooze_duration": "Minutes du bouton « Ignorer » de la notification et de l'action snooze par défaut.",
+          "startup_grace": "Minutes après le démarrage de Home Assistant pendant lesquelles rien n'est envoyé.",
+          "quiet_start": "De là jusqu'à la fin, seules les alertes critiques partent ; les autres sont envoyées à la fin si toujours d'actualité.",
+          "presence": "Zone, personne, groupe ou booléen : tant que personne n'est là, seules les alertes critiques partent.",
+          "clear_when_resolved": "Retire la notification des téléphones quand tous les problèmes notifiés sont terminés.",
+          "critical_volume": "Volume du son critique iOS, de 0 à 1.",
+          "url": "Ouverte au toucher de la notification, ex. homeassistant://navigate/lovelace/confort",
+          "tag": "Chaque notification remplace la précédente de même tag au lieu de s'empiler."
+        }
+      },
+      "alerts": {
+        "title": "Alertes",
+        "data": {
+          "kind": "Alerte"
+        },
+        "description": "Réglages d'une alerte pour toutes les pièces. Une pièce peut les remplacer en YAML."
+      },
+      "alert": {
+        "title": "Réglages de l'alerte",
+        "data": {
+          "enabled": "Activée",
+          "threshold": "Seuil",
+          "min_indoor": "Température intérieure minimale",
+          "min_outdoor": "Température extérieure minimale",
+          "max_outdoor": "Température extérieure maximale",
+          "hysteresis": "Hystérésis",
+          "delay": "Délai",
+          "severity": "Gravité",
+          "escalation": "Pas d'aggravation"
+        },
+        "data_description": {
+          "threshold": "Trop chaud/froid, CO₂, humidité : la valeur. Aérer / fermer : l'écart intérieur/extérieur.",
+          "min_indoor": "Ne suggère d'aérer que si la pièce est au moins à cette température.",
+          "min_outdoor": "Seulement s'il fait au moins cette température dehors.",
+          "max_outdoor": "Seulement s'il fait au plus cette température dehors.",
+          "hysteresis": "Le problème ne se termine qu'une fois la valeur revenue de cet écart sous le seuil : pas de yo-yo.",
+          "delay": "Minutes pendant lesquelles la condition doit tenir avant de devenir un problème.",
+          "escalation": "Renotifie quand la valeur s'aggrave de cet écart depuis la dernière notification. 0 : jamais."
+        }
+      },
+      "control": {
+        "title": "Pilotage des appareils",
+        "data": {
+          "enabled": "Piloter les appareils",
+          "start": "Boost fenêtre à partir de",
+          "end": "Boost fenêtre jusqu'à",
+          "manual_override": "Reprise manuelle",
+          "suppress_when_handled": "Pas d'alerte si traité"
+        },
+        "data_description": {
+          "start": "Ventilateurs et purificateurs passent à fond à l'ouverture d'une fenêtre seulement entre ces heures.",
+          "manual_override": "Minutes pendant lesquelles un appareil modifié à la main est laissé tranquille. 0 : jamais.",
+          "suppress_when_handled": "Pas d'alerte « trop chaud » pour une pièce dont la clim ou le ventilateur tourne déjà."
+        },
+        "sections": {
+          "climate": {
+            "name": "Climatiseurs",
+            "data": {
+              "cool_above": "Climatiser à partir de",
+              "off_below": "Éteindre sous",
+              "setpoint": "Consigne",
+              "fan_mode": "Mode de ventilation",
+              "closed_for": "Ouvertures fermées depuis (min)",
+              "off_on_open": "Éteindre si ouvert depuis (min)"
+            }
+          },
+          "fans": {
+            "name": "Ventilateurs",
+            "data": {
+              "on_above": "Allumer à partir de",
+              "off_below": "Éteindre sous",
+              "percentage": "Vitesse",
+              "preset": "Mode",
+              "open_percentage": "Vitesse, fenêtre ouverte",
+              "open_preset": "Mode, fenêtre ouverte",
+              "off_preset": "Mode avant extinction"
+            },
+            "description": "Laissez « Allumer à partir de » et « Éteindre sous » vides pour des ventilateurs pilotés par les fenêtres seulement."
+          },
+          "purifiers": {
+            "name": "Purificateurs",
+            "data": {
+              "open_percentage": "Vitesse, fenêtre ouverte",
+              "open_preset": "Mode, fenêtre ouverte",
+              "closed_preset": "Mode, fenêtres fermées",
+              "keep_on": "Garder allumé"
+            },
+            "data_description": {
+              "keep_on": "Rallume un purificateur éteint depuis 10 s (coupure, bug)."
+            }
+          }
+        }
+      },
+      "add_room": {
+        "title": "Ajouter une pièce",
+        "data": {
+          "name": "Nom",
+          "temperature": "Température",
+          "co2": "CO₂",
+          "humidity": "Humidité",
+          "openings": "Fenêtres et portes",
+          "climate": "Climatiseur",
+          "fans": "Ventilateurs",
+          "purifiers": "Purificateurs d'air"
+        },
+        "description": "Capteurs et appareils de la pièce. Laissez vide ce qu'elle n'a pas.",
+        "sections": {
+          "overrides": {
+            "name": "Réglages de la pièce",
+            "description": "Remplace les réglages globaux pour cette pièce. Les réglages par appareil sont en YAML uniquement.",
+            "data": {
+              "too_hot_threshold": "Trop chaud à partir de",
+              "too_cold_threshold": "Trop froid sous",
+              "fan_preset": "Mode du ventilateur",
+              "fan_open_preset": "Mode du ventilateur, fenêtre ouverte",
+              "fan_off_preset": "Mode du ventilateur avant extinction",
+              "purifier_open_preset": "Mode du purificateur, fenêtre ouverte",
+              "purifier_closed_preset": "Mode du purificateur, fenêtres fermées",
+              "purifier_mode_select": "Sélecteur de mode du purificateur",
+              "purifier_open_mode": "Option du mode, fenêtre ouverte",
+              "purifier_closed_mode": "Option du mode, fenêtres fermées",
+              "purifier_keep_on": "Garder les purificateurs allumés"
+            }
+          }
+        }
+      },
+      "room": {
+        "title": "Modifier la pièce",
+        "data": {
+          "name": "Nom",
+          "temperature": "Température",
+          "co2": "CO₂",
+          "humidity": "Humidité",
+          "openings": "Fenêtres et portes",
+          "climate": "Climatiseur",
+          "fans": "Ventilateurs",
+          "purifiers": "Purificateurs d'air"
+        },
+        "description": "Capteurs et appareils de la pièce. Laissez vide ce qu'elle n'a pas.",
+        "sections": {
+          "overrides": {
+            "name": "Réglages de la pièce",
+            "description": "Remplace les réglages globaux pour cette pièce. Les réglages par appareil sont en YAML uniquement.",
+            "data": {
+              "too_hot_threshold": "Trop chaud à partir de",
+              "too_cold_threshold": "Trop froid sous",
+              "fan_preset": "Mode du ventilateur",
+              "fan_open_preset": "Mode du ventilateur, fenêtre ouverte",
+              "fan_off_preset": "Mode du ventilateur avant extinction",
+              "purifier_open_preset": "Mode du purificateur, fenêtre ouverte",
+              "purifier_closed_preset": "Mode du purificateur, fenêtres fermées",
+              "purifier_mode_select": "Sélecteur de mode du purificateur",
+              "purifier_open_mode": "Option du mode, fenêtre ouverte",
+              "purifier_closed_mode": "Option du mode, fenêtres fermées",
+              "purifier_keep_on": "Garder les purificateurs allumés"
+            }
+          }
+        }
+      },
+      "edit_room": {
+        "title": "Modifier une pièce",
+        "data": {
+          "room": "Pièce"
+        }
+      },
+      "remove_room": {
+        "title": "Supprimer des pièces",
+        "data": {
+          "rooms": "Pièces"
+        }
+      }
+    },
+    "error": {
+      "name_required": "Donnez un nom à la pièce.",
+      "name_exists": "Une pièce porte déjà ce nom."
+    }
+  },
+  "selector": {
+    "kind": {
+      "options": {
+        "too_hot": "Trop chaud",
+        "close_windows": "Fermer les fenêtres (plus chaud dehors)",
+        "ventilate": "Aérer (plus frais dehors)",
+        "too_cold": "Trop froid",
+        "window_open_cold": "Fenêtre ouverte par temps froid",
+        "co2_high": "CO₂ élevé",
+        "humidity_high": "Humidité élevée"
+      }
+    },
+    "severity": {
+      "options": {
+        "info": "Info (silencieuse)",
+        "warning": "Avertissement (urgent, avec son)",
+        "critical": "Critique (passe outre heures calmes et mode silencieux)"
+      }
+    },
+    "outdoor_aggregate": {
+      "options": {
+        "min": "Minimum",
+        "max": "Maximum",
+        "mean": "Moyenne"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "alerts": {
+        "name": "Alertes actives",
+        "state_attributes": {
+          "alerts": {
+            "name": "Alertes"
+          },
+          "snoozes": {
+            "name": "Mises en sourdine"
+          },
+          "outdoor_temperature": {
+            "name": "Température extérieure"
+          }
+        }
+      },
+      "room": {
+        "name": "Confort {room}",
+        "state": {
+          "ok": "OK",
+          "too_hot": "Trop chaud",
+          "close_windows": "Fermer les fenêtres (plus chaud dehors)",
+          "ventilate": "Aérer (plus frais dehors)",
+          "too_cold": "Trop froid",
+          "window_open_cold": "Fenêtre ouverte par temps froid",
+          "co2_high": "CO₂ élevé",
+          "humidity_high": "Humidité élevée"
+        }
+      },
+      "last_notification": {
+        "name": "Dernière notification"
+      }
+    },
+    "switch": {
+      "notifications": {
+        "name": "Notifications"
+      },
+      "control": {
+        "name": "Pilotage des appareils"
+      }
+    },
+    "button": {
+      "notify_now": {
+        "name": "Notifier maintenant"
+      },
+      "unsnooze": {
+        "name": "Annuler les sourdines"
+      }
+    }
+  },
+  "services": {
+    "snooze": {
+      "name": "Mettre en sourdine",
+      "description": "Arrête de notifier un moment les alertes des pièces et types donnés (toutes par défaut).",
+      "fields": {
+        "duration": {
+          "name": "Durée",
+          "description": "Minutes ; par défaut la durée des options."
+        },
+        "rooms": {
+          "name": "Pièces",
+          "description": "Noms ou ids des pièces ; toutes par défaut."
+        },
+        "kinds": {
+          "name": "Alertes",
+          "description": "Types d'alertes ; si précisés, seules celles en cours sont mises en sourdine."
+        }
+      }
+    },
+    "unsnooze": {
+      "name": "Annuler les sourdines",
+      "description": "Notifie à nouveau les alertes en sourdine des pièces données (toutes par défaut).",
+      "fields": {
+        "rooms": {
+          "name": "Pièces",
+          "description": "Noms ou ids des pièces ; toutes par défaut."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Acquitter",
+      "description": "Plus de rappel ni d'aggravation pour les alertes en cours jusqu'à leur fin.",
+      "fields": {
+        "rooms": {
+          "name": "Pièces",
+          "description": "Noms ou ids des pièces ; toutes par défaut."
+        },
+        "kinds": {
+          "name": "Alertes",
+          "description": "Types d'alertes ; tous par défaut."
+        }
+      }
+    },
+    "notify_now": {
+      "name": "Notifier maintenant",
+      "description": "Envoie tous les problèmes en cours dans une notification, sans tenir compte des heures calmes ni du regroupement."
+    }
+  },
+  "common": {
+    "title_one": "{room}",
+    "title_many": "{count} alertes confort",
+    "room_line": "{room} : {problem}",
+    "decimal": ",",
+    "duration_minutes": "{minutes} min",
+    "duration_hours": "{hours} h {minutes:02d}",
+    "since": "depuis {duration}",
+    "worse": "s'aggrave",
+    "line_too_hot": "{value} °C, au-dessus de {threshold} °C",
+    "line_too_cold": "{value} °C, sous {threshold} °C",
+    "line_ventilate": "{temperature} °C dedans, {outdoor} °C dehors — aérez",
+    "line_close_windows": "{outdoor} °C dehors, {temperature} °C dedans — fermez {openings}",
+    "line_window_open_cold": "{openings} ouvert, {outdoor} °C dehors",
+    "line_co2_high": "CO₂ {value} ppm — aérez",
+    "line_humidity_high": "humidité {value} % — aérez",
+    "action_snooze": "Ignorer {hours} h",
+    "action_snooze_minutes": "Ignorer {minutes} min",
+    "action_ack": "C'est noté"
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Smart Comfort n'est pas chargé."
+    },
+    "unknown_room": {
+      "message": "Pièce inconnue : {room}."
+    }
+  }
+}

@@ -1,0 +1,52 @@
+snooze:
+  fields:
+    duration:
+      selector:
+        number:
+          min: 1
+          max: 10080
+          unit_of_measurement: min
+          mode: box
+    rooms:
+      selector:
+        text:
+          multiple: true
+    kinds:
+      selector:
+        select:
+          multiple: true
+          translation_key: kind
+          options:
+            - too_hot
+            - close_windows
+            - ventilate
+            - too_cold
+            - window_open_cold
+            - co2_high
+            - humidity_high
+unsnooze:
+  fields:
+    rooms:
+      selector:
+        text:
+          multiple: true
+acknowledge:
+  fields:
+    rooms:
+      selector:
+        text:
+          multiple: true
+    kinds:
+      selector:
+        select:
+          multiple: true
+          translation_key: kind
+          options:
+            - too_hot
+            - close_windows
+            - ventilate
+            - too_cold
+            - window_open_cold
+            - co2_high
+            - humidity_high
+notify_now:

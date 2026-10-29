@@ -1,0 +1,40 @@
+# Smart Comfort — Agent Context
+
+## Purpose
+Home Assistant custom integration that replaces cooldown-based comfort automations: per-room alerts tracked as episodes and sent as grouped, replaceable notifications, plus control of air conditioners, fans and air purifiers.
+
+## Architecture
+
+```
+custom_components/smart_comfort/
+├── __init__.py      # YAML import (async_import_yaml), actions snooze/unsnooze/acknowledge/notify_now, entry setup
+├── const.py         # Keys (same in YAML and options), kinds, DEFAULT_ALERTS, DEFAULT_CONTROL
+├── schema.py        # voluptuous: CONFIG_SCHEMA (YAML) and OPTIONS (also validates what the options flow saves)
+├── config.py        # Pure: build_settings(options) -> Settings/Room/AlertSettings/devices, defaults merged (global < room < device)
+├── engine.py        # Pure: Episode, Engine.evaluate (readings -> episodes), Engine.step (gates -> Digest | Clear | None)
+├── control.py       # Pure: Controller.evaluate (room context + device states -> Commands), targets, manual overrides, keep_on
+├── message.py       # Pure: render(digest, texts) -> title, message; texts = translations common.*
+├── manager.py       # HA glue: state tracking, debounce, interval, commands with own Context, notify, mobile_app actions, Store
+├── config_flow.py   # Single entry; import step; options menu general / alerts (per kind) / control (sections) / rooms
+├── sensor.py        # alerts, room (enum per room), last_notification
+├── switch.py        # notifications, control (restored)
+├── button.py        # notify_now, unsnooze
+├── entity.py / icons.json / services.yaml / translations/{en,fr,de,es}.json / brand/
+```
+
+## Rules
+- Options dict is the single source of truth (entry.options), same shape as YAML. Missing keys mean defaults; keep it minimal.
+- YAML: `async_import_yaml` creates the entry via the import flow, or, when the entry exists (a single-entry integration can't run a flow then), updates its options only if the sha256 of the YAML differs from `entry.data["yaml_hash"]`. Unchanged YAML keeps UI edits.
+- Episode key `room|kind`. Pending until `delay`, active after; ends when the check is False (hysteresis applied once the episode exists). A check returning None (unknown sensor/opening) leaves the episode untouched.
+- Due = never notified, worse by `escalation` (not when acknowledged), or `reminder` elapsed (not when acknowledged). Snoozed (episode, room or "*") and handled too_hot (room whose AC/fan target is running) are invisible.
+- Digest = all visible episodes (only critical ones while `hold`), sent when the batch is older than `digest_window` or a due item is critical. Same `tag` every time: it replaces the previous notification. `Clear` (clear_notification) once no visible episode was notified.
+- Gates: startup grace (only when HA was starting at setup), notifications switch, hold (quiet hours or presence away).
+- Control: a target per device; commands only on a target change and when the device doesn't already satisfy it. Hysteresis band keeps the previous target. Climate in a mode other than cool/off is left alone. Manual change = device state/attribute change whose context isn't ours, outside 90 s after our last command → override `manual_override` min; when it ends the target is forgotten and applied again.
+- State (episodes, snoozes, targets, overrides, last notification) in `Store` `smart_comfort`, and in `hass.data[DOMAIN]["state"]` across entry reloads (the delayed save may not be written yet).
+- Notification texts: translations `common.*` with `str.format`; a broken template falls back to English (message.FALLBACK).
+
+## Release
+Bump `version` in manifest.json and add its CHANGELOG.md section; pushing to main publishes `vX.Y.Z` with `smart_comfort.zip` when that tag doesn't exist yet.
+
+## Tests
+`pip install -r requirements_test.txt && pytest` — engine/control/message tests are pure Python; `tests/test_init.py` runs the integration with mocked notify and fan services. CI runs the latest Home Assistant (Python 3.14) and 2024.12.0.

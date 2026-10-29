@@ -1,0 +1,14 @@
+{
+  "domain": "smart_comfort",
+  "name": "Smart Comfort",
+  "after_dependencies": ["mobile_app", "notify"],
+  "codeowners": ["@juju35"],
+  "config_flow": true,
+  "documentation": "https://github.com/juju35/ha-smart-comfort",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/juju35/ha-smart-comfort/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.1.0"
+}

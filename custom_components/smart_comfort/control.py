@@ -1,0 +1,296 @@
+"""Device control: air conditioners, fans and air purifiers of each room.
+
+Pure Python. Each device has a target (cool/off, on/boost/off, boost/normal) derived from the room
+reading, with a hysteresis band in which the previous target holds. Commands are sent only when
+the target changes and the device isn't already in that state, so a user who changes a device by
+hand is not fought: a manual change pauses the device for `manual_override` minutes, after which the
+target is applied again.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import Any
+
+from .config import ClimateDevice, FanDevice, PurifierDevice, Room, Settings, in_window
+from .const import KEEP_ON_DELAY
+
+TARGET_COOL = "cool"
+TARGET_OFF = "off"
+TARGET_ON = "on"
+TARGET_BOOST = "boost"
+TARGET_NORMAL = "normal"
+
+
+@dataclass
+class DeviceState:
+    """State of a device entity, None fields when unknown."""
+
+    available: bool = True
+    on: bool | None = None
+    hvac_mode: str | None = None
+    preset: str | None = None
+    percentage: int | None = None
+    option: str | None = None  # Current option of the purifier's mode select.
+    off_since: datetime | None = None
+
+
+@dataclass
+class RoomContext:
+    temperature: float | None
+    any_open: bool | None
+    # Since when every opening is closed / at least one is open (None when unknown or not the case).
+    closed_since: datetime | None
+    open_since: datetime | None
+    has_openings: bool
+
+
+@dataclass
+class Command:
+    """One action call: domain.service with data, on entity_id."""
+
+    entity_id: str
+    domain: str
+    service: str
+    data: dict[str, Any] = field(default_factory=dict)
+    target: str | None = None
+
+
+def _fan_commands(entity_id: str, percentage: int | None, preset: str | None) -> list[Command]:
+    cmds = [Command(entity_id, "fan", "turn_on")]
+    if preset:
+        cmds.append(Command(entity_id, "fan", "set_preset_mode", {"preset_mode": preset}))
+    if percentage is not None:
+        cmds.append(Command(entity_id, "fan", "set_percentage", {"percentage": percentage}))
+    return cmds
+
+
+class Controller:
+    """Targets and manual overrides of every controlled device."""
+
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+        self.targets: dict[str, str] = {}
+        self.overrides: dict[str, datetime] = {}
+        self.keep_on_sent: dict[str, datetime] = {}
+
+    def update_settings(self, settings: Settings) -> None:
+        self.settings = settings
+        devices = {d for r in settings.rooms for d in r.devices}
+        self.targets = {k: v for k, v in self.targets.items() if k in devices}
+        self.overrides = {k: v for k, v in self.overrides.items() if k in devices}
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"targets": self.targets, "overrides": {k: v.isoformat() for k, v in self.overrides.items()}}
+
+    def restore(self, data: dict[str, Any]) -> None:
+        self.targets = {str(k): str(v) for k, v in (data.get("targets") or {}).items()}
+        for k, v in (data.get("overrides") or {}).items():
+            try:
+                self.overrides[str(k)] = datetime.fromisoformat(v)
+            except (TypeError, ValueError):
+                continue
+        self.update_settings(self.settings)
+
+    def manual_change(self, entity_id: str, now: datetime) -> None:
+        """A device was changed by someone else than Smart Comfort."""
+        if self.settings.manual_override > 0:
+            self.overrides[entity_id] = now + timedelta(minutes=self.settings.manual_override)
+
+    def overridden(self, entity_id: str, now: datetime) -> bool:
+        until = self.overrides.get(entity_id)
+        if until is None:
+            return False
+        if until > now:
+            return True
+        # Override over: forget the target so that it is applied again.
+        del self.overrides[entity_id]
+        self.targets.pop(entity_id, None)
+        return False
+
+    def handled(self, room: Room, states: dict[str, DeviceState]) -> bool:
+        """An air conditioner cools or a fan blows in the room, on Smart Comfort's command."""
+        for entity_id in room.devices:
+            target, state = self.targets.get(entity_id), states.get(entity_id)
+            if state is None or not state.available:
+                continue
+            if target == TARGET_COOL and state.hvac_mode == "cool":
+                return True
+            if target in (TARGET_ON, TARGET_BOOST) and state.on and any(f.entity_id == entity_id for f in room.fans):
+                return True
+        return False
+
+    # Decisions.
+
+    def evaluate(
+        self, now: datetime, local: Any, room: Room, ctx: RoomContext, states: dict[str, DeviceState]
+    ) -> list[Command]:
+        """Commands for the devices of a room. `local` is the local time of day."""
+        if not self.settings.control_enabled:
+            return []
+        boost_hours = in_window(local, self.settings.control_start, self.settings.control_end)
+        cmds: list[Command] = []
+        if room.climate:
+            cmds += self._device(now, room.climate.entity_id, states, self._climate(room.climate, ctx, now))
+        for fan in room.fans:
+            cmds += self._device(now, fan.entity_id, states, self._fan(fan, ctx, boost_hours))
+        for purifier in room.purifiers:
+            state = states.get(purifier.entity_id)
+            cmds += self._keep_on(now, purifier, state)
+            cmds += self._device(now, purifier.entity_id, states, self._purifier(purifier, ctx, boost_hours))
+        return cmds
+
+    def _device(self, now: datetime, entity_id: str, states: dict[str, DeviceState], decision: Any) -> list[Command]:
+        state = states.get(entity_id)
+        if decision is None or state is None or not state.available or self.overridden(entity_id, now):
+            return []
+        target, commands_for, satisfied = decision
+        if target is None or self.targets.get(entity_id) == target:
+            return []
+        self.targets[entity_id] = target
+        if satisfied(state):
+            return []
+        cmds = commands_for(state)
+        for c in cmds:
+            c.target = target
+        return cmds
+
+    # Air conditioner: cool / off.
+
+    def _climate(self, dev: ClimateDevice, ctx: RoomContext, now: datetime) -> Any:
+        temp, current = ctx.temperature, self.targets.get(dev.entity_id)
+        target = current
+        open_for = now - ctx.open_since if ctx.open_since else None
+        closed_for = now - ctx.closed_since if ctx.closed_since else None
+        if ctx.has_openings and ctx.any_open is None:
+            return None
+        if ctx.any_open and open_for is not None and open_for >= timedelta(minutes=dev.off_on_open):
+            target = TARGET_OFF
+        elif temp is None:
+            return None
+        elif temp >= dev.cool_above and (
+            not ctx.has_openings or (closed_for is not None and closed_for >= timedelta(minutes=dev.closed_for))
+        ):
+            target = TARGET_COOL
+        elif temp <= dev.off_below:
+            target = TARGET_OFF
+        elif ctx.any_open:
+            return None  # Opening just opened: wait for off_on_open.
+
+        def commands(state: DeviceState) -> list[Command]:
+            if target == TARGET_OFF:
+                return [Command(dev.entity_id, "climate", "turn_off")]
+            cmds = [
+                Command(
+                    dev.entity_id,
+                    "climate",
+                    "set_temperature",
+                    {"hvac_mode": "cool", "temperature": dev.setpoint},
+                )
+            ]
+            if dev.fan_mode:
+                cmds.append(Command(dev.entity_id, "climate", "set_fan_mode", {"fan_mode": dev.fan_mode}))
+            return cmds
+
+        def satisfied(state: DeviceState) -> bool:
+            if state.hvac_mode not in (None, "off", "cool"):
+                return True  # Heating, drying…: left alone.
+            return (state.hvac_mode == "cool") == (target == TARGET_COOL)
+
+        return target, commands, satisfied
+
+    # Fan: boost (opening open, in the hours) / on (warm) / off.
+
+    def _fan(self, dev: FanDevice, ctx: RoomContext, boost_hours: bool) -> Any:
+        current = self.targets.get(dev.entity_id)
+        temp = ctx.temperature
+        boost = bool(ctx.any_open) and boost_hours and (dev.open_percentage is not None or dev.open_preset)
+        if ctx.has_openings and ctx.any_open is None:
+            return None
+        temperature_control = dev.on_above is not None and dev.off_below is not None
+        if boost:
+            target = TARGET_BOOST
+        elif not temperature_control:
+            target = TARGET_OFF if current == TARGET_BOOST else None
+        elif temp is None:
+            return None
+        elif temp >= dev.on_above:
+            target = TARGET_ON
+        elif temp <= dev.off_below or current == TARGET_BOOST:
+            target = TARGET_OFF
+        else:
+            target = current
+
+        def commands(state: DeviceState) -> list[Command]:
+            if target == TARGET_BOOST:
+                return _fan_commands(dev.entity_id, dev.open_percentage, dev.open_preset)
+            if target == TARGET_ON:
+                return _fan_commands(dev.entity_id, dev.percentage, dev.preset)
+            cmds = []
+            if dev.off_preset:
+                cmds.append(Command(dev.entity_id, "fan", "set_preset_mode", {"preset_mode": dev.off_preset}))
+            return [*cmds, Command(dev.entity_id, "fan", "turn_off")]
+
+        def satisfied(state: DeviceState) -> bool:
+            if target == TARGET_OFF:
+                return state.on is False
+            pct, preset = (
+                (dev.open_percentage, dev.open_preset) if target == TARGET_BOOST else (dev.percentage, dev.preset)
+            )
+            return (
+                bool(state.on) and (pct is None or state.percentage == pct) and (not preset or state.preset == preset)
+            )
+
+        return target, commands, satisfied
+
+    # Air purifier: boost (opening open, in the hours) / normal.
+
+    def _purifier(self, dev: PurifierDevice, ctx: RoomContext, boost_hours: bool) -> Any:
+        if ctx.has_openings and ctx.any_open is None:
+            return None
+        target = TARGET_BOOST if ctx.any_open and boost_hours else TARGET_NORMAL
+
+        def commands(state: DeviceState) -> list[Command]:
+            cmds = []
+            if target == TARGET_BOOST:
+                if not state.on:
+                    cmds.append(Command(dev.entity_id, "fan", "turn_on"))
+                if dev.mode_select and dev.open_mode:
+                    cmds.append(Command(dev.mode_select, "select", "select_option", {"option": dev.open_mode}))
+                if dev.open_preset:
+                    cmds.append(Command(dev.entity_id, "fan", "set_preset_mode", {"preset_mode": dev.open_preset}))
+                if dev.open_percentage is not None:
+                    cmds.append(Command(dev.entity_id, "fan", "set_percentage", {"percentage": dev.open_percentage}))
+            else:
+                if dev.mode_select and dev.closed_mode:
+                    cmds.append(Command(dev.mode_select, "select", "select_option", {"option": dev.closed_mode}))
+                if dev.closed_preset:
+                    cmds.append(Command(dev.entity_id, "fan", "set_preset_mode", {"preset_mode": dev.closed_preset}))
+            return cmds
+
+        def satisfied(state: DeviceState) -> bool:
+            if target == TARGET_BOOST:
+                return (
+                    bool(state.on)
+                    and (not (dev.mode_select and dev.open_mode) or state.option == dev.open_mode)
+                    and (not dev.open_preset or state.preset == dev.open_preset)
+                    and (dev.open_percentage is None or state.percentage == dev.open_percentage)
+                )
+            return (not (dev.mode_select and dev.closed_mode) or state.option == dev.closed_mode) and (
+                not dev.closed_preset or state.preset == dev.closed_preset
+            )
+
+        return target, commands, satisfied
+
+    def _keep_on(self, now: datetime, dev: PurifierDevice, state: DeviceState | None) -> list[Command]:
+        """Turn a purifier back on when it has been off for a few seconds (power cut, glitch…)."""
+        if not dev.keep_on or state is None or not state.available or state.on is not False:
+            return []
+        if state.off_since is None or now - state.off_since < timedelta(seconds=KEEP_ON_DELAY):
+            return []
+        last = self.keep_on_sent.get(dev.entity_id)
+        if last is not None and now - last < timedelta(minutes=1):
+            return []
+        self.keep_on_sent[dev.entity_id] = now
+        return [Command(dev.entity_id, "fan", "turn_on", target="keep_on")]

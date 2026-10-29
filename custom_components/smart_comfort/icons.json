@@ -1,0 +1,35 @@
+{
+  "entity": {
+    "sensor": {
+      "alerts": { "default": "mdi:home-thermometer-outline" },
+      "room": {
+        "default": "mdi:home-thermometer",
+        "state": {
+          "ok": "mdi:home-heart",
+          "too_hot": "mdi:thermometer-high",
+          "too_cold": "mdi:thermometer-low",
+          "ventilate": "mdi:window-open-variant",
+          "close_windows": "mdi:window-closed-variant",
+          "window_open_cold": "mdi:snowflake-alert",
+          "co2_high": "mdi:molecule-co2",
+          "humidity_high": "mdi:water-percent-alert"
+        }
+      },
+      "last_notification": { "default": "mdi:bell-ring-outline" }
+    },
+    "switch": {
+      "notifications": { "default": "mdi:bell", "state": { "off": "mdi:bell-off" } },
+      "control": { "default": "mdi:air-conditioner", "state": { "off": "mdi:hand-back-right-off" } }
+    },
+    "button": {
+      "notify_now": { "default": "mdi:bell-badge" },
+      "unsnooze": { "default": "mdi:alarm-off" }
+    }
+  },
+  "services": {
+    "snooze": { "service": "mdi:alarm-snooze" },
+    "unsnooze": { "service": "mdi:alarm-off" },
+    "acknowledge": { "service": "mdi:check-circle-outline" },
+    "notify_now": { "service": "mdi:bell-badge" }
+  }
+}

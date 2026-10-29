@@ -1,0 +1,392 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Smart Comfort",
+        "data": {
+          "notify": "Benachrichtigungsaktionen",
+          "outdoor_temperature": "Außentemperatur",
+          "outdoor_aggregate": "Außensensoren kombinieren"
+        },
+        "description": "Weniger und klügere Komfortmeldungen sowie die Steuerung von Klimaanlagen, Lüftern und Luftreinigern. Räume danach in den Optionen hinzufügen oder alles per YAML konfigurieren.",
+        "data_description": {
+          "notify": "Wohin die Meldungen gehen (notify.mobile_app_…, eine notify-Gruppe…).",
+          "outdoor_temperature": "Ein oder mehrere Außensensoren; nicht verfügbare werden ignoriert.",
+          "outdoor_aggregate": "Das Minimum vermeidet einen Sensor in der Sonne."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Smart Comfort ist bereits eingerichtet.",
+      "single_instance_allowed": "Smart Comfort ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Smart-Comfort-Optionen",
+        "description": "{rooms} Raum/Räume eingerichtet. Bei YAML ersetzt eine Änderung dort diese Optionen beim nächsten Neustart.",
+        "menu_options": {
+          "general": "Benachrichtigungen",
+          "alerts": "Meldungen",
+          "control": "Gerätesteuerung",
+          "add_room": "Raum hinzufügen",
+          "edit_room": "Raum bearbeiten",
+          "remove_room": "Räume entfernen"
+        }
+      },
+      "general": {
+        "title": "Benachrichtigungen",
+        "data": {
+          "notify": "Benachrichtigungsaktionen",
+          "outdoor_temperature": "Außentemperatur",
+          "outdoor_aggregate": "Außensensoren kombinieren",
+          "digest_window": "Sammelfenster",
+          "reminder": "Erinnerung",
+          "snooze_duration": "Stummschaltdauer",
+          "startup_grace": "Karenzzeit beim Start",
+          "quiet_start": "Beginn der Ruhezeit",
+          "quiet_end": "Ende der Ruhezeit",
+          "presence": "Anwesenheit",
+          "clear_when_resolved": "Nach Lösung entfernen",
+          "critical_volume": "Lautstärke kritischer Meldungen",
+          "url": "Aktion beim Tippen",
+          "tag": "Benachrichtigungs-Tag"
+        },
+        "data_description": {
+          "notify": "Wohin die Meldungen gehen (notify.mobile_app_…, eine notify-Gruppe…).",
+          "outdoor_temperature": "Ein oder mehrere Außensensoren; nicht verfügbare werden ignoriert.",
+          "outdoor_aggregate": "Das Minimum vermeidet einen Sensor in der Sonne.",
+          "digest_window": "Minuten, die auf weitere Meldungen gewartet wird, bevor eine gesammelte Benachrichtigung gesendet wird. Kritische warten nicht.",
+          "reminder": "Minuten, nach denen ein weiterhin bestehendes Problem erneut gemeldet wird. 0: nie (nur bei Verschlechterung).",
+          "snooze_duration": "Minuten der Schaltfläche „Stumm“ der Benachrichtigung und standardmäßig der Aktion snooze.",
+          "startup_grace": "Minuten nach dem Start von Home Assistant, in denen nichts gesendet wird.",
+          "quiet_start": "Ab dann bis zum Ende werden nur kritische Meldungen gesendet; die anderen am Ende, falls noch aktuell.",
+          "presence": "Zone, Person, Gruppe oder Boolean: solange niemand zu Hause ist, nur kritische Meldungen.",
+          "clear_when_resolved": "Entfernt die Benachrichtigung von den Telefonen, sobald alle gemeldeten Probleme vorbei sind.",
+          "critical_volume": "Lautstärke des kritischen iOS-Tons, 0 bis 1.",
+          "url": "Wird beim Tippen geöffnet, z. B. homeassistant://navigate/lovelace/komfort",
+          "tag": "Jede Benachrichtigung ersetzt die vorherige mit diesem Tag, statt sich zu stapeln."
+        }
+      },
+      "alerts": {
+        "title": "Meldungen",
+        "data": {
+          "kind": "Meldung"
+        },
+        "description": "Einstellungen einer Meldung für alle Räume. Ein Raum kann sie per YAML überschreiben."
+      },
+      "alert": {
+        "title": "Meldungseinstellungen",
+        "data": {
+          "enabled": "Aktiviert",
+          "threshold": "Schwellenwert",
+          "min_indoor": "Mindest-Innentemperatur",
+          "min_outdoor": "Mindest-Außentemperatur",
+          "max_outdoor": "Höchst-Außentemperatur",
+          "hysteresis": "Hysterese",
+          "delay": "Verzögerung",
+          "severity": "Schweregrad",
+          "escalation": "Verschlechterungsschritt"
+        },
+        "data_description": {
+          "threshold": "Zu warm/kalt, CO₂, Feuchte: der Wert. Lüften/Schließen: die Differenz innen/außen.",
+          "min_indoor": "Lüften nur vorschlagen, wenn der Raum mindestens so warm ist.",
+          "min_outdoor": "Nur wenn es draußen mindestens so warm ist.",
+          "max_outdoor": "Nur wenn es draußen höchstens so warm ist.",
+          "hysteresis": "Das Problem endet erst, wenn der Wert um so viel zurück ist: kein Flattern.",
+          "delay": "Minuten, die die Bedingung anhalten muss, bevor sie ein Problem ist.",
+          "escalation": "Erneut melden, wenn sich der Wert seit der letzten Meldung um so viel verschlechtert. 0: nie."
+        }
+      },
+      "control": {
+        "title": "Gerätesteuerung",
+        "data": {
+          "enabled": "Geräte steuern",
+          "start": "Fenster-Boost ab",
+          "end": "Fenster-Boost bis",
+          "manual_override": "Manuelle Übersteuerung",
+          "suppress_when_handled": "Keine Meldung, wenn behandelt"
+        },
+        "data_description": {
+          "start": "Lüfter und Luftreiniger laufen beim Öffnen nur zwischen diesen Zeiten auf voller Stufe.",
+          "manual_override": "Minuten, die ein von Hand geändertes Gerät in Ruhe gelassen wird. 0: nie.",
+          "suppress_when_handled": "Keine „zu warm“-Meldung für einen Raum, dessen Klimaanlage oder Lüfter schon läuft."
+        },
+        "sections": {
+          "climate": {
+            "name": "Klimaanlagen",
+            "data": {
+              "cool_above": "Kühlen ab",
+              "off_below": "Aus unter",
+              "setpoint": "Sollwert",
+              "fan_mode": "Lüftermodus",
+              "closed_for": "Öffnungen geschlossen seit (min)",
+              "off_on_open": "Aus, wenn offen seit (min)"
+            }
+          },
+          "fans": {
+            "name": "Lüfter",
+            "data": {
+              "on_above": "Ein ab",
+              "off_below": "Aus unter",
+              "percentage": "Geschwindigkeit",
+              "preset": "Voreinstellung",
+              "open_percentage": "Geschwindigkeit, Fenster offen",
+              "open_preset": "Voreinstellung, Fenster offen",
+              "off_preset": "Voreinstellung vor dem Ausschalten"
+            },
+            "description": "„Ein ab“ und „Aus unter“ leer lassen für Lüfter, die nur über die Fenster gesteuert werden."
+          },
+          "purifiers": {
+            "name": "Luftreiniger",
+            "data": {
+              "open_percentage": "Geschwindigkeit, Fenster offen",
+              "open_preset": "Voreinstellung, Fenster offen",
+              "closed_preset": "Voreinstellung, Fenster zu",
+              "keep_on": "Eingeschaltet halten"
+            },
+            "data_description": {
+              "keep_on": "Schaltet einen Luftreiniger wieder ein, der seit 10 s aus ist (Stromausfall, Störung)."
+            }
+          }
+        }
+      },
+      "add_room": {
+        "title": "Raum hinzufügen",
+        "data": {
+          "name": "Name",
+          "temperature": "Temperatur",
+          "co2": "CO₂",
+          "humidity": "Luftfeuchtigkeit",
+          "openings": "Fenster und Türen",
+          "climate": "Klimaanlage",
+          "fans": "Lüfter",
+          "purifiers": "Luftreiniger"
+        },
+        "description": "Sensoren und Geräte des Raums. Leer lassen, was er nicht hat.",
+        "sections": {
+          "overrides": {
+            "name": "Raumeinstellungen",
+            "description": "Überschreibt die globalen Einstellungen für diesen Raum. Einstellungen pro Gerät nur per YAML.",
+            "data": {
+              "too_hot_threshold": "Zu warm ab",
+              "too_cold_threshold": "Zu kalt unter",
+              "fan_preset": "Lüfter-Voreinstellung",
+              "fan_open_preset": "Lüfter-Voreinstellung, Fenster offen",
+              "fan_off_preset": "Lüfter-Voreinstellung vor dem Ausschalten",
+              "purifier_open_preset": "Luftreiniger-Voreinstellung, Fenster offen",
+              "purifier_closed_preset": "Luftreiniger-Voreinstellung, Fenster zu",
+              "purifier_mode_select": "Modusauswahl des Luftreinigers",
+              "purifier_open_mode": "Modus-Option, Fenster offen",
+              "purifier_closed_mode": "Modus-Option, Fenster zu",
+              "purifier_keep_on": "Luftreiniger eingeschaltet halten"
+            }
+          }
+        }
+      },
+      "room": {
+        "title": "Raum bearbeiten",
+        "data": {
+          "name": "Name",
+          "temperature": "Temperatur",
+          "co2": "CO₂",
+          "humidity": "Luftfeuchtigkeit",
+          "openings": "Fenster und Türen",
+          "climate": "Klimaanlage",
+          "fans": "Lüfter",
+          "purifiers": "Luftreiniger"
+        },
+        "description": "Sensoren und Geräte des Raums. Leer lassen, was er nicht hat.",
+        "sections": {
+          "overrides": {
+            "name": "Raumeinstellungen",
+            "description": "Überschreibt die globalen Einstellungen für diesen Raum. Einstellungen pro Gerät nur per YAML.",
+            "data": {
+              "too_hot_threshold": "Zu warm ab",
+              "too_cold_threshold": "Zu kalt unter",
+              "fan_preset": "Lüfter-Voreinstellung",
+              "fan_open_preset": "Lüfter-Voreinstellung, Fenster offen",
+              "fan_off_preset": "Lüfter-Voreinstellung vor dem Ausschalten",
+              "purifier_open_preset": "Luftreiniger-Voreinstellung, Fenster offen",
+              "purifier_closed_preset": "Luftreiniger-Voreinstellung, Fenster zu",
+              "purifier_mode_select": "Modusauswahl des Luftreinigers",
+              "purifier_open_mode": "Modus-Option, Fenster offen",
+              "purifier_closed_mode": "Modus-Option, Fenster zu",
+              "purifier_keep_on": "Luftreiniger eingeschaltet halten"
+            }
+          }
+        }
+      },
+      "edit_room": {
+        "title": "Raum bearbeiten",
+        "data": {
+          "room": "Raum"
+        }
+      },
+      "remove_room": {
+        "title": "Räume entfernen",
+        "data": {
+          "rooms": "Räume"
+        }
+      }
+    },
+    "error": {
+      "name_required": "Geben Sie dem Raum einen Namen.",
+      "name_exists": "Ein Raum hat bereits diesen Namen."
+    }
+  },
+  "selector": {
+    "kind": {
+      "options": {
+        "too_hot": "Zu warm",
+        "close_windows": "Fenster schließen (draußen wärmer)",
+        "ventilate": "Lüften (draußen kühler)",
+        "too_cold": "Zu kalt",
+        "window_open_cold": "Fenster offen bei Kälte",
+        "co2_high": "Hoher CO₂-Wert",
+        "humidity_high": "Hohe Luftfeuchtigkeit"
+      }
+    },
+    "severity": {
+      "options": {
+        "info": "Info (lautlos)",
+        "warning": "Warnung (zeitkritisch, mit Ton)",
+        "critical": "Kritisch (ignoriert Ruhezeiten und Lautlos)"
+      }
+    },
+    "outdoor_aggregate": {
+      "options": {
+        "min": "Minimum",
+        "max": "Maximum",
+        "mean": "Mittelwert"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "alerts": {
+        "name": "Aktive Meldungen",
+        "state_attributes": {
+          "alerts": {
+            "name": "Meldungen"
+          },
+          "snoozes": {
+            "name": "Stummschaltungen"
+          },
+          "outdoor_temperature": {
+            "name": "Außentemperatur"
+          }
+        }
+      },
+      "room": {
+        "name": "Komfort {room}",
+        "state": {
+          "ok": "OK",
+          "too_hot": "Zu warm",
+          "close_windows": "Fenster schließen (draußen wärmer)",
+          "ventilate": "Lüften (draußen kühler)",
+          "too_cold": "Zu kalt",
+          "window_open_cold": "Fenster offen bei Kälte",
+          "co2_high": "Hoher CO₂-Wert",
+          "humidity_high": "Hohe Luftfeuchtigkeit"
+        }
+      },
+      "last_notification": {
+        "name": "Letzte Benachrichtigung"
+      }
+    },
+    "switch": {
+      "notifications": {
+        "name": "Benachrichtigungen"
+      },
+      "control": {
+        "name": "Gerätesteuerung"
+      }
+    },
+    "button": {
+      "notify_now": {
+        "name": "Jetzt benachrichtigen"
+      },
+      "unsnooze": {
+        "name": "Stummschaltungen aufheben"
+      }
+    }
+  },
+  "services": {
+    "snooze": {
+      "name": "Stummschalten",
+      "description": "Meldet die Meldungen der angegebenen Räume und Arten (standardmäßig alle) eine Zeit lang nicht.",
+      "fields": {
+        "duration": {
+          "name": "Dauer",
+          "description": "Minuten; standardmäßig die Dauer aus den Optionen."
+        },
+        "rooms": {
+          "name": "Räume",
+          "description": "Namen oder IDs der Räume; standardmäßig alle."
+        },
+        "kinds": {
+          "name": "Meldungen",
+          "description": "Meldungsarten; wenn angegeben, nur aktuelle."
+        }
+      }
+    },
+    "unsnooze": {
+      "name": "Stummschaltungen aufheben",
+      "description": "Meldet stummgeschaltete Meldungen der angegebenen Räume (standardmäßig alle) wieder.",
+      "fields": {
+        "rooms": {
+          "name": "Räume",
+          "description": "Namen oder IDs der Räume; standardmäßig alle."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Bestätigen",
+      "description": "Keine Erinnerung oder Verschlechterungsmeldung für aktuelle Meldungen bis zu ihrem Ende.",
+      "fields": {
+        "rooms": {
+          "name": "Räume",
+          "description": "Namen oder IDs der Räume; standardmäßig alle."
+        },
+        "kinds": {
+          "name": "Meldungen",
+          "description": "Meldungsarten; standardmäßig alle."
+        }
+      }
+    },
+    "notify_now": {
+      "name": "Jetzt benachrichtigen",
+      "description": "Sendet alle aktuellen Probleme in einer Benachrichtigung, ohne Ruhezeit und Sammelfenster."
+    }
+  },
+  "common": {
+    "title_one": "{room}",
+    "title_many": "{count} Komfortmeldungen",
+    "room_line": "{room}: {problem}",
+    "decimal": ",",
+    "duration_minutes": "{minutes} Min.",
+    "duration_hours": "{hours} Std. {minutes:02d}",
+    "since": "seit {duration}",
+    "worse": "verschlechtert sich",
+    "line_too_hot": "{value} °C, über {threshold} °C",
+    "line_too_cold": "{value} °C, unter {threshold} °C",
+    "line_ventilate": "{temperature} °C innen, {outdoor} °C außen — lüften",
+    "line_close_windows": "{outdoor} °C außen, {temperature} °C innen — schließen: {openings}",
+    "line_window_open_cold": "{openings} offen, {outdoor} °C außen",
+    "line_co2_high": "CO₂ {value} ppm — lüften",
+    "line_humidity_high": "Luftfeuchtigkeit {value} % — lüften",
+    "action_snooze": "{hours} Std. stumm",
+    "action_snooze_minutes": "{minutes} Min. stumm",
+    "action_ack": "Verstanden"
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Smart Comfort ist nicht geladen."
+    },
+    "unknown_room": {
+      "message": "Unbekannter Raum: {room}."
+    }
+  }
+}

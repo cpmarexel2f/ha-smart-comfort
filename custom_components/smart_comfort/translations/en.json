@@ -1,0 +1,392 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Smart Comfort",
+        "data": {
+          "notify": "Notify actions",
+          "outdoor_temperature": "Outdoor temperature",
+          "outdoor_aggregate": "Combine outdoor sensors"
+        },
+        "description": "Fewer, smarter comfort alerts, and control of your air conditioners, fans and purifiers. Add the rooms afterwards in the options, or configure everything in YAML.",
+        "data_description": {
+          "notify": "Where the alerts go (notify.mobile_app_…, a notify group…).",
+          "outdoor_temperature": "One or more outdoor sensors; unavailable ones are ignored.",
+          "outdoor_aggregate": "Minimum avoids a sensor in the sun."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Smart Comfort is already configured.",
+      "single_instance_allowed": "Smart Comfort is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Smart Comfort options",
+        "description": "{rooms} room(s) configured. If you use YAML, changing it replaces these options at the next restart.",
+        "menu_options": {
+          "general": "Notifications",
+          "alerts": "Alerts",
+          "control": "Device control",
+          "add_room": "Add a room",
+          "edit_room": "Edit a room",
+          "remove_room": "Remove rooms"
+        }
+      },
+      "general": {
+        "title": "Notifications",
+        "data": {
+          "notify": "Notify actions",
+          "outdoor_temperature": "Outdoor temperature",
+          "outdoor_aggregate": "Combine outdoor sensors",
+          "digest_window": "Digest window",
+          "reminder": "Reminder",
+          "snooze_duration": "Snooze duration",
+          "startup_grace": "Startup grace period",
+          "quiet_start": "Quiet hours start",
+          "quiet_end": "Quiet hours end",
+          "presence": "Presence",
+          "clear_when_resolved": "Clear when resolved",
+          "critical_volume": "Critical alert volume",
+          "url": "Tap action",
+          "tag": "Notification tag"
+        },
+        "data_description": {
+          "notify": "Where the alerts go (notify.mobile_app_…, a notify group…).",
+          "outdoor_temperature": "One or more outdoor sensors; unavailable ones are ignored.",
+          "outdoor_aggregate": "Minimum avoids a sensor in the sun.",
+          "digest_window": "Minutes to wait for other alerts before sending one grouped notification. Critical alerts don't wait.",
+          "reminder": "Minutes after which a problem still going on is notified again. 0: never (only when it gets worse).",
+          "snooze_duration": "Minutes of the notification's Snooze button and of the snooze action by default.",
+          "startup_grace": "Minutes after Home Assistant starts during which nothing is sent.",
+          "quiet_start": "From then until the end, only critical alerts are sent; the others go out at the end if still relevant.",
+          "presence": "Zone, person, group or boolean: while nobody is home, only critical alerts are sent.",
+          "clear_when_resolved": "Remove the notification from the phones once every notified problem is over.",
+          "critical_volume": "iOS critical sound volume, 0 to 1.",
+          "url": "Opened when the notification is tapped, e.g. homeassistant://navigate/lovelace/comfort",
+          "tag": "Each notification replaces the previous one with this tag instead of piling up."
+        }
+      },
+      "alerts": {
+        "title": "Alerts",
+        "data": {
+          "kind": "Alert"
+        },
+        "description": "Settings of an alert for every room. A room can override them in YAML."
+      },
+      "alert": {
+        "title": "Alert settings",
+        "data": {
+          "enabled": "Enabled",
+          "threshold": "Threshold",
+          "min_indoor": "Minimum indoor temperature",
+          "min_outdoor": "Minimum outdoor temperature",
+          "max_outdoor": "Maximum outdoor temperature",
+          "hysteresis": "Hysteresis",
+          "delay": "Delay",
+          "severity": "Severity",
+          "escalation": "Escalation step"
+        },
+        "data_description": {
+          "threshold": "Too hot/cold, CO₂, humidity: the value. Open/close the windows: the indoor/outdoor difference.",
+          "min_indoor": "Suggest opening only when the room is at least this warm.",
+          "min_outdoor": "Only when it is at least this hot outside.",
+          "max_outdoor": "Only when it is at most this cold outside.",
+          "hysteresis": "The problem ends only once the value is back past the threshold by this much: no flapping.",
+          "delay": "Minutes the condition must hold before it is a problem.",
+          "escalation": "Notify again when the value gets this much worse than when last notified. 0: never."
+        }
+      },
+      "control": {
+        "title": "Device control",
+        "data": {
+          "enabled": "Control the devices",
+          "start": "Window boost from",
+          "end": "Window boost until",
+          "manual_override": "Manual override",
+          "suppress_when_handled": "No alert when handled"
+        },
+        "data_description": {
+          "start": "Fans and purifiers go to full speed when an opening opens only between these times.",
+          "manual_override": "Minutes a device changed by hand is left alone. 0: never paused.",
+          "suppress_when_handled": "No “too hot” alert for a room whose air conditioner or fan is already running."
+        },
+        "sections": {
+          "climate": {
+            "name": "Air conditioners",
+            "data": {
+              "cool_above": "Cool from",
+              "off_below": "Off below",
+              "setpoint": "Setpoint",
+              "fan_mode": "Fan mode",
+              "closed_for": "Openings closed for (min)",
+              "off_on_open": "Off when open for (min)"
+            }
+          },
+          "fans": {
+            "name": "Fans",
+            "data": {
+              "on_above": "On from",
+              "off_below": "Off below",
+              "percentage": "Speed",
+              "preset": "Preset",
+              "open_percentage": "Speed, window open",
+              "open_preset": "Preset, window open",
+              "off_preset": "Preset before turning off"
+            },
+            "description": "Leave “On from” and “Off below” empty for fans driven by the windows only."
+          },
+          "purifiers": {
+            "name": "Air purifiers",
+            "data": {
+              "open_percentage": "Speed, window open",
+              "open_preset": "Preset, window open",
+              "closed_preset": "Preset, windows closed",
+              "keep_on": "Keep on"
+            },
+            "data_description": {
+              "keep_on": "Turn a purifier back on when it has been off for 10 s (power cut, glitch)."
+            }
+          }
+        }
+      },
+      "add_room": {
+        "title": "Add a room",
+        "data": {
+          "name": "Name",
+          "temperature": "Temperature",
+          "co2": "CO₂",
+          "humidity": "Humidity",
+          "openings": "Windows and doors",
+          "climate": "Air conditioner",
+          "fans": "Fans",
+          "purifiers": "Air purifiers"
+        },
+        "description": "Sensors and devices of the room. Leave empty what it doesn't have.",
+        "sections": {
+          "overrides": {
+            "name": "Room settings",
+            "description": "Override the global settings for this room. Per-device settings are YAML only.",
+            "data": {
+              "too_hot_threshold": "Too hot from",
+              "too_cold_threshold": "Too cold below",
+              "fan_preset": "Fan preset",
+              "fan_open_preset": "Fan preset, window open",
+              "fan_off_preset": "Fan preset before turning off",
+              "purifier_open_preset": "Purifier preset, window open",
+              "purifier_closed_preset": "Purifier preset, windows closed",
+              "purifier_mode_select": "Purifier mode select",
+              "purifier_open_mode": "Mode option, window open",
+              "purifier_closed_mode": "Mode option, windows closed",
+              "purifier_keep_on": "Keep the purifiers on"
+            }
+          }
+        }
+      },
+      "room": {
+        "title": "Edit the room",
+        "data": {
+          "name": "Name",
+          "temperature": "Temperature",
+          "co2": "CO₂",
+          "humidity": "Humidity",
+          "openings": "Windows and doors",
+          "climate": "Air conditioner",
+          "fans": "Fans",
+          "purifiers": "Air purifiers"
+        },
+        "description": "Sensors and devices of the room. Leave empty what it doesn't have.",
+        "sections": {
+          "overrides": {
+            "name": "Room settings",
+            "description": "Override the global settings for this room. Per-device settings are YAML only.",
+            "data": {
+              "too_hot_threshold": "Too hot from",
+              "too_cold_threshold": "Too cold below",
+              "fan_preset": "Fan preset",
+              "fan_open_preset": "Fan preset, window open",
+              "fan_off_preset": "Fan preset before turning off",
+              "purifier_open_preset": "Purifier preset, window open",
+              "purifier_closed_preset": "Purifier preset, windows closed",
+              "purifier_mode_select": "Purifier mode select",
+              "purifier_open_mode": "Mode option, window open",
+              "purifier_closed_mode": "Mode option, windows closed",
+              "purifier_keep_on": "Keep the purifiers on"
+            }
+          }
+        }
+      },
+      "edit_room": {
+        "title": "Edit a room",
+        "data": {
+          "room": "Room"
+        }
+      },
+      "remove_room": {
+        "title": "Remove rooms",
+        "data": {
+          "rooms": "Rooms"
+        }
+      }
+    },
+    "error": {
+      "name_required": "Give the room a name.",
+      "name_exists": "A room already has this name."
+    }
+  },
+  "selector": {
+    "kind": {
+      "options": {
+        "too_hot": "Too hot",
+        "close_windows": "Close the windows (hotter outside)",
+        "ventilate": "Open the windows (cooler outside)",
+        "too_cold": "Too cold",
+        "window_open_cold": "Window open in the cold",
+        "co2_high": "High CO₂",
+        "humidity_high": "High humidity"
+      }
+    },
+    "severity": {
+      "options": {
+        "info": "Info (silent)",
+        "warning": "Warning (time-sensitive, sound)",
+        "critical": "Critical (bypasses quiet hours and silent mode)"
+      }
+    },
+    "outdoor_aggregate": {
+      "options": {
+        "min": "Minimum",
+        "max": "Maximum",
+        "mean": "Mean"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "alerts": {
+        "name": "Active alerts",
+        "state_attributes": {
+          "alerts": {
+            "name": "Alerts"
+          },
+          "snoozes": {
+            "name": "Snoozes"
+          },
+          "outdoor_temperature": {
+            "name": "Outdoor temperature"
+          }
+        }
+      },
+      "room": {
+        "name": "{room} comfort",
+        "state": {
+          "ok": "OK",
+          "too_hot": "Too hot",
+          "close_windows": "Close the windows (hotter outside)",
+          "ventilate": "Open the windows (cooler outside)",
+          "too_cold": "Too cold",
+          "window_open_cold": "Window open in the cold",
+          "co2_high": "High CO₂",
+          "humidity_high": "High humidity"
+        }
+      },
+      "last_notification": {
+        "name": "Last notification"
+      }
+    },
+    "switch": {
+      "notifications": {
+        "name": "Notifications"
+      },
+      "control": {
+        "name": "Device control"
+      }
+    },
+    "button": {
+      "notify_now": {
+        "name": "Notify now"
+      },
+      "unsnooze": {
+        "name": "Cancel snoozes"
+      }
+    }
+  },
+  "services": {
+    "snooze": {
+      "name": "Snooze",
+      "description": "Stops notifying the alerts of the rooms and kinds given (all by default) for a while.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "Minutes; the snooze duration of the options by default."
+        },
+        "rooms": {
+          "name": "Rooms",
+          "description": "Names or ids of the rooms; all by default."
+        },
+        "kinds": {
+          "name": "Alerts",
+          "description": "Kinds of alerts; given, only current ones are snoozed."
+        }
+      }
+    },
+    "unsnooze": {
+      "name": "Cancel snoozes",
+      "description": "Notifies again the snoozed alerts of the rooms given (all by default).",
+      "fields": {
+        "rooms": {
+          "name": "Rooms",
+          "description": "Names or ids of the rooms; all by default."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Acknowledge",
+      "description": "No reminder nor escalation for the current alerts until they end.",
+      "fields": {
+        "rooms": {
+          "name": "Rooms",
+          "description": "Names or ids of the rooms; all by default."
+        },
+        "kinds": {
+          "name": "Alerts",
+          "description": "Kinds of alerts; all by default."
+        }
+      }
+    },
+    "notify_now": {
+      "name": "Notify now",
+      "description": "Sends every current problem in one notification, ignoring quiet hours and the digest window."
+    }
+  },
+  "common": {
+    "title_one": "{room}",
+    "title_many": "{count} comfort alerts",
+    "room_line": "{room}: {problem}",
+    "decimal": ".",
+    "duration_minutes": "{minutes} min",
+    "duration_hours": "{hours} h {minutes:02d}",
+    "since": "for {duration}",
+    "worse": "getting worse",
+    "line_too_hot": "{value} °C, above {threshold} °C",
+    "line_too_cold": "{value} °C, below {threshold} °C",
+    "line_ventilate": "{temperature} °C inside, {outdoor} °C outside — open the windows",
+    "line_close_windows": "{outdoor} °C outside, {temperature} °C inside — close {openings}",
+    "line_window_open_cold": "{openings} open, {outdoor} °C outside",
+    "line_co2_high": "CO₂ {value} ppm — air the room",
+    "line_humidity_high": "humidity {value} % — air the room",
+    "action_snooze": "Snooze {hours} h",
+    "action_snooze_minutes": "Snooze {minutes} min",
+    "action_ack": "Got it"
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Smart Comfort is not loaded."
+    },
+    "unknown_room": {
+      "message": "Unknown room: {room}."
+    }
+  }
+}

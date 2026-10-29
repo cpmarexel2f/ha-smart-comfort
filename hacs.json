@@ -1,0 +1,8 @@
+{
+  "name": "Smart Comfort",
+  "content_in_root": false,
+  "render_readme": true,
+  "zip_release": true,
+  "filename": "smart_comfort.zip",
+  "homeassistant": "2024.12.0"
+}

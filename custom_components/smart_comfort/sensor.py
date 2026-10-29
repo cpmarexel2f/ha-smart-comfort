@@ -1,0 +1,129 @@
+"""Sensors: active alerts, comfort of each room, last notification."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any, ClassVar
+
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
+
+from . import SmartComfortConfigEntry
+from .config import Room
+from .const import KINDS
+from .entity import SmartComfortEntity
+
+STATE_OK = "ok"
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: SmartComfortConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    m = entry.runtime_data
+    entities: list[SensorEntity] = [
+        ActiveAlertsSensor(m, entry.entry_id, "alerts"),
+        LastNotificationSensor(m, entry.entry_id, "last_notification"),
+    ]
+    entities += [RoomSensor(m, entry.entry_id, room) for room in m.settings.rooms]
+    async_add_entities(entities)
+
+
+def _episode(manager: Any, ep: Any, now: datetime) -> dict[str, Any]:
+    room = manager.settings.room(ep.room)
+    return {
+        "room": ep.room,
+        "room_name": room.name if room else ep.room,
+        "kind": ep.kind,
+        "value": ep.value,
+        "since": ep.since.isoformat(),
+        "notified_at": ep.notified_at.isoformat() if ep.notified_at else None,
+        "snoozed": manager.engine.snoozed(ep, now),
+        "acknowledged": ep.acknowledged,
+        "handled": ep.room in manager.handled,
+        **{k: v for k, v in ep.details.items() if k != "openings"},
+        "openings": ep.details.get("openings", []),
+    }
+
+
+class ActiveAlertsSensor(SmartComfortEntity, SensorEntity):
+    """Number of active problems (notified or not), listed in the attributes."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> int:
+        return len(self.manager.engine.active())
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        now = dt_util.utcnow()
+        engine = self.manager.engine
+        return {
+            "alerts": [_episode(self.manager, ep, now) for ep in engine.active()],
+            "snoozes": {k: v.isoformat() for k, v in engine.snoozes.items() if v > now},
+            "outdoor_temperature": self.manager.outdoor(),
+        }
+
+
+class RoomSensor(SmartComfortEntity, SensorEntity):
+    """Worst active problem of a room, or ok."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options: ClassVar[list[str]] = [STATE_OK, *KINDS]
+
+    def __init__(self, manager: Any, entry_id: str, room: Room) -> None:
+        super().__init__(manager, entry_id, "room", f"room_{room.id}")
+        self.room = room
+        self._attr_translation_placeholders = {"room": room.name}
+
+    def _episodes(self) -> list[Any]:
+        return [e for e in self.manager.engine.active() if e.room == self.room.id]
+
+    @property
+    def native_value(self) -> str:
+        episodes = self._episodes()
+        return episodes[0].kind if episodes else STATE_OK
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        reading, _ctx = self.manager.reading(self.room)
+        controller = self.manager.controller
+        now = dt_util.utcnow()
+        return {
+            "room_id": self.room.id,
+            "temperature": reading.temperature,
+            "co2": reading.co2,
+            "humidity": reading.humidity,
+            "open": reading.open,
+            "alerts": [e.kind for e in self._episodes()],
+            "handled": self.room.id in self.manager.handled,
+            "devices": {
+                d: {
+                    "target": controller.targets.get(d),
+                    "override_until": controller.overrides[d].isoformat()
+                    if d in controller.overrides and controller.overrides[d] > now
+                    else None,
+                }
+                for d in self.room.devices
+            },
+        }
+
+
+class LastNotificationSensor(SmartComfortEntity, SensorEntity):
+    """Time of the last notification, with its text."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    @property
+    def native_value(self) -> datetime | None:
+        last = self.manager.last_notification
+        return dt_util.parse_datetime(last["at"]) if last else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        last = self.manager.last_notification or {}
+        return {k: last.get(k) for k in ("title", "message", "severity", "alerts")}
