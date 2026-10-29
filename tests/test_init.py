@@ -498,3 +498,79 @@ async def test_renamed_room_keeps_its_sensor(hass: HomeAssistant) -> None:
     await hass.async_block_till_done()
     sensors = [e for e in er.async_entries_for_config_entry(registry, entry.entry_id) if "_room_" in e.unique_id]
     assert sensors == []
+
+
+PURIFIER_OPTIONS = {
+    "notify": [],
+    "outdoor_temperature": ["sensor.out1"],
+    "digest_window": 0,
+    "startup_grace": 0,
+    "control": {"start": "00:00", "end": "00:00"},
+    "rooms": [
+        {
+            "name": "Séjour",
+            "temperature": "sensor.t_sejour",
+            "openings": ["binary_sensor.w_sejour"],
+            "purifiers": [
+                {"entity_id": "fan.p", "mode_select": "select.p_mode", "open_mode": "manual", "closed_mode": "auto"}
+            ],
+        }
+    ],
+}
+
+
+async def _purifier_setup(hass: HomeAssistant):
+    select = async_mock_service(hass, "select", "select_option")
+    for service in ("turn_on", "turn_off", "set_percentage", "set_preset_mode"):
+        async_mock_service(hass, "fan", service)
+    hass.states.async_set("sensor.out1", "20")
+    hass.states.async_set("sensor.t_sejour", "21")
+    hass.states.async_set("binary_sensor.w_sejour", "on")
+    hass.states.async_set("fan.p", "on", {"preset_mode": "Auto", "percentage": 30})
+    hass.states.async_set("select.p_mode", "auto")
+    entry = await _setup(hass, PURIFIER_OPTIONS)
+    await _evaluate(hass, entry)
+    # The purifier applies the boost.
+    hass.states.async_set("select.p_mode", "manual")
+    hass.states.async_set("fan.p", "on", {"preset_mode": None, "percentage": 100})
+    await hass.async_block_till_done()
+    return entry, select
+
+
+async def test_purifier_answer_to_mode_select_is_not_manual(hass: HomeAssistant, freezer) -> None:
+    entry, select = await _purifier_setup(hass)
+    controller = entry.runtime_data.controller
+    # Window closed long after the boost: only the mode select is sent.
+    freezer.tick(timedelta(minutes=10))
+    hass.states.async_set("binary_sensor.w_sejour", "off")
+    await _evaluate(hass, entry)
+    assert [c.data["option"] for c in select] == ["manual", "auto"]
+    # The purifier answers on its fan entity, in its own context: not a manual change.
+    hass.states.async_set("select.p_mode", "auto")
+    hass.states.async_set("fan.p", "on", {"preset_mode": "Auto", "percentage": 30})
+    await hass.async_block_till_done()
+    assert "fan.p" not in controller.overrides
+    # Window opened again: boosted again.
+    freezer.tick(timedelta(minutes=10))
+    hass.states.async_set("binary_sensor.w_sejour", "on")
+    await _evaluate(hass, entry)
+    assert [c.data["option"] for c in select] == ["manual", "auto", "manual"]
+
+
+async def test_purifier_changed_by_hand_after_mode_select_is_manual(hass: HomeAssistant, freezer) -> None:
+    entry, select = await _purifier_setup(hass)
+    controller = entry.runtime_data.controller
+    freezer.tick(timedelta(minutes=10))
+    hass.states.async_set("binary_sensor.w_sejour", "off")
+    await _evaluate(hass, entry)
+    hass.states.async_set("select.p_mode", "auto")
+    hass.states.async_set("fan.p", "on", {"preset_mode": "Auto", "percentage": 30})
+    await hass.async_block_till_done()
+    # Changed by hand once the grace period of the command is over: control paused.
+    freezer.tick(timedelta(minutes=5))
+    hass.states.async_set("fan.p", "on", {"preset_mode": "Sleep", "percentage": 10})
+    await hass.async_block_till_done()
+    assert "fan.p" in controller.overrides
+    hass.states.async_set("binary_sensor.w_sejour", "on")
+    await _evaluate(hass, entry)
+    assert [c.data["option"] for c in select] == ["manual", "auto"]

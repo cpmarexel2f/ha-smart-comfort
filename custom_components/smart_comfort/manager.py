@@ -372,6 +372,9 @@ class SmartComfort:
         context = Context()
         self._contexts.append(context.id)
         self._commanded[cmd.entity_id] = now
+        if cmd.device:
+            # A purifier answers its mode select on its fan entity, in a context of its own.
+            self._commanded[cmd.device] = now
         data = {"entity_id": cmd.entity_id, **cmd.data}
         try:
             async with asyncio.timeout(SERVICE_TIMEOUT):

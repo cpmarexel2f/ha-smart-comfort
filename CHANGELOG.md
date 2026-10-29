@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4
+
+### Fixes
+- An air purifier driven by its mode select only (for example `closed_mode: auto` when the windows close) no longer pauses its own control for the manual override time when it answers the mode change by updating its preset or speed: the next window boost and "keep on" work again. Changing the purifier by hand still pauses its control.
+
 ## 0.1.3
 
 ### Fixes
