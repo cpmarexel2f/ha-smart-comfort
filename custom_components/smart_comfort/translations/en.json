@@ -16,6 +16,9 @@
         }
       }
     },
+    "error": {
+      "invalid_options": "Some values are invalid, check them."
+    },
     "abort": {
       "already_configured": "Smart Comfort is already configured.",
       "single_instance_allowed": "Smart Comfort is already configured."
@@ -74,7 +77,7 @@
         "data": {
           "kind": "Alert"
         },
-        "description": "Settings of an alert for every room. A room can override them in YAML."
+        "description": "Settings of an alert for every room. A room can override the too hot / too cold thresholds in its form, and everything in YAML."
       },
       "alert": {
         "title": "Alert settings",
@@ -93,7 +96,7 @@
           "threshold": "Too hot/cold, CO₂, humidity: the value. Open/close the windows: the indoor/outdoor difference.",
           "min_indoor": "Suggest opening only when the room is at least this warm.",
           "min_outdoor": "Only when it is at least this hot outside.",
-          "max_outdoor": "Only when it is at most this cold outside.",
+          "max_outdoor": "Only when it is this cold or colder outside.",
           "hysteresis": "The problem ends only once the value is back past the threshold by this much: no flapping.",
           "delay": "Minutes the condition must hold before it is a problem.",
           "escalation": "Notify again when the value gets this much worse than when last notified. 0: never."
@@ -109,9 +112,9 @@
           "suppress_when_handled": "No alert when handled"
         },
         "data_description": {
-          "start": "Fans and purifiers go to full speed when an opening opens only between these times.",
+          "start": "Fans and purifiers go to full speed when an opening opens only between these times. Both empty: all day.",
           "manual_override": "Minutes a device changed by hand is left alone. 0: never paused.",
-          "suppress_when_handled": "No “too hot” alert for a room whose air conditioner or fan is already running."
+          "suppress_when_handled": "No “too hot” alert for a room whose air conditioner or fan Smart Comfort has turned on."
         },
         "sections": {
           "climate": {
@@ -233,7 +236,8 @@
     },
     "error": {
       "name_required": "Give the room a name.",
-      "name_exists": "A room already has this name."
+      "name_exists": "A room already has this name.",
+      "invalid_options": "Some values are invalid, check them."
     }
   },
   "selector": {
@@ -328,7 +332,7 @@
         },
         "kinds": {
           "name": "Alerts",
-          "description": "Kinds of alerts; given, only current ones are snoozed."
+          "description": "If set, only the current alerts of these kinds are snoozed."
         }
       }
     },

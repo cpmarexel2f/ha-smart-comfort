@@ -33,6 +33,20 @@ REASON_ONGOING = "ongoing"
 
 # Kinds a running air conditioner or fan takes care of: not notified when suppress_when_handled.
 HANDLED_KINDS = frozenset({KIND_TOO_HOT})
+# Kinds that need the outdoor temperature.
+OUTDOOR_KINDS = frozenset({KIND_VENTILATE, KIND_CLOSE_WINDOWS, KIND_WINDOW_OPEN_COLD})
+# Room readings each kind is computed from (RoomReading field names).
+SOURCES: dict[str, tuple[str, ...]] = {
+    KIND_TOO_HOT: ("temperature",),
+    KIND_TOO_COLD: ("temperature",),
+    KIND_VENTILATE: ("temperature",),
+    KIND_CLOSE_WINDOWS: ("temperature",),
+    KIND_WINDOW_OPEN_COLD: (),
+    KIND_CO2: ("co2",),
+    KIND_HUMIDITY: ("humidity",),
+}
+# Kinds whose value gets worse when it goes down.
+DOWNWARD_KINDS = frozenset({KIND_TOO_COLD, KIND_WINDOW_OPEN_COLD})
 
 
 @dataclass
@@ -47,6 +61,8 @@ class RoomReading:
     has_openings: bool = False
     # A fan or air conditioner of the room is working on it.
     handled: bool = False
+    # Readings (field names) whose entity no longer exists: their problems end instead of holding.
+    missing: frozenset[str] = frozenset()
 
     @property
     def any_open(self) -> bool | None:
@@ -62,29 +78,29 @@ class Check:
     details: dict[str, Any] = field(default_factory=dict)
 
 
-def _above(value: float | None, threshold: float | None, hysteresis: float, active: bool) -> bool | None:
+def _above(value: float | None, threshold: float | None, hysteresis: float) -> bool | None:
     if value is None or threshold is None:
         return None
-    return value > (threshold - hysteresis if active else threshold)
+    return value > threshold - hysteresis
 
 
-def _below(value: float | None, threshold: float | None, hysteresis: float, active: bool) -> bool | None:
+def _below(value: float | None, threshold: float | None, hysteresis: float) -> bool | None:
     if value is None or threshold is None:
         return None
-    return value < (threshold + hysteresis if active else threshold)
+    return value < threshold + hysteresis
 
 
 def check(kind: str, s: AlertSettings, r: RoomReading, outdoor: float | None, active: bool) -> Check:
     """Evaluate one condition. `active`: the episode exists, hysteresis applies."""
     h = s.hysteresis if active else 0.0
     if kind == KIND_TOO_HOT:
-        return Check(_above(r.temperature, s.threshold, h, True), r.temperature, {"threshold": s.threshold})
+        return Check(_above(r.temperature, s.threshold, h), r.temperature, {"threshold": s.threshold})
     if kind == KIND_TOO_COLD:
-        return Check(_below(r.temperature, s.threshold, h, True), r.temperature, {"threshold": s.threshold})
+        return Check(_below(r.temperature, s.threshold, h), r.temperature, {"threshold": s.threshold})
     if kind == KIND_CO2:
-        return Check(_above(r.co2, s.threshold, h, True), r.co2, {"threshold": s.threshold})
+        return Check(_above(r.co2, s.threshold, h), r.co2, {"threshold": s.threshold})
     if kind == KIND_HUMIDITY:
-        return Check(_above(r.humidity, s.threshold, h, True), r.humidity, {"threshold": s.threshold})
+        return Check(_above(r.humidity, s.threshold, h), r.humidity, {"threshold": s.threshold})
     if kind == KIND_VENTILATE:
         if r.temperature is None or outdoor is None or s.threshold is None:
             return Check(None)
@@ -121,7 +137,7 @@ def worsening(kind: str, value: float | None, previous: float | None) -> float:
     """How much worse value is than previous, in the unit of the kind (0 when better or unknown)."""
     if value is None or previous is None:
         return 0.0
-    return max(0.0, previous - value if kind == KIND_TOO_COLD else value - previous)
+    return max(0.0, previous - value if kind in DOWNWARD_KINDS else value - previous)
 
 
 def _dt(value: str | None) -> datetime | None:
@@ -228,23 +244,35 @@ class Engine:
         self.batch_started: datetime | None = None
         # Notified problems are on screen: a Clear is due once none is left.
         self.shown = False
-        self.last_digest: Digest | None = None
+        # Episode keys of the last notification sent, for its Snooze / Got it buttons.
+        self.last_keys: list[str] | None = None
 
     # Settings and persistence.
 
     def update_settings(self, settings: Settings) -> None:
-        """New settings: episodes of removed rooms or disabled kinds go away."""
+        """New settings: episodes of removed rooms, disabled kinds or removed sensors go away."""
         self.settings = settings
         for key, ep in list(self.episodes.items()):
             room = settings.room(ep.room)
-            if room is None or not room.alerts[ep.kind].enabled:
+            if room is None or not room.alerts[ep.kind].enabled or not self._has_sources(room, ep.kind):
                 del self.episodes[key]
+        if self.last_keys is not None:
+            self.last_keys = [k for k in self.last_keys if k in self.episodes]
+
+    def _has_sources(self, room: Room, kind: str) -> bool:
+        """The room still has the sensors the kind is computed from."""
+        if kind in OUTDOOR_KINDS and not self.settings.outdoor:
+            return False
+        if kind in (KIND_CLOSE_WINDOWS, KIND_WINDOW_OPEN_COLD) and not room.openings:
+            return False
+        return all(getattr(room, field) for field in SOURCES[kind])
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "episodes": [e.as_dict() for e in self.episodes.values()],
             "snoozes": {k: v.isoformat() for k, v in self.snoozes.items()},
             "shown": self.shown,
+            "last_keys": self.last_keys,
         }
 
     def restore(self, data: dict[str, Any]) -> None:
@@ -261,13 +289,14 @@ class Engine:
             except (TypeError, ValueError):
                 continue
         self.shown = bool(data.get("shown"))
+        if isinstance(last_keys := data.get("last_keys"), list):
+            self.last_keys = [str(k) for k in last_keys]
         self.update_settings(self.settings)
 
     # Evaluation.
 
-    def evaluate(self, now: datetime, readings: dict[str, RoomReading], outdoor: float | None) -> list[Episode]:
-        """Update the episodes from the readings; returns those that ended."""
-        ended: list[Episode] = []
+    def evaluate(self, now: datetime, readings: dict[str, RoomReading], outdoor: float | None) -> None:
+        """Update the episodes from the readings."""
         for room in self.settings.rooms:
             reading = readings.get(room.id)
             if reading is None:
@@ -280,12 +309,12 @@ class Engine:
                     continue
                 result = check(kind, s, reading, outdoor, ep is not None)
                 if result.state is None:
+                    # Unknown: the episode holds, unless its sensor is gone for good.
+                    if ep is not None and reading.missing.intersection(SOURCES[kind]):
+                        del self.episodes[key]
                     continue
                 if not result.state:
-                    if ep is not None:
-                        del self.episodes[key]
-                        if ep.active:
-                            ended.append(ep)
+                    self.episodes.pop(key, None)
                     continue
                 if ep is None:
                     ep = self.episodes[key] = Episode(room.id, kind, now)
@@ -293,7 +322,6 @@ class Engine:
                 if not ep.active and now - ep.since >= timedelta(minutes=s.delay):
                     ep.active = True
         self.snoozes = {k: v for k, v in self.snoozes.items() if v > now}
-        return ended
 
     # Queries.
 
@@ -318,6 +346,9 @@ class Engine:
             return REASON_NEW
         if ep.acknowledged:
             return None
+        if ep.snoozed_until is not None and ep.notified_at < ep.snoozed_until <= now:
+            # Snooze over while the problem goes on: its notification was cleared, notify it again.
+            return REASON_REMINDER
         if s.escalation > 0 and worsening(ep.kind, ep.value, ep.notified_value) >= s.escalation:
             return REASON_WORSE
         reminder = self.settings.reminder
@@ -337,7 +368,7 @@ class Engine:
     # Sending.
 
     def step(self, now: datetime, gates: Gates, handled: set[str]) -> Digest | Clear | None:
-        """What to send now, if anything. The caller sends it; the episodes are marked here."""
+        """What to send now, if anything. The caller sends it, then marks a digest with `sent()`."""
         visible = self.visible(now, handled)
         if self.shown and not any(ep.notified_at for ep, _ in visible):
             self.shown = False
@@ -365,20 +396,22 @@ class Engine:
         urgent = any(room.alerts[ep.kind].severity == SEVERITY_CRITICAL for ep, room in due_now)
         if not urgent and now - self.batch_started < timedelta(minutes=self.settings.digest_window):
             return None
-        return self._digest(now, [(ep, room) for ep, room in visible if sendable(ep, room)], due)
+        return self._digest([(ep, room) for ep, room in visible if sendable(ep, room)], due)
 
-    def _digest(self, now: datetime, items: list[tuple[Episode, Room]], due: dict[str, str]) -> Digest:
+    def _digest(self, items: list[tuple[Episode, Room]], due: dict[str, str]) -> Digest:
+        out = [
+            Item(ep, room.name, room.alerts[ep.kind].severity, due.get(ep.key, REASON_ONGOING)) for ep, room in items
+        ]
+        changed = [i.severity for i in out if i.reason != REASON_ONGOING] or [i.severity for i in out]
+        return Digest(out, max(changed, key=_severity_rank))
+
+    def sent(self, digest: Digest, now: datetime) -> None:
+        """The digest went out: its episodes are notified. Not called when it could not be sent."""
         self.batch_started = None
         self.shown = True
-        out = []
-        for ep, room in items:
-            out.append(Item(ep, room.name, room.alerts[ep.kind].severity, due.get(ep.key, REASON_ONGOING)))
-            ep.notified_at, ep.notified_value = now, ep.value
-        changed = [i.severity for i in out if i.reason != REASON_ONGOING] or [i.severity for i in out]
-        severity = max(changed, key=_severity_rank)
-        digest = Digest(out, severity)
-        self.last_digest = digest
-        return digest
+        for item in digest.items:
+            item.episode.notified_at, item.episode.notified_value = now, item.episode.value
+        self.last_keys = digest.keys
 
     def summary(self, now: datetime, handled: set[str]) -> Digest | None:
         """Every visible problem, for "notify now": ignores the gates and the digest window."""
@@ -386,7 +419,7 @@ class Engine:
         if not visible:
             return None
         due = {ep.key: (self._reason(ep, room.alerts[ep.kind], now) or REASON_ONGOING) for ep, room in visible}
-        return self._digest(now, visible, due)
+        return self._digest(visible, due)
 
     # User actions.
 
@@ -417,14 +450,16 @@ class Engine:
             ep.snoozed_until = until
         return len(selected)
 
-    def unsnooze(self, rooms: list[str] | None = None) -> None:
+    def unsnooze(self, now: datetime, rooms: list[str] | None = None) -> None:
         if rooms is None:
             self.snoozes.clear()
         else:
             for room in rooms:
                 self.snoozes.pop(room, None)
         for ep in self._select(rooms, None, None):
-            ep.snoozed_until = None
+            # Ended now rather than forgotten, so that a problem notified before the snooze is notified again.
+            if ep.snoozed_until is not None and ep.snoozed_until > now:
+                ep.snoozed_until = now
 
     def acknowledge(
         self, rooms: list[str] | None = None, kinds: list[str] | None = None, keys: list[str] | None = None

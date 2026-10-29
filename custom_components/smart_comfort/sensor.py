@@ -7,6 +7,7 @@ from typing import Any, ClassVar
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
@@ -28,8 +29,15 @@ async def async_setup_entry(
         ActiveAlertsSensor(m, entry.entry_id, "alerts"),
         LastNotificationSensor(m, entry.entry_id, "last_notification"),
     ]
-    entities += [RoomSensor(m, entry.entry_id, room) for room in m.settings.rooms]
-    async_add_entities(entities)
+    rooms = [RoomSensor(m, entry.entry_id, room) for room in m.settings.rooms]
+    # Sensors of removed rooms are removed from the registry instead of staying orphaned.
+    current = {sensor.unique_id for sensor in rooms}
+    prefix = f"{entry.entry_id}_room_"
+    registry = er.async_get(hass)
+    for reg in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if reg.domain == "sensor" and reg.unique_id.startswith(prefix) and reg.unique_id not in current:
+            registry.async_remove(reg.entity_id)
+    async_add_entities([*entities, *rooms])
 
 
 def _episode(manager: Any, ep: Any, now: datetime) -> dict[str, Any]:
@@ -53,6 +61,7 @@ class ActiveAlertsSensor(SmartComfortEntity, SensorEntity):
     """Number of active problems (notified or not), listed in the attributes."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _unrecorded_attributes = frozenset({"alerts", "snoozes", "outdoor_temperature"})
 
     @property
     def native_value(self) -> int:
@@ -74,6 +83,9 @@ class RoomSensor(SmartComfortEntity, SensorEntity):
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options: ClassVar[list[str]] = [STATE_OK, *KINDS]
+    _unrecorded_attributes = frozenset(
+        {"temperature", "co2", "humidity", "open", "ignored_openings", "alerts", "handled", "devices"}
+    )
 
     def __init__(self, manager: Any, entry_id: str, room: Room) -> None:
         super().__init__(manager, entry_id, "room", f"room_{room.id}")
@@ -90,15 +102,16 @@ class RoomSensor(SmartComfortEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        reading, _ctx = self.manager.reading(self.room)
-        controller = self.manager.controller
         now = dt_util.utcnow()
+        reading, _ctx = self.manager.reading(self.room, now)
+        controller = self.manager.controller
         return {
             "room_id": self.room.id,
             "temperature": reading.temperature,
             "co2": reading.co2,
             "humidity": reading.humidity,
             "open": reading.open,
+            "ignored_openings": self.manager.ignored_openings(self.room, now),
             "alerts": [e.kind for e in self._episodes()],
             "handled": self.room.id in self.manager.handled,
             "devices": {

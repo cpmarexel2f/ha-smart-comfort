@@ -213,6 +213,8 @@ DEBOUNCE: Final = 3
 NOTIFY_TIMEOUT: Final = 20
 SERVICE_TIMEOUT: Final = 15
 KEEP_ON_DELAY: Final = 10
+# Minutes after which an unavailable opening is left out of its room instead of blocking it.
+OPENING_UNAVAILABLE: Final = 10
 
 STORAGE_VERSION: Final = 1
 STORAGE_KEY: Final = DOMAIN

@@ -140,3 +140,71 @@ def test_disabled_control():
     )
     c = Controller(s)
     assert c.evaluate(T0, NOON, s.rooms[0], ctx(30), {"fan.f": DeviceState(on=False)}) == []
+
+
+def test_purifier_back_to_its_state_before_the_boost():
+    s = room_settings(purifiers=["fan.p"])
+    c, room = Controller(s), s.rooms[0]
+    normal = {"fan.p": DeviceState(on=True, percentage=40)}
+    assert c.evaluate(T0, NOON, room, ctx(21.0), normal) == []
+    assert calls(c.evaluate(T0, NOON, room, ctx(21.0, opened=True), normal)) == [
+        ("fan.p", "fan.set_percentage", {"percentage": 100}),
+    ]
+    boosted = {"fan.p": DeviceState(on=True, percentage=100)}
+    assert calls(c.evaluate(T0, NOON, room, ctx(21.0), boosted)) == [
+        ("fan.p", "fan.set_percentage", {"percentage": 40}),
+    ]
+    assert c.before_boost == {}
+    # A preset before the boost is restored as a preset.
+    auto = {"fan.p": DeviceState(on=True, preset="Auto", percentage=30)}
+    c.evaluate(T0, NOON, room, ctx(21.0, opened=True), auto)
+    assert calls(c.evaluate(T0, NOON, room, ctx(21.0), boosted)) == [
+        ("fan.p", "fan.set_preset_mode", {"preset_mode": "Auto"}),
+    ]
+
+
+def test_failed_command_is_retried():
+    s = room_settings(
+        purifiers=[{"entity_id": "fan.p", "mode_select": "select.p_mode", "open_mode": "manual", "closed_mode": "auto"}]
+    )
+    c, room = Controller(s), s.rooms[0]
+    auto = {"fan.p": DeviceState(on=True, option="auto")}
+    cmds = c.evaluate(T0, NOON, room, ctx(21.0, opened=True), auto)
+    assert cmds[0].entity_id == "select.p_mode" and cmds[0].device == "fan.p"
+    c.command_failed(cmds[0])
+    assert "fan.p" not in c.targets
+    assert c.evaluate(T0, NOON, room, ctx(21.0, opened=True), auto) != []
+
+
+def test_keep_on_respects_manual_override():
+    s = room_settings(purifiers=[{"entity_id": "fan.p", "keep_on": True}])
+    c, room = Controller(s), s.rooms[0]
+    off = {"fan.p": DeviceState(on=False, off_since=T0 - timedelta(seconds=30))}
+    c.manual_change("fan.p", T0 - timedelta(seconds=30))
+    assert c.evaluate(T0, NOON, room, ctx(21.0), off) == []
+    later = T0 + timedelta(minutes=61)
+    assert ("fan.p", "fan.turn_on", {}) in calls(c.evaluate(later, NOON, room, ctx(21.0), off))
+
+
+def test_climate_heating_turned_off_when_open():
+    s = room_settings(climate="climate.ac")
+    c, room = Controller(s), s.rooms[0]
+    heating = {"climate.ac": DeviceState(on=True, hvac_mode="heat")}
+    # Cold room: target off, but heating is left alone by the temperature control.
+    assert c.evaluate(T0, NOON, room, ctx(19.0), heating) == []
+    assert calls(c.evaluate(T0, NOON, room, ctx(19.0, opened=True, minutes=2), heating)) == [
+        ("climate.ac", "climate.turn_off", {})
+    ]
+
+
+def test_fan_without_temperature_control():
+    s = build_settings(
+        {
+            "control": {"fans": {"on_above": None, "off_below": None}},
+            "rooms": [{"name": "A", "temperature": "sensor.t", "openings": ["binary_sensor.w"], "fans": ["fan.f"]}],
+        }
+    )
+    c, room = Controller(s), s.rooms[0]
+    off = {"fan.f": DeviceState(on=False)}
+    assert c.evaluate(T0, NOON, room, ctx(30.0), off) == []
+    assert c.evaluate(T0, NOON, room, ctx(30.0, opened=True), off) != []

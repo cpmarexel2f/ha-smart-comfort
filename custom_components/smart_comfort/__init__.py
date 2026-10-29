@@ -13,6 +13,7 @@ from homeassistant.core import CoreState, HomeAssistant, ServiceCall, SupportsRe
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.start import async_at_started
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
 from .config import build_settings, slugify
@@ -24,6 +25,8 @@ from .const import (
     SERVICE_NOTIFY_NOW,
     SERVICE_SNOOZE,
     SERVICE_UNSNOOZE,
+    STORAGE_KEY,
+    STORAGE_VERSION,
 )
 from .manager import SmartComfort
 from .schema import CONFIG_SCHEMA as _CONFIG_SCHEMA
@@ -148,7 +151,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: SmartComfortConfigEntry)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: SmartComfortConfigEntry) -> bool:
+    # Waits for an evaluation in progress, so that the next instance starts from its final state.
+    await entry.runtime_data.async_stop()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: SmartComfortConfigEntry) -> None:
+    """Forget the episodes, snoozes and targets: a new entry starts afresh."""
+    hass.data.get(DOMAIN, {}).pop("state", None)
+    await Store(hass, STORAGE_VERSION, STORAGE_KEY).async_remove()
 
 
 async def _async_reload(hass: HomeAssistant, entry: SmartComfortConfigEntry) -> None:

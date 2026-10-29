@@ -18,6 +18,8 @@ from .const import KEEP_ON_DELAY
 
 TARGET_COOL = "cool"
 TARGET_OFF = "off"
+# Air conditioner turned off because an opening stays open: applies whatever its mode (heating too).
+TARGET_OFF_OPEN = "off_open"
 TARGET_ON = "on"
 TARGET_BOOST = "boost"
 TARGET_NORMAL = "normal"
@@ -55,6 +57,8 @@ class Command:
     service: str
     data: dict[str, Any] = field(default_factory=dict)
     target: str | None = None
+    # Controlled device the command is for (entity_id is the mode select for a purifier's option).
+    device: str | None = None
 
 
 def _fan_commands(entity_id: str, percentage: int | None, preset: str | None) -> list[Command]:
@@ -74,15 +78,23 @@ class Controller:
         self.targets: dict[str, str] = {}
         self.overrides: dict[str, datetime] = {}
         self.keep_on_sent: dict[str, datetime] = {}
+        # State of a purifier before its window boost, restored when the boost ends.
+        self.before_boost: dict[str, dict[str, Any]] = {}
 
     def update_settings(self, settings: Settings) -> None:
         self.settings = settings
         devices = {d for r in settings.rooms for d in r.devices}
         self.targets = {k: v for k, v in self.targets.items() if k in devices}
         self.overrides = {k: v for k, v in self.overrides.items() if k in devices}
+        self.keep_on_sent = {k: v for k, v in self.keep_on_sent.items() if k in devices}
+        self.before_boost = {k: v for k, v in self.before_boost.items() if k in devices}
 
     def as_dict(self) -> dict[str, Any]:
-        return {"targets": self.targets, "overrides": {k: v.isoformat() for k, v in self.overrides.items()}}
+        return {
+            "targets": self.targets,
+            "overrides": {k: v.isoformat() for k, v in self.overrides.items()},
+            "before_boost": self.before_boost,
+        }
 
     def restore(self, data: dict[str, Any]) -> None:
         self.targets = {str(k): str(v) for k, v in (data.get("targets") or {}).items()}
@@ -91,7 +103,14 @@ class Controller:
                 self.overrides[str(k)] = datetime.fromisoformat(v)
             except (TypeError, ValueError):
                 continue
+        saved = data.get("before_boost") or {}
+        self.before_boost = {str(k): dict(v) for k, v in saved.items() if isinstance(v, dict)}
         self.update_settings(self.settings)
+
+    def command_failed(self, cmd: Command) -> None:
+        """A command could not be sent: forget the target so that it is tried again."""
+        if cmd.target != "keep_on":
+            self.targets.pop(cmd.device or cmd.entity_id, None)
 
     def manual_change(self, entity_id: str, now: datetime) -> None:
         """A device was changed by someone else than Smart Comfort."""
@@ -153,7 +172,7 @@ class Controller:
             return []
         cmds = commands_for(state)
         for c in cmds:
-            c.target = target
+            c.target, c.device = target, entity_id
         return cmds
 
     # Air conditioner: cool / off.
@@ -166,7 +185,7 @@ class Controller:
         if ctx.has_openings and ctx.any_open is None:
             return None
         if ctx.any_open and open_for is not None and open_for >= timedelta(minutes=dev.off_on_open):
-            target = TARGET_OFF
+            target = TARGET_OFF_OPEN
         elif temp is None:
             return None
         elif temp >= dev.cool_above and (
@@ -179,7 +198,7 @@ class Controller:
             return None  # Opening just opened: wait for off_on_open.
 
         def commands(state: DeviceState) -> list[Command]:
-            if target == TARGET_OFF:
+            if target in (TARGET_OFF, TARGET_OFF_OPEN):
                 return [Command(dev.entity_id, "climate", "turn_off")]
             cmds = [
                 Command(
@@ -194,8 +213,10 @@ class Controller:
             return cmds
 
         def satisfied(state: DeviceState) -> bool:
+            if target == TARGET_OFF_OPEN:
+                return state.hvac_mode == "off"  # Any mode, heating included, while an opening stays open.
             if state.hvac_mode not in (None, "off", "cool"):
-                return True  # Heating, drying…: left alone.
+                return True  # Heating, drying…: left alone by the temperature control.
             return (state.hvac_mode == "cool") == (target == TARGET_COOL)
 
         return target, commands, satisfied
@@ -250,10 +271,26 @@ class Controller:
         if ctx.has_openings and ctx.any_open is None:
             return None
         target = TARGET_BOOST if ctx.any_open and boost_hours else TARGET_NORMAL
+        # Without a "windows closed" preset or mode, normal is the state the purifier had before the boost.
+        restore = None if dev.closed_preset or (dev.mode_select and dev.closed_mode) else self.before_boost
+        saved = (restore or {}).get(dev.entity_id) if target == TARGET_NORMAL else None
+        if saved is not None and dev.keep_on:
+            saved = {**saved, "on": True}  # Kept on: never turned off by the restore.
+
+        def restored(state: DeviceState) -> bool:
+            if saved is None:
+                return True
+            if saved.get("on") is False:
+                return state.on is False
+            if saved.get("preset"):
+                return bool(state.on) and state.preset == saved["preset"]
+            return bool(state.on) and (saved.get("percentage") is None or state.percentage == saved["percentage"])
 
         def commands(state: DeviceState) -> list[Command]:
             cmds = []
             if target == TARGET_BOOST:
+                if restore is not None and dev.entity_id not in restore:
+                    restore[dev.entity_id] = {"on": state.on, "preset": state.preset, "percentage": state.percentage}
                 if not state.on:
                     cmds.append(Command(dev.entity_id, "fan", "turn_on"))
                 if dev.mode_select and dev.open_mode:
@@ -267,6 +304,16 @@ class Controller:
                     cmds.append(Command(dev.mode_select, "select", "select_option", {"option": dev.closed_mode}))
                 if dev.closed_preset:
                     cmds.append(Command(dev.entity_id, "fan", "set_preset_mode", {"preset_mode": dev.closed_preset}))
+                if saved is not None:
+                    self.before_boost.pop(dev.entity_id, None)
+                    if saved.get("on") is False:
+                        cmds.append(Command(dev.entity_id, "fan", "turn_off"))
+                    elif saved.get("preset"):
+                        cmds.append(Command(dev.entity_id, "fan", "set_preset_mode", {"preset_mode": saved["preset"]}))
+                    elif saved.get("percentage") is not None:
+                        cmds.append(
+                            Command(dev.entity_id, "fan", "set_percentage", {"percentage": saved["percentage"]})
+                        )
             return cmds
 
         def satisfied(state: DeviceState) -> bool:
@@ -277,8 +324,12 @@ class Controller:
                     and (not dev.open_preset or state.preset == dev.open_preset)
                     and (dev.open_percentage is None or state.percentage == dev.open_percentage)
                 )
-            return (not (dev.mode_select and dev.closed_mode) or state.option == dev.closed_mode) and (
-                not dev.closed_preset or state.preset == dev.closed_preset
+            if saved is not None and restored(state):
+                self.before_boost.pop(dev.entity_id, None)
+            return (
+                (not (dev.mode_select and dev.closed_mode) or state.option == dev.closed_mode)
+                and (not dev.closed_preset or state.preset == dev.closed_preset)
+                and restored(state)
             )
 
         return target, commands, satisfied
@@ -287,6 +338,8 @@ class Controller:
         """Turn a purifier back on when it has been off for a few seconds (power cut, glitch…)."""
         if not dev.keep_on or state is None or not state.available or state.on is not False:
             return []
+        if self.overridden(dev.entity_id, now):
+            return []  # Turned off by hand: left alone for the manual override.
         if state.off_since is None or now - state.off_since < timedelta(seconds=KEEP_ON_DELAY):
             return []
         last = self.keep_on_sent.get(dev.entity_id)

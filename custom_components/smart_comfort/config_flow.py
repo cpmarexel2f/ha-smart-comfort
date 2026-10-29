@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import copy
+import logging
+from collections.abc import Iterable
 from typing import Any
 
 import voluptuous as vol
@@ -24,8 +26,10 @@ from homeassistant.helpers.selector import (
 )
 
 from . import const as k
-from .config import slugify
+from .config import build_settings, slugify
 from .schema import OPTIONS
+
+_LOGGER = logging.getLogger(__name__)
 
 # Room form: overrides of the room, stored in room.alerts / room.control.
 ROOM_OVERRIDES = "overrides"
@@ -88,9 +92,20 @@ def _opt(key: str, value: Any) -> vol.Optional:
     )
 
 
-def _clean(data: dict[str, Any]) -> dict[str, Any]:
-    """Drop empty values: missing means default."""
-    return {k: v for k, v in data.items() if v not in (None, "", [])}
+def _clean(data: dict[str, Any], defaults: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Drop empty values: missing means default.
+
+    A field emptied in the form whose default is a value is kept as None instead, so that it stays empty
+    (a fan without temperature control, no boost hours…) rather than coming back to the default.
+    """
+    out = {key: value for key, value in data.items() if value not in (None, "", [])}
+    for key in _nullable(defaults or {}):
+        out.setdefault(key, None)
+    return out
+
+
+def _nullable(defaults: dict[str, Any]) -> Iterable[str]:
+    return [key for key, value in defaults.items() if value is not None and not isinstance(value, (bool, dict))]
 
 
 def _notify_options(hass: HomeAssistant, current: list[str]) -> list[str]:
@@ -264,6 +279,13 @@ def _room_schema(room: dict[str, Any]) -> vol.Schema:
     )
 
 
+def _unique_id(base: str, used: list[str]) -> str:
+    room_id, n = base, 2
+    while room_id in used:
+        room_id, n = f"{base}_{n}", n + 1
+    return room_id
+
+
 def _keep_items(old: Any, new_ids: list[str]) -> list[Any]:
     """Device list from the form, keeping the per-device overrides set in YAML."""
     old = [old] if isinstance(old, (str, dict)) else (old or [])
@@ -320,9 +342,9 @@ def _room_from_form(user_input: dict[str, Any], old: dict[str, Any]) -> dict[str
             target.pop(key, None)
     control[k.CONF_FANS], control[k.CONF_PURIFIERS] = fans, pur
     # Empty sections are dropped, the room stays minimal.
-    room[k.CONF_ALERTS] = {k: v for k, v in alerts.items() if v}
-    room[k.CONF_CONTROL] = {k: v for k, v in control.items() if v}
-    return {k: v for k, v in room.items() if v not in (None, "", [], {})}
+    room[k.CONF_ALERTS] = {key: value for key, value in alerts.items() if value}
+    room[k.CONF_CONTROL] = {key: value for key, value in control.items() if value}
+    return {key: value for key, value in room.items() if value not in (None, "", [], {})}
 
 
 class SmartComfortConfigFlow(ConfigFlow, domain=k.DOMAIN):
@@ -333,9 +355,18 @@ class SmartComfortConfigFlow(ConfigFlow, domain=k.DOMAIN):
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         await self.async_set_unique_id(k.DOMAIN)
         self._abort_if_unique_id_configured()
+        errors: dict[str, str] = {}
+        schema = _general_schema(self.hass, {}, first=True)
         if user_input is not None:
-            return self.async_create_entry(title=k.TITLE, data={}, options=OPTIONS(_clean(user_input)))
-        return self.async_show_form(step_id="user", data_schema=_general_schema(self.hass, {}, first=True))
+            try:
+                options = OPTIONS(_clean(user_input))
+            except vol.Invalid as err:
+                _LOGGER.debug("Invalid options: %s", err)
+                errors["base"] = "invalid_options"
+                schema = self.add_suggested_values_to_schema(schema, user_input)
+            else:
+                return self.async_create_entry(title=k.TITLE, data={}, options=options)
+        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
 
     async def async_step_import(self, import_data: dict[str, Any]) -> ConfigFlowResult:
         """First YAML import; later changes of the YAML are applied by async_import_yaml."""
@@ -365,8 +396,25 @@ class SmartComfortOptionsFlow(OptionsFlow):
             self._options = copy.deepcopy(dict(self.config_entry.options))
         return self._options
 
-    def _save(self) -> ConfigFlowResult:
-        return self.async_create_entry(data=OPTIONS(self.options))
+    def _save(self, options: dict[str, Any]) -> ConfigFlowResult | None:
+        """Save the new options, None when they are invalid (the step shows its form again with an error)."""
+        try:
+            validated = OPTIONS(options)
+        except vol.Invalid as err:
+            _LOGGER.debug("Invalid options: %s", err)
+            return None
+        self._options = options
+        return self.async_create_entry(data=validated)
+
+    def _form(
+        self, step_id: str, schema: vol.Schema, user_input: dict[str, Any] | None, **kwargs: Any
+    ) -> ConfigFlowResult:
+        """The form of a step, again with the values entered and an error when they could not be saved."""
+        errors: dict[str, str] = kwargs.pop("errors", None) or {}
+        if user_input is not None:
+            errors = errors or {"base": "invalid_options"}
+            schema = self.add_suggested_values_to_schema(schema, user_input)
+        return self.async_show_form(step_id=step_id, data_schema=schema, errors=errors, **kwargs)
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         menu = ["general", "alerts", "control", "add_room"]
@@ -380,10 +428,14 @@ class SmartComfortOptionsFlow(OptionsFlow):
 
     async def async_step_general(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
-            keep = {k: self.options[k] for k in (k.CONF_ALERTS, k.CONF_CONTROL, k.CONF_ROOMS) if k in self.options}
-            self._options = {**_clean(user_input), **keep}
-            return self._save()
-        return self.async_show_form(step_id="general", data_schema=_general_schema(self.hass, self.options))
+            keep = {
+                key: copy.deepcopy(self.options[key])
+                for key in (k.CONF_ALERTS, k.CONF_CONTROL, k.CONF_ROOMS)
+                if key in self.options
+            }
+            if (result := self._save({**_clean(user_input), **keep})) is not None:
+                return result
+        return self._form("general", _general_schema(self.hass, self.options), user_input)
 
     async def async_step_alerts(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
@@ -395,29 +447,33 @@ class SmartComfortOptionsFlow(OptionsFlow):
 
     async def async_step_alert(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         kind = self._kind or k.KINDS[0]
-        alerts = self.options.setdefault(k.CONF_ALERTS, {})
         if user_input is not None:
-            alerts[kind] = _clean(user_input) | {k.CONF_ENABLED: user_input[k.CONF_ENABLED]}
-            return self._save()
-        return self.async_show_form(
-            step_id="alert",
-            data_schema=_alert_schema(kind, alerts.get(kind) or {}),
+            options = copy.deepcopy(self.options)
+            options.setdefault(k.CONF_ALERTS, {})[kind] = _clean(user_input, k.DEFAULT_ALERTS[kind]) | {
+                k.CONF_ENABLED: user_input[k.CONF_ENABLED]
+            }
+            if (result := self._save(options)) is not None:
+                return result
+        return self._form(
+            "alert",
+            _alert_schema(kind, (self.options.get(k.CONF_ALERTS) or {}).get(kind) or {}),
+            user_input,
             description_placeholders={"kind": kind},
             last_step=True,
         )
 
     async def async_step_control(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
-            control = _clean({k: v for k, v in user_input.items() if not isinstance(v, dict)})
+            control = _clean(
+                {key: value for key, value in user_input.items() if not isinstance(value, dict)}, k.DEFAULT_CONTROL
+            )
             for key in (k.CONF_ENABLED, k.CONF_SUPPRESS_HANDLED):
                 control[key] = user_input[key]
             for key in (k.CONF_CLIMATE, k.CONF_FANS, k.CONF_PURIFIERS):
-                control[key] = _clean(user_input.get(key) or {})
-            self.options[k.CONF_CONTROL] = control
-            return self._save()
-        return self.async_show_form(
-            step_id="control", data_schema=_control_schema(self.options.get(k.CONF_CONTROL) or {})
-        )
+                control[key] = _clean(user_input.get(key) or {}, k.DEFAULT_CONTROL[key])
+            if (result := self._save({**copy.deepcopy(self.options), k.CONF_CONTROL: control})) is not None:
+                return result
+        return self._form("control", _control_schema(self.options.get(k.CONF_CONTROL) or {}), user_input)
 
     def _room_names(self) -> list[dict[str, str]]:
         return [{"value": str(i), "label": r[k.CONF_NAME]} for i, r in enumerate(self.options.get(k.CONF_ROOMS) or [])]
@@ -440,7 +496,7 @@ class SmartComfortOptionsFlow(OptionsFlow):
         return await self._room_form("room", user_input, self._room)
 
     async def _room_form(self, step_id: str, user_input: dict[str, Any] | None, index: int | None) -> ConfigFlowResult:
-        rooms = self.options.setdefault(k.CONF_ROOMS, [])
+        rooms = self.options.get(k.CONF_ROOMS) or []
         old = rooms[index] if index is not None else {}
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -451,31 +507,37 @@ class SmartComfortOptionsFlow(OptionsFlow):
             elif slugify(name) in others:
                 errors[k.CONF_NAME] = "name_exists"
             else:
+                options = copy.deepcopy(self.options)
+                new_rooms = options.setdefault(k.CONF_ROOMS, [])
                 room = _room_from_form(user_input, old)
+                # A stable id: renaming the room keeps its sensor, its alerts and its snoozes.
+                ids = [r.id for r in build_settings(self.options).rooms]
                 if index is None:
-                    rooms.append(room)
+                    room["id"] = _unique_id(slugify(name), ids)
+                    new_rooms.append(room)
                 else:
-                    rooms[index] = room
-                return self._save()
-        schema = _room_schema(old)
-        if user_input is not None:
-            schema = self.add_suggested_values_to_schema(schema, user_input)
-        return self.async_show_form(step_id=step_id, data_schema=schema, errors=errors, last_step=True)
+                    room.setdefault("id", ids[index])
+                    new_rooms[index] = room
+                if (result := self._save(options)) is not None:
+                    return result
+                errors["base"] = "invalid_options"
+        return self._form(step_id, _room_schema(old), user_input, errors=errors, last_step=True)
 
     async def async_step_remove_room(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             remove = {int(i) for i in user_input.get("rooms") or []}
-            self.options[k.CONF_ROOMS] = [
-                r for i, r in enumerate(self.options.get(k.CONF_ROOMS) or []) if i not in remove
-            ]
-            return self._save()
-        return self.async_show_form(
-            step_id="remove_room",
-            data_schema=vol.Schema(
+            options = copy.deepcopy(self.options)
+            options[k.CONF_ROOMS] = [r for i, r in enumerate(options.get(k.CONF_ROOMS) or []) if i not in remove]
+            if (result := self._save(options)) is not None:
+                return result
+        return self._form(
+            "remove_room",
+            vol.Schema(
                 {
                     vol.Optional("rooms", default=[]): SelectSelector(
                         SelectSelectorConfig(options=self._room_names(), multiple=True)
                     )
                 }
             ),
+            user_input,
         )

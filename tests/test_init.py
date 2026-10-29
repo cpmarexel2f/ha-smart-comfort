@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
@@ -16,6 +18,7 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.smart_comfort import async_import_yaml, yaml_hash
+from custom_components.smart_comfort.config import build_settings
 from custom_components.smart_comfort.const import ACTION_SNOOZE, DOMAIN
 
 OPTIONS = {
@@ -69,8 +72,9 @@ def fan_calls(hass: HomeAssistant):
 
 
 async def test_one_grouped_notification(hass: HomeAssistant, notify, fan_calls) -> None:
+    mobile = async_mock_service(hass, "notify", "mobile_app_phone")
     _states(hass, sejour=27.5, chambre=28.0)
-    entry = await _setup(hass)
+    entry = await _setup(hass, {**OPTIONS, "notify": ["notify.phone", "notify.mobile_app_phone"]})
     await _evaluate(hass, entry)
     assert len(notify) == 1
     data = notify[0].data
@@ -85,10 +89,12 @@ async def test_one_grouped_notification(hass: HomeAssistant, notify, fan_calls) 
     assert hass.states.get("sensor.smart_comfort_active_alerts").state == "2"
     # The fan of the room was turned on (23 °C by default), so the Séjour too_hot is handled now.
     assert fan_calls["turn_on"]
-    # Back to normal: the notification is cleared.
+    # Back to normal: the notification is cleared, on the Companion app only.
     _states(hass)
     await _evaluate(hass, entry)
-    assert notify[-1].data == {"message": "clear_notification", "data": {"tag": "smart_comfort"}}
+    assert mobile[-1].data == {"message": "clear_notification", "data": {"tag": "smart_comfort"}}
+    assert len(mobile) == 2
+    assert len(notify) == 1
 
 
 async def test_snooze_action_from_notification(hass: HomeAssistant, notify, fan_calls) -> None:
@@ -218,3 +224,220 @@ async def test_yaml_reimport_only_when_changed(hass: HomeAssistant) -> None:
     # YAML changed: it wins.
     await import_({"rooms": [{"name": "C"}]})
     assert entry.options["rooms"] == [{"name": "C"}]
+
+
+async def test_failed_notification_is_sent_again(hass: HomeAssistant, fan_calls) -> None:
+    calls = []
+
+    async def failing(call) -> None:
+        calls.append(call)
+        if len(calls) == 1:
+            raise RuntimeError("offline")
+
+    hass.services.async_register("notify", "phone", failing)
+    _states(hass, chambre=28.0)
+    entry = await _setup(hass)  # First evaluation: the notifier fails.
+    assert len(calls) == 1
+    assert entry.runtime_data.last_notification is None
+    assert entry.runtime_data.engine.episodes["chambre|too_hot"].notified_at is None
+    await _evaluate(hass, entry)
+    assert len(calls) == 2
+    assert entry.runtime_data.last_notification is not None
+    await _evaluate(hass, entry)
+    assert len(calls) == 2
+
+
+async def test_failed_command_is_retried(hass: HomeAssistant, notify) -> None:
+    calls = []
+
+    async def failing(call) -> None:
+        calls.append(call)
+        raise RuntimeError("timeout")
+
+    hass.services.async_register("fan", "turn_on", failing)
+    for service in ("set_percentage", "set_preset_mode", "turn_off"):
+        async_mock_service(hass, "fan", service)
+    _states(hass, sejour=24.0)
+    entry = await _setup(hass)
+    sent = len(calls)
+    assert sent >= 1
+    assert "fan.sejour" not in entry.runtime_data.controller.targets
+    await _evaluate(hass, entry)
+    assert len(calls) == sent + 1
+
+
+async def test_snooze_keys_survive_restart(hass: HomeAssistant, notify, fan_calls) -> None:
+    _states(hass, sejour=28.0, chambre=28.0)
+    entry = await _setup(hass)
+    await _evaluate(hass, entry)
+    assert len(notify) == 1
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    # A new problem comes up after the notification: the Snooze button only covers what it showed.
+    engine = entry.runtime_data.engine
+    assert sorted(engine.last_keys) == ["chambre|too_hot", "sejour|too_hot"]
+    hass.bus.async_fire("mobile_app_notification_action", {"action": ACTION_SNOOZE})
+    await hass.async_block_till_done()
+    assert "*" not in engine.snoozes
+    assert engine.episodes["chambre|too_hot"].snoozed_until is not None
+
+
+async def test_weather_and_fahrenheit_outdoor(hass: HomeAssistant, notify) -> None:
+    entry = await _setup(hass, {**OPTIONS, "outdoor_temperature": ["weather.home", "sensor.out_f"]})
+    hass.states.async_set("weather.home", "sunny", {"temperature": 20.0, "temperature_unit": "°C"})
+    hass.states.async_set("sensor.out_f", "77", {"unit_of_measurement": "°F"})
+    assert entry.runtime_data.outdoor() == 20.0
+    hass.states.async_set("weather.home", "sunny", {"temperature": 86.0, "temperature_unit": "°F"})
+    assert entry.runtime_data.outdoor() == 25.0
+
+
+async def test_unavailable_opening_left_out(hass: HomeAssistant, notify, fan_calls) -> None:
+    _states(hass)
+    entry = await _setup(hass)
+    m = entry.runtime_data
+    room = m.settings.rooms[0]
+    hass.states.async_set("binary_sensor.w_sejour", "unavailable")
+    now = dt_util.utcnow()
+    assert m.reading(room, now)[0].open is None
+    later = now + timedelta(minutes=11)
+    assert m.reading(room, later)[0].open == []
+    assert m.ignored_openings(room, later) == ["binary_sensor.w_sejour"]
+
+
+async def test_removed_sensor_entity_ends_episode(hass: HomeAssistant, notify, fan_calls) -> None:
+    _states(hass, chambre=28.0)
+    entry = await _setup(hass)
+    await _evaluate(hass, entry)
+    assert "chambre|too_hot" in entry.runtime_data.engine.episodes
+    hass.states.async_set("sensor.t_chambre", "unavailable")
+    await _evaluate(hass, entry)
+    assert "chambre|too_hot" in entry.runtime_data.engine.episodes
+    hass.states.async_remove("sensor.t_chambre")
+    await _evaluate(hass, entry)
+    assert "chambre|too_hot" not in entry.runtime_data.engine.episodes
+
+
+async def test_stop_waits_for_the_evaluation(hass: HomeAssistant, notify, fan_calls) -> None:
+    _states(hass)
+    entry = await _setup(hass)
+    m = entry.runtime_data
+    await m._lock.acquire()
+    stop = hass.async_create_task(m.async_stop())
+    await asyncio.sleep(0)
+    assert not stop.done()
+    m.engine.shown = True  # Changed by the evaluation in progress.
+    m._lock.release()
+    await stop
+    assert hass.data[DOMAIN]["state"]["engine"]["shown"] is True
+
+
+async def test_switch_states_restored_before_entities(hass: HomeAssistant, notify, fan_calls) -> None:
+    _states(hass)
+    entry = await _setup(hass)
+    await hass.services.async_call(
+        "switch", "turn_off", {"entity_id": "switch.smart_comfort_device_control"}, blocking=True
+    )
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.data[DOMAIN]["state"]["control_enabled"] is False
+
+
+async def test_remove_entry_forgets_the_state(hass: HomeAssistant, notify, fan_calls) -> None:
+    _states(hass, chambre=28.0)
+    entry = await _setup(hass)
+    await _evaluate(hass, entry)
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert "state" not in hass.data.get(DOMAIN, {})
+
+
+async def test_options_flow_keeps_emptied_fields_empty(hass: HomeAssistant) -> None:
+    entry = MockConfigEntry(domain=DOMAIN, title="Smart Comfort", data={}, options={})
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "control"})
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "enabled": True,
+            "manual_override": 60,
+            "suppress_when_handled": True,
+            "climate": {"cool_above": 23, "off_below": 21, "setpoint": 22, "closed_for": 2, "off_on_open": 1},
+            "fans": {},
+            "purifiers": {"keep_on": False, "open_preset": "Turbo"},
+        },
+    )
+    assert result["type"] == "create_entry"
+    settings = build_settings(dict(entry.options))
+    assert settings.control_start is None and settings.control_end is None
+    control = entry.options["control"]
+    assert control["fans"]["on_above"] is None and control["fans"]["off_below"] is None
+    assert control["purifiers"]["open_percentage"] is None
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "alerts"})
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"kind": "ventilate"})
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {"enabled": True, "threshold": 2, "hysteresis": 0.5, "delay": 15, "severity": "info", "escalation": 2},
+    )
+    assert result["type"] == "create_entry"
+    assert build_settings(dict(entry.options)).rooms == ()
+    assert entry.options["alerts"]["ventilate"]["min_indoor"] is None
+
+
+async def test_options_flow_invalid_value_shows_error(hass: HomeAssistant) -> None:
+    entry = MockConfigEntry(domain=DOMAIN, title="Smart Comfort", data={}, options={})
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "general"})
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            "notify": ["notify."],
+            "outdoor_temperature": [],
+            "outdoor_aggregate": "min",
+            "digest_window": 5,
+            "reminder": 0,
+            "snooze_duration": 240,
+            "startup_grace": 10,
+            "clear_when_resolved": True,
+            "critical_volume": 0.5,
+            "tag": "smart_comfort",
+        },
+    )
+    assert result["type"] == "form"
+    assert result["errors"] == {"base": "invalid_options"}
+
+
+async def test_renamed_room_keeps_its_sensor(hass: HomeAssistant) -> None:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"notify": [], "outdoor_temperature": [], "outdoor_aggregate": "min"}
+    )
+    entry = result["result"]
+    await hass.async_block_till_done()
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "add_room"})
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"name": "Bureau", "overrides": {}})
+    assert entry.options["rooms"][0]["id"] == "bureau"
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.smart_comfort_bureau_comfort") is not None
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "edit_room"})
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"room": "0"})
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"name": "Office", "overrides": {}})
+    await hass.async_block_till_done()
+    assert entry.options["rooms"][0]["id"] == "bureau"
+    registry = er.async_get(hass)
+    sensors = [e for e in er.async_entries_for_config_entry(registry, entry.entry_id) if "_room_" in e.unique_id]
+    assert [e.unique_id for e in sensors] == [f"{entry.entry_id}_room_bureau"]
+
+    # Removed: its sensor leaves the registry.
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": "remove_room"})
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"rooms": ["0"]})
+    await hass.async_block_till_done()
+    sensors = [e for e in er.async_entries_for_config_entry(registry, entry.entry_id) if "_room_" in e.unique_id]
+    assert sensors == []

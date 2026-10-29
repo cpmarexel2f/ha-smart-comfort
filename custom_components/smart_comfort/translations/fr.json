@@ -16,6 +16,9 @@
         }
       }
     },
+    "error": {
+      "invalid_options": "Certaines valeurs sont invalides, vérifiez-les."
+    },
     "abort": {
       "already_configured": "Smart Comfort est déjà configuré.",
       "single_instance_allowed": "Smart Comfort est déjà configuré."
@@ -74,7 +77,7 @@
         "data": {
           "kind": "Alerte"
         },
-        "description": "Réglages d'une alerte pour toutes les pièces. Une pièce peut les remplacer en YAML."
+        "description": "Réglages d'une alerte pour toutes les pièces. Une pièce peut remplacer les seuils trop chaud / trop froid dans son formulaire, et tout en YAML."
       },
       "alert": {
         "title": "Réglages de l'alerte",
@@ -109,9 +112,9 @@
           "suppress_when_handled": "Pas d'alerte si traité"
         },
         "data_description": {
-          "start": "Ventilateurs et purificateurs passent à fond à l'ouverture d'une fenêtre seulement entre ces heures.",
+          "start": "Ventilateurs et purificateurs passent à fond à l'ouverture d'une fenêtre seulement entre ces heures. Les deux vides : toute la journée.",
           "manual_override": "Minutes pendant lesquelles un appareil modifié à la main est laissé tranquille. 0 : jamais.",
-          "suppress_when_handled": "Pas d'alerte « trop chaud » pour une pièce dont la clim ou le ventilateur tourne déjà."
+          "suppress_when_handled": "Pas d'alerte « trop chaud » pour une pièce dont Smart Comfort a allumé la clim ou le ventilateur."
         },
         "sections": {
           "climate": {
@@ -233,7 +236,8 @@
     },
     "error": {
       "name_required": "Donnez un nom à la pièce.",
-      "name_exists": "Une pièce porte déjà ce nom."
+      "name_exists": "Une pièce porte déjà ce nom.",
+      "invalid_options": "Certaines valeurs sont invalides, vérifiez-les."
     }
   },
   "selector": {

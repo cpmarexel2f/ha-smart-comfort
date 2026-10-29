@@ -16,6 +16,9 @@
         }
       }
     },
+    "error": {
+      "invalid_options": "Einige Werte sind ungültig, bitte prüfen."
+    },
     "abort": {
       "already_configured": "Smart Comfort ist bereits eingerichtet.",
       "single_instance_allowed": "Smart Comfort ist bereits eingerichtet."
@@ -74,7 +77,7 @@
         "data": {
           "kind": "Meldung"
         },
-        "description": "Einstellungen einer Meldung für alle Räume. Ein Raum kann sie per YAML überschreiben."
+        "description": "Einstellungen einer Meldung für alle Räume. Ein Raum kann die Schwellen zu warm / zu kalt in seinem Formular überschreiben, alles per YAML."
       },
       "alert": {
         "title": "Meldungseinstellungen",
@@ -94,7 +97,7 @@
           "min_indoor": "Lüften nur vorschlagen, wenn der Raum mindestens so warm ist.",
           "min_outdoor": "Nur wenn es draußen mindestens so warm ist.",
           "max_outdoor": "Nur wenn es draußen höchstens so warm ist.",
-          "hysteresis": "Das Problem endet erst, wenn der Wert um so viel zurück ist: kein Flattern.",
+          "hysteresis": "Das Problem endet erst, wenn der Wert um diesen Betrag über den Schwellenwert zurückgekehrt ist: kein Flattern.",
           "delay": "Minuten, die die Bedingung anhalten muss, bevor sie ein Problem ist.",
           "escalation": "Erneut melden, wenn sich der Wert seit der letzten Meldung um so viel verschlechtert. 0: nie."
         }
@@ -109,9 +112,9 @@
           "suppress_when_handled": "Keine Meldung, wenn behandelt"
         },
         "data_description": {
-          "start": "Lüfter und Luftreiniger laufen beim Öffnen nur zwischen diesen Zeiten auf voller Stufe.",
+          "start": "Lüfter und Luftreiniger laufen beim Öffnen nur zwischen diesen Zeiten auf voller Stufe. Beide leer: ganztägig.",
           "manual_override": "Minuten, die ein von Hand geändertes Gerät in Ruhe gelassen wird. 0: nie.",
-          "suppress_when_handled": "Keine „zu warm“-Meldung für einen Raum, dessen Klimaanlage oder Lüfter schon läuft."
+          "suppress_when_handled": "Keine „zu warm“-Meldung für einen Raum, dessen Klimaanlage oder Lüfter Smart Comfort eingeschaltet hat."
         },
         "sections": {
           "climate": {
@@ -233,7 +236,8 @@
     },
     "error": {
       "name_required": "Geben Sie dem Raum einen Namen.",
-      "name_exists": "Ein Raum hat bereits diesen Namen."
+      "name_exists": "Ein Raum hat bereits diesen Namen.",
+      "invalid_options": "Einige Werte sind ungültig, bitte prüfen."
     }
   },
   "selector": {

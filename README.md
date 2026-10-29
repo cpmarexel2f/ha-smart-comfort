@@ -25,11 +25,11 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
 - **Actionable notifications**: **Snooze 4 h** and **Got it** (no more reminders for these problems) buttons, right from the phone
 - **Cleared when resolved**: the notification is removed from the phones once every notified problem is over
 - **Device control** per room:
-  - **air conditioner**: cools above a temperature once the openings have been closed for a while, turns off below another one or when an opening stays open
+  - **air conditioner**: cools above a temperature once the openings have been closed for a while, turns off below another one, or when an opening stays open (whatever its mode, heating included)
   - **fans**: on above a temperature, off below another one (hysteresis band in between), full speed while a window is open during the day
-  - **air purifiers**: boost while a window is open during the day (preset, speed, or a mode select such as `manual`/`automatic`), back to normal when closed, and optionally **kept on** (turned back on after a power cut)
+  - **air purifiers**: boost while a window is open during the day (preset, speed, or a mode select such as `manual`/`automatic`), back to normal when closed (the closed preset / mode, or else the state it had before the boost), and optionally **kept on** (turned back on after a power cut)
   - commands are sent only when the target changes and the device isn't already in that state; a device changed **by hand** is left alone for an hour (configurable)
-  - a room whose air conditioner or fan is already running gets no "too hot" alert
+  - a room whose air conditioner or fan Smart Comfort has turned on gets no "too hot" alert (a device turned on by hand doesn't count)
 - **No re-notification after a restart**: episodes, snoozes and device targets are stored; nothing is sent during the startup grace period
 - **YAML or UI**: configure everything in YAML (imported at startup) or in the integration options — rooms, alerts, control
 - Sensors for the active alerts and the comfort of each room, switches to pause the notifications or the device control, buttons, actions and events
@@ -38,7 +38,7 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
 ## Prerequisites
 
 - Home Assistant 2024.12 or newer
-- A notify action: the [Companion app](https://companion.home-assistant.io/) (`notify.mobile_app_…`) or a notify group of several phones. The snooze buttons, replacement and clearing of notifications need the Companion app; other notifiers get the title and message
+- A notify action: the [Companion app](https://companion.home-assistant.io/) (`notify.mobile_app_…`) or a notify group of several phones. The snooze buttons, replacement and clearing of notifications need the Companion app; other notifiers get the title and message (and no clearing message)
 - Temperature (and optionally CO₂ / humidity) sensors per room, door/window `binary_sensor`s, and outdoor temperature sensors for the window alerts
 
 ## Installation
@@ -134,7 +134,7 @@ smart_comfort:
 | Option | Default | Description |
 |---|---|---|
 | `notify` | none | Notify actions the alerts go to |
-| `outdoor_temperature` | none | Outdoor sensors (or `weather` entities); unavailable ones are ignored |
+| `outdoor_temperature` | none | Outdoor sensors (or `weather` entities, their `temperature` attribute); unavailable ones are ignored |
 | `outdoor_aggregate` | `min` | `min`, `max` or `mean` of the outdoor sensors |
 | `digest_window` | 5 min | Wait for other alerts before sending one grouped notification. Critical alerts don't wait |
 | `reminder` | 0 | Minutes after which a problem still going on is notified again. 0: never (only when it gets worse) |
@@ -170,7 +170,7 @@ Set under `control:` for every room, under `rooms[].control:` for one room, and 
 | Option | Default | Description |
 |---|---|---|
 | `enabled` | `true` | Control the devices (also the **Device control** switch) |
-| `start` / `end` | 09:00 / 21:00 | Window boost hours of the fans and purifiers |
+| `start` / `end` | 09:00 / 21:00 | Window boost hours of the fans and purifiers. Both empty (or equal): all day |
 | `manual_override` | 60 min | A device changed by hand is left alone this long, then its target is applied again. 0: never paused |
 | `suppress_when_handled` | `true` | No "too hot" alert for a room whose air conditioner or fan is running on Smart Comfort's command |
 | `climate.cool_above` / `off_below` | 23 / 21 °C | Cool above, turn off below |
@@ -181,18 +181,20 @@ Set under `control:` for every room, under `rooms[].control:` for one room, and 
 | `fans.open_percentage` / `open_preset` | 100 % / none | While a window is open in the boost hours |
 | `fans.off_preset` | none | Preset set before turning off (the fan restarts in it) |
 | `purifiers.open_percentage` / `open_preset` | 100 % / none | While a window is open in the boost hours |
-| `purifiers.closed_preset` | none | When the windows are closed |
+| `purifiers.closed_preset` | none | When the windows are closed. Without it (nor `closed_mode`), the purifier goes back to the state it had before the boost |
 | `purifiers.mode_select` / `open_mode` / `closed_mode` | none | A `select` entity and its options for the two states (e.g. `manual` / `automatic`) |
 | `purifiers.keep_on` | `false` | Turn the purifier back on when it has been off for 10 seconds |
 
-An air conditioner in another mode than `cool` or `off` (heat, dry…) is left alone.
+An air conditioner in another mode than `cool` or `off` (heat, dry…) is left alone by the temperature control, but turned off when an opening stays open.
+
+Thresholds and messages are in °C; sensors in °F or K are converted. An opening unavailable for 10 minutes (dead battery…) is left out of its room instead of blocking its alerts and devices (`ignored_openings` attribute of the room sensor). The problems of a sensor removed from a room end.
 
 ### Entities
 
 | Entity | Description |
 |---|---|
 | `sensor.smart_comfort_active_alerts` | Number of current problems. Attributes: `alerts` (room, kind, value, since, notified_at, snoozed, acknowledged, handled…), `snoozes`, `outdoor_temperature` |
-| `sensor.smart_comfort_<room>_comfort` | `ok` or the main problem of the room. Attributes: readings, open openings, alerts, device targets and manual overrides |
+| `sensor.smart_comfort_<room>_comfort` | `ok` or the main problem of the room. Attributes: readings, open and ignored openings, alerts, device targets and manual overrides |
 | `sensor.smart_comfort_last_notification` | Time of the last notification. Attributes: `title`, `message`, `severity`, `alerts` |
 | `switch.smart_comfort_notifications` | Send notifications (problems are still tracked when off) |
 | `switch.smart_comfort_device_control` | Control the devices |

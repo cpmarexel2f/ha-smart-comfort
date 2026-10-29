@@ -38,7 +38,10 @@ def run(engine, minutes, readings, outdoor=27.0, gates=OPEN, handled=frozenset()
     """Evaluate once at T0 + minutes and step; returns (now, result)."""
     now = T0 + timedelta(minutes=minutes)
     engine.evaluate(now, readings, outdoor)
-    return now, engine.step(now, gates, set(handled))
+    result = engine.step(now, gates, set(handled))
+    if isinstance(result, Digest):
+        engine.sent(result, now)  # What the manager does once a notifier got it.
+    return now, result
 
 
 def hot(temp=28.0, **kw):
@@ -257,3 +260,97 @@ def test_removed_room_drops_episodes():
         run(e, m, hot())
     e.update_settings(build_settings({"rooms": [{"name": "Chambre Léa"}]}))
     assert not e.episodes
+
+
+def test_snoozed_problem_notified_again_when_snooze_ends():
+    e = Engine(settings())
+    for m in (0, 15, 20):
+        run(e, m, hot())
+    e.snooze(T0 + timedelta(minutes=40), 60, keys=["sejour|too_hot"])
+    # Hidden by the snooze: the notification is cleared.
+    assert isinstance(run(e, 41, hot())[1], Clear)
+    assert run(e, 99, hot())[1] is None
+    # Snooze over, still too hot: notified again after the digest window.
+    run(e, 100, hot())
+    _, result = run(e, 105, hot())
+    assert isinstance(result, Digest)
+    assert result.items[0].reason == REASON_REMINDER
+    # Once only.
+    assert run(e, 200, hot())[1] is None
+
+
+def test_unsnooze_notifies_again():
+    e = Engine(settings())
+    for m in (0, 15, 20):
+        run(e, m, hot())
+    e.snooze(T0 + timedelta(minutes=30), 240)
+    run(e, 31, hot())
+    e.unsnooze(T0 + timedelta(minutes=50))
+    run(e, 50, hot())
+    _, result = run(e, 55, hot())
+    assert isinstance(result, Digest)
+
+
+def test_removed_sensor_ends_its_episodes():
+    e = Engine(settings())
+    readings = {"chambre_lea": RoomReading(temperature=21.0, co2=1500)}
+    for m in (0, 10, 15):
+        run(e, m, readings)
+    assert e.episodes["chambre_lea|co2_high"].active
+    # The CO₂ sensor removed from the room in the options.
+    e.update_settings(
+        build_settings(
+            {
+                "rooms": [
+                    {"name": "Séjour", "temperature": "sensor.t1"},
+                    {"name": "Chambre Léa", "temperature": "sensor.t2"},
+                ]
+            }
+        )
+    )
+    assert "chambre_lea|co2_high" not in e.episodes
+    # The entity deleted: unknown for good, the episode ends instead of holding.
+    e = Engine(settings())
+    for m in (0, 10, 15):
+        run(e, m, readings)
+    run(e, 16, {"chambre_lea": RoomReading(temperature=21.0, missing=frozenset({"co2"}))})
+    assert "chambre_lea|co2_high" not in e.episodes
+
+
+def test_window_open_cold_worsens_when_colder():
+    e = Engine(settings(alerts={"window_open_cold": {"enabled": True, "delay": 0, "escalation": 2}}))
+    opened = {"sejour": RoomReading(temperature=20.0, has_openings=True, open=["binary_sensor.w1"])}
+    run(e, 0, opened, outdoor=8.0)
+    assert isinstance(run(e, 5, opened, outdoor=8.0)[1], Digest)
+    # Warmer outside: not worse.
+    run(e, 10, opened, outdoor=11.0)
+    assert run(e, 20, opened, outdoor=11.0)[1] is None
+    # Colder: worse.
+    run(e, 21, opened, outdoor=5.0)
+    _, result = run(e, 26, opened, outdoor=5.0)
+    assert result.items[0].reason == REASON_WORSE
+
+
+def test_equal_window_bounds_mean_always():
+    assert in_window(parse_time("03:00"), parse_time("09:00"), parse_time("09:00"))
+
+
+def test_last_keys_persisted():
+    e = Engine(settings())
+    for m in (0, 15, 20):
+        run(e, m, hot())
+    restored = Engine(settings())
+    restored.restore(e.as_dict())
+    assert restored.last_keys == ["sejour|too_hot"]
+
+
+def test_digest_not_marked_until_sent():
+    e = Engine(settings())
+    for m in (0, 15):
+        run(e, m, hot())
+    now = T0 + timedelta(minutes=20)
+    e.evaluate(now, hot(), 27.0)
+    assert isinstance(e.step(now, OPEN, set()), Digest)
+    # Not sent (every notifier failed): due again at the next evaluation.
+    assert e.episodes["sejour|too_hot"].notified_at is None
+    assert isinstance(run(e, 21, hot())[1], Digest)

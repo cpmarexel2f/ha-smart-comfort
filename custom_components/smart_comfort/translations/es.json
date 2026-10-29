@@ -16,6 +16,9 @@
         }
       }
     },
+    "error": {
+      "invalid_options": "Algunos valores no son válidos, revíselos."
+    },
     "abort": {
       "already_configured": "Smart Comfort ya está configurado.",
       "single_instance_allowed": "Smart Comfort ya está configurado."
@@ -74,7 +77,7 @@
         "data": {
           "kind": "Alerta"
         },
-        "description": "Ajustes de una alerta para todas las estancias. Una estancia puede sustituirlos en YAML."
+        "description": "Ajustes de una alerta para todas las estancias. Una estancia puede sustituir los umbrales de calor / frío en su formulario, y todo en YAML."
       },
       "alert": {
         "title": "Ajustes de la alerta",
@@ -94,7 +97,7 @@
           "min_indoor": "Solo sugiere ventilar si la estancia está al menos a esta temperatura.",
           "min_outdoor": "Solo si fuera hace al menos esta temperatura.",
           "max_outdoor": "Solo si fuera hace como máximo esta temperatura.",
-          "hysteresis": "El problema termina solo cuando el valor vuelve tanto del umbral: sin oscilaciones.",
+          "hysteresis": "El problema termina solo cuando el valor vuelve a pasar el umbral en al menos esta cantidad: sin oscilaciones.",
           "delay": "Minutos que la condición debe mantenerse antes de ser un problema.",
           "escalation": "Notifica de nuevo si el valor empeora tanto desde la última notificación. 0: nunca."
         }
@@ -103,15 +106,15 @@
         "title": "Control de aparatos",
         "data": {
           "enabled": "Controlar los aparatos",
-          "start": "Impulso de ventana desde",
-          "end": "Impulso de ventana hasta",
-          "manual_override": "Control manual",
+          "start": "Refuerzo con ventana abierta desde",
+          "end": "Refuerzo con ventana abierta hasta",
+          "manual_override": "Pausa tras cambio manual",
           "suppress_when_handled": "Sin alerta si se gestiona"
         },
         "data_description": {
-          "start": "Ventiladores y purificadores van al máximo al abrir solo entre estas horas.",
+          "start": "Ventiladores y purificadores van al máximo al abrir solo entre estas horas. Ambas vacías: todo el día.",
           "manual_override": "Minutos que se deja en paz un aparato cambiado a mano. 0: nunca.",
-          "suppress_when_handled": "Sin alerta «demasiado calor» si el aire o el ventilador ya funcionan."
+          "suppress_when_handled": "Sin alerta «demasiado calor» si Smart Comfort ha encendido el aire o el ventilador de la estancia."
         },
         "sections": {
           "climate": {
@@ -121,8 +124,8 @@
               "off_below": "Apagar por debajo de",
               "setpoint": "Consigna",
               "fan_mode": "Modo del ventilador",
-              "closed_for": "Aberturas cerradas desde (min)",
-              "off_on_open": "Apagar si abierto desde (min)"
+              "closed_for": "Aberturas cerradas durante (min)",
+              "off_on_open": "Apagar si abierta durante (min)"
             }
           },
           "fans": {
@@ -233,7 +236,8 @@
     },
     "error": {
       "name_required": "Dé un nombre a la estancia.",
-      "name_exists": "Ya hay una estancia con este nombre."
+      "name_exists": "Ya hay una estancia con este nombre.",
+      "invalid_options": "Algunos valores no son válidos, revíselos."
     }
   },
   "selector": {
@@ -374,7 +378,7 @@
     "line_too_cold": "{value} °C, por debajo de {threshold} °C",
     "line_ventilate": "{temperature} °C dentro, {outdoor} °C fuera — ventile",
     "line_close_windows": "{outdoor} °C fuera, {temperature} °C dentro — cierre {openings}",
-    "line_window_open_cold": "{openings} abierto, {outdoor} °C fuera",
+    "line_window_open_cold": "{openings} abierta(s), {outdoor} °C fuera",
     "line_co2_high": "CO₂ {value} ppm — ventile",
     "line_humidity_high": "humedad {value} % — ventile",
     "action_snooze": "Posponer {hours} h",

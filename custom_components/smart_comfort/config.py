@@ -100,9 +100,9 @@ def parse_time(value: Any) -> time | None:
 
 
 def in_window(now: time, start: time | None, end: time | None) -> bool:
-    """Whether now is in [start, end), the window may cross midnight. Unset bounds: always."""
+    """Whether now is in [start, end), the window may cross midnight. Unset or equal bounds: always."""
     if start is None or end is None or start == end:
-        return start is None or end is None
+        return True
     if start < end:
         return start <= now < end
     return now >= start or now < end

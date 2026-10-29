@@ -37,7 +37,7 @@ jobs:
       - name: Build zip and notes
         if: steps.version.outputs.exists == 'false'
         run: |
-          (cd custom_components/smart_comfort && zip -r ../../smart_comfort.zip . -x "__pycache__/*" "AGENT.md" "brand/*")
+          (cd custom_components/smart_comfort && zip -r ../../smart_comfort.zip . -x "__pycache__/*" "AGENT.md")
           .github/scripts/release-notes.sh "${{ steps.version.outputs.version }}" > notes.md
           test -s notes.md
 
