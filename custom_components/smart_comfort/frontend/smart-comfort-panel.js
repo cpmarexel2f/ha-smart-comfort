@@ -24,6 +24,14 @@ const UNITS = { co2_high: "ppm", humidity_high: "%" };
 // Strings of the panel itself; field labels come from the integration translations.
 const STRINGS = {
   en: {
+    discovered_new: "new",
+    discovered_updated: "completed",
+    discover: "Discover",
+    discover_help: "Adds a room for each Home Assistant area except the outdoor ones (garden, terrace…) and sets it up: temperature, CO₂ and humidity sensors, windows and doors, air conditioner, fans and purifiers with their presets and modes. The outdoor areas give the outdoor temperature. What is already set is kept. Check the result, then save.",
+    discover_running: "Discovering…",
+    discover_result: "Discovery: {added} room(s) added, {updated} completed{outdoor}. Check them, then save.",
+    discover_outdoor: ", outdoor temperature set",
+    discover_none: "Discovery found nothing new.",
     fan: "Fan",
     purifier: "Air purifier",
     overview: "Overview",
@@ -83,6 +91,14 @@ const STRINGS = {
     sensors: "Sensors",
   },
   fr: {
+    discovered_new: "nouvelle",
+    discovered_updated: "complétée",
+    discover: "Découvrir",
+    discover_help: "Ajoute chaque pièce de Home Assistant sauf les extérieures (jardin, terrasse…) et la règle : capteurs de température, CO₂ et humidité, fenêtres et portes, climatiseur, ventilateurs et purificateurs avec leurs modes. Les pièces extérieures donnent la température extérieure. Ce qui est déjà réglé est conservé. Vérifiez le résultat, puis enregistrez.",
+    discover_running: "Découverte…",
+    discover_result: "Découverte : {added} pièce(s) ajoutée(s), {updated} complétée(s){outdoor}. Vérifiez-les, puis enregistrez.",
+    discover_outdoor: ", température extérieure renseignée",
+    discover_none: "La découverte n'a rien trouvé de nouveau.",
     fan: "Ventilateur",
     purifier: "Purificateur",
     overview: "Vue d'ensemble",
@@ -142,6 +158,14 @@ const STRINGS = {
     sensors: "Capteurs",
   },
   de: {
+    discovered_new: "neu",
+    discovered_updated: "ergänzt",
+    discover: "Erkennen",
+    discover_help: "Legt für jeden Home-Assistant-Bereich außer den Außenbereichen (Garten, Terrasse…) einen Raum an und richtet ihn ein: Temperatur-, CO₂- und Feuchtesensoren, Fenster und Türen, Klimaanlage, Lüfter und Luftreiniger mit ihren Modi. Die Außenbereiche liefern die Außentemperatur. Bereits Eingestelltes bleibt erhalten. Ergebnis prüfen, dann speichern.",
+    discover_running: "Erkennung…",
+    discover_result: "Erkennung: {added} Raum/Räume hinzugefügt, {updated} ergänzt{outdoor}. Prüfen, dann speichern.",
+    discover_outdoor: ", Außentemperatur gesetzt",
+    discover_none: "Die Erkennung hat nichts Neues gefunden.",
     fan: "Lüfter",
     purifier: "Luftreiniger",
     overview: "Übersicht",
@@ -201,6 +225,14 @@ const STRINGS = {
     sensors: "Sensoren",
   },
   es: {
+    discovered_new: "nueva",
+    discovered_updated: "completada",
+    discover: "Descubrir",
+    discover_help: "Añade una estancia por cada área de Home Assistant salvo las exteriores (jardín, terraza…) y la configura: sensores de temperatura, CO₂ y humedad, ventanas y puertas, aire acondicionado, ventiladores y purificadores con sus modos. Las áreas exteriores dan la temperatura exterior. Lo ya configurado se conserva. Revise el resultado y guarde.",
+    discover_running: "Descubriendo…",
+    discover_result: "Descubrimiento: {added} estancia(s) añadida(s), {updated} completada(s){outdoor}. Revíselas y guarde.",
+    discover_outdoor: ", temperatura exterior configurada",
+    discover_none: "El descubrimiento no encontró nada nuevo.",
     fan: "Ventilador",
     purifier: "Purificador",
     overview: "Resumen",
@@ -492,6 +524,7 @@ class SmartComfortPanel extends HTMLElement {
       this._config.options = result.options;
       this._draft = clone(result.options);
       this._message = { type: "success", text: this._t("saved") };
+      this._discovered = null;
     } catch (err) {
       this._message = { type: "error", text: err.message };
     }
@@ -501,6 +534,7 @@ class SmartComfortPanel extends HTMLElement {
 
   _discard() {
     this._draft = clone(this._config.options);
+    this._discovered = null;
     this._message = null;
     this._render();
   }
@@ -1023,7 +1057,43 @@ class SmartComfortPanel extends HTMLElement {
     return keys.length === 1 && keys[0] === "entity_id" ? p.entity_id : p;
   }
 
+  async _discover() {
+    this._discovering = true;
+    this._renderTab();
+    try {
+      const result = await this._hass.callWS({ type: `${DOMAIN}/discover`, options: prune(this._draft) });
+      const r = result.report;
+      this._draft = result.options;
+      // Marked in the list (collapsed, with a summary of what was found) until saved.
+      this._discovered = { added: new Set(r.added), updated: new Set(r.updated) };
+      this._message =
+        r.added.length || r.updated.length || r.outdoor.length
+          ? {
+              type: "info",
+              text: this._t("discover_result", {
+                added: r.added.length,
+                updated: r.updated.length,
+                outdoor: r.outdoor.length ? this._t("discover_outdoor") : "",
+              }),
+            }
+          : { type: "info", text: this._t("discover_none") };
+    } catch (err) {
+      this._message = { type: "error", text: err.message };
+    }
+    this._discovering = false;
+    this._renderToolbar();
+    this._renderTab();
+  }
+
   _renderRooms(content) {
+    const intro = this._el("div", "card discover");
+    const text = this._el("div", "discover-text", this._t("discover_help"));
+    const button = this._button(this._discovering ? this._t("discover_running") : this._t("discover"), () =>
+      this._discover()
+    );
+    button.disabled = Boolean(this._discovering);
+    intro.append(text, button);
+    content.append(intro);
     const rooms = (this._draft.rooms = this._draft.rooms || []);
     if (!rooms.length) content.append(this._el("div", "empty card", this._t("no_rooms")));
     rooms.forEach((room, index) => {
@@ -1055,7 +1125,7 @@ class SmartComfortPanel extends HTMLElement {
       else this._expanded.add(index);
       this._renderTab();
     });
-    header.append(toggle);
+    header.append(toggle, this._roomSummary(room));
     const tools = this._el("div", "row-actions");
     const move = (to) => {
       [rooms[index], rooms[to]] = [rooms[to], rooms[index]];
@@ -1210,6 +1280,34 @@ class SmartComfortPanel extends HTMLElement {
       )
     );
     return card;
+  }
+
+  /** Icons of what the room has (sensors, openings, devices), and a badge after a discovery. */
+  _roomSummary(room) {
+    const box = this._el("div", "room-summary");
+    const count = (v) => (Array.isArray(v) ? v.length : v ? 1 : 0);
+    const items = [
+      ["mdi:thermometer", count(room.temperature)],
+      ["mdi:molecule-co2", count(room.co2)],
+      ["mdi:water-percent", count(room.humidity)],
+      ["mdi:window-closed-variant", count(room.openings)],
+      ["mdi:air-conditioner", count(room.climate)],
+      ["mdi:fan", count(room.fans)],
+      ["mdi:air-purifier", count(room.purifiers)],
+    ];
+    for (const [icon, n] of items) {
+      if (!n) continue;
+      const chip = this._el("span", "summary-item");
+      const i = document.createElement("ha-icon");
+      i.icon = icon;
+      chip.append(i);
+      if (n > 1) chip.append(document.createTextNode(String(n)));
+      box.append(chip);
+    }
+    const found = this._discovered;
+    if (found?.added.has(room.name)) box.append(this._el("span", "badge new", this._t("discovered_new")));
+    else if (found?.updated.has(room.name)) box.append(this._el("span", "badge new", this._t("discovered_updated")));
+    return box;
   }
 
   _effectiveControl(room, section) {
@@ -1458,11 +1556,18 @@ const STYLE = `
   .device-state { color: var(--secondary-text-color); white-space: nowrap; }
   .last-title { font-weight: 500; }
   .last-message { white-space: pre-line; margin-top: 4px; }
-  .room-header { justify-content: space-between; margin-bottom: 0; }
+  .room-header { justify-content: space-between; margin-bottom: 0; gap: 12px; }
+  .room-summary { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--secondary-text-color); font-size: 13px; }
+  .summary-item { display: inline-flex; align-items: center; gap: 2px; }
+  .summary-item ha-icon { --mdc-icon-size: 18px; }
+  .badge.new { color: var(--primary-color); border-color: var(--primary-color); }
   .room-toggle { display: flex; align-items: center; gap: 6px; background: none; border: none; color: inherit; font: inherit; font-size: 18px; cursor: pointer; padding: 0; }
   .room-toggle ha-icon { color: var(--secondary-text-color); }
   .subheader { font-size: 14px; font-weight: 500; color: var(--secondary-text-color); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.04em; }
   .help { font-size: 13px; color: var(--secondary-text-color); margin: -4px 0 8px; }
+  .discover { display: flex; align-items: center; gap: 16px; }
+  .discover-text { flex: 1; font-size: 14px; color: var(--secondary-text-color); line-height: 1.4; }
+  @media (max-width: 600px) { .discover { flex-direction: column; align-items: flex-start; } }
   .device-item { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
   .device-item ha-form { flex: 1; }
   @media (max-width: 600px) {

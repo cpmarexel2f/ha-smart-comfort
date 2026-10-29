@@ -14,6 +14,7 @@ from voluptuous.humanize import humanize_error
 
 from . import const as k
 from .config import slugify
+from .discovery import discover_rooms, merge
 from .schema import OPTIONS
 from .status import status
 
@@ -46,6 +47,7 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_get_config)
     websocket_api.async_register_command(hass, ws_save_config)
     websocket_api.async_register_command(hass, ws_subscribe)
+    websocket_api.async_register_command(hass, ws_discover)
 
 
 @websocket_api.require_admin
@@ -122,3 +124,13 @@ def ws_subscribe(hass: HomeAssistant, connection: websocket_api.ActiveConnection
     connection.subscriptions[msg["id"]] = async_dispatcher_connect(hass, k.SIGNAL_UPDATE, send)
     connection.send_result(msg["id"])
     send()
+
+
+@websocket_api.require_admin
+@websocket_api.websocket_command({vol.Required("type"): f"{k.DOMAIN}/discover", vol.Required("options"): dict})
+@callback
+def ws_discover(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """The options being edited, with the rooms found in the areas merged in (not saved)."""
+    found, outdoor = discover_rooms(hass)
+    options, report = merge(msg["options"], found, outdoor)
+    connection.send_result(msg["id"], {"options": options, "report": report.as_dict()})

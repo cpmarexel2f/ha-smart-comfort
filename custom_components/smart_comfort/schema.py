@@ -105,6 +105,8 @@ ROOM = vol.Schema(
     {
         vol.Required(k.CONF_NAME): cv.string,
         vol.Optional("id"): cv.slug,
+        # Home Assistant area the room was discovered from (re-running the discovery updates it).
+        vol.Optional(k.CONF_AREA): cv.string,
         vol.Optional(k.CONF_TEMPERATURE): vol.Any(None, cv.entity_id),
         vol.Optional(k.CONF_CO2): vol.Any(None, cv.entity_id),
         vol.Optional(k.CONF_HUMIDITY): vol.Any(None, cv.entity_id),

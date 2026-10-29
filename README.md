@@ -74,7 +74,7 @@ Both ways can be used together:
 Once set up, Smart Comfort adds a **Smart Comfort** page to the sidebar, for administrators:
 
 - **Overview**: the active alerts with their state (notified, snoozed, acknowledged, handled by a running device) and **Snooze** / **Got it** buttons, the readings and devices of each room with their targets and manual overrides, the last notification, and switches for the notifications and the device control
-- **Rooms**: add, remove and reorder rooms; their sensors and openings; their air conditioner, fans and purifiers, each with its own settings (presets offered from the device, mode select and its options); and alert overrides for the room
+- **Rooms**: **Discover** adds a room for every Home Assistant area except the outdoor ones (garden, terrace, balcony…) and sets it up: temperature, CO₂ and humidity sensors (a weather station preferred over a device's own sensor), windows and doors, air conditioner (only one that can cool), fans with their natural / direct presets, purifiers with their auto / manual mode select or presets; the temperature sensors of the outdoor areas become the outdoor temperature. What is already set is kept, and running it again only adds what is new. Nothing is saved until **Save**. Then add, remove and reorder rooms; their sensors and openings; their air conditioner, fans and purifiers, each with its own settings (presets offered from the device, mode select and its options); and alert overrides for the room
 - **Alerts**, **Notifications**, **Device control**: the global settings, with their defaults
 
 Changes are checked and saved with **Save** (or dropped with **Discard**); the integration reloads with them, and the page keeps following its status. Only the settings that differ from the defaults are stored. When the configuration comes from YAML, the page says so: what is saved there stays until the YAML changes.
@@ -85,6 +85,8 @@ Each tab has its own address, e.g. `/smart-comfort/rooms`.
 
 <details>
 <summary>More screenshots</summary>
+
+![Rooms found by Discover, before saving](screenshots/panel-discover.png)
 
 ![A room in the Smart Comfort panel](screenshots/panel-room.png)
 

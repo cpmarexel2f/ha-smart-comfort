@@ -28,6 +28,7 @@ CONF_ROOMS: Final = "rooms"
 
 # Rooms.
 CONF_NAME: Final = "name"
+CONF_AREA: Final = "area"
 CONF_TEMPERATURE: Final = "temperature"
 CONF_CO2: Final = "co2"
 CONF_HUMIDITY: Final = "humidity"

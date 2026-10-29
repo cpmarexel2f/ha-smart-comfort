@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+### What's new
+- **Discover** button in the Rooms tab of the panel: adds a room for every Home Assistant area except the outdoor ones and sets it up (sensors, windows and doors, air conditioner, fans and purifiers with their presets and modes); the outdoor areas give the outdoor temperature. What is already set is kept; the result is shown collapsed with a summary of each room and is saved with **Save**. WebSocket command `smart_comfort/discover`.
+- Rooms remember the area they come from (`area`), so that discovering again completes them instead of adding them twice.
+
 ## 0.2.0
 
 ### What's new

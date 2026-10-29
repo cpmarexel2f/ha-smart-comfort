@@ -21,6 +21,7 @@ custom_components/smart_comfort/
 ├── button.py        # notify_now, unsnooze
 ├── status.py        # episode_info / room_info / status: shared by the sensors and the panel
 ├── websocket.py     # smart_comfort/config, smart_comfort/config/save (OPTIONS + unique room names), smart_comfort/subscribe (SIGNAL_UPDATE)
+├── discovery.py     # discover_rooms (areas -> rooms, outdoor areas -> outdoor sensors), merge (keeps what is set, matches on area then name)
 ├── panel.py         # Static path /smart_comfort_static (once per run) + custom panel "smart-comfort" (admin), removed with the entry
 ├── frontend/smart-comfort-panel.js  # Plain web component (no build): tabs overview/rooms/alerts/notifications/control, ha-form
 ├── entity.py / icons.json / services.yaml / translations/{en,fr,de,es}.json / brand/
@@ -42,6 +43,7 @@ custom_components/smart_comfort/
 - Labels come from the translations through `frontend/get_translations` (category `options`: the options flow steps general / alert / control (+ sections) / room (+ section overrides); category `selector`: kinds, severities, aggregates). Panel-only strings are in `STRINGS` of the JS (en/fr/de/es).
 - ha-form is lazy-loaded by Home Assistant: `loadHaForm()` loads it through the entities card editor.
 - The draft stores only what differs from the defaults (`diff`, `prune`); times "HH:MM" and "HH:MM:SS" compare equal. Device items with no own setting are stored as a bare entity id. Unknown keys of a room (room-level `control`, `id`) are kept.
+- Discover: `smart_comfort/discover` returns the draft options with the discovered rooms merged (not saved); the panel marks them new/completed until Save or Discard.
 - The status subscription listens to `SIGNAL_UPDATE`, sent by `_update_listeners` and by setup/unload, so it survives reloads.
 
 ## Release
