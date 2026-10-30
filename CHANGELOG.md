@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1
+
+### Fixes
+- Discover no longer adds the rooms with nothing to follow — no comfort sensor (temperature, CO₂, humidity, noise), air conditioner, fan nor purifier, such as a hallway with only its door — nor the outdoor areas without a sensor. Rooms already set up stay.
+- Panel: the outdoor places appear in the overview with their values and each of their sensors, and the Notifications tab says which outdoor places add their sensors to the outdoor fields (empty once Discover has moved them to the places).
+- Discover no longer takes the temperature of a machine for the room's: the sensors of NAS, internet boxes, servers, UPS, printers (by their integration), and those named CPU, disk, fridge, freezer, battery… are left out, in the rooms and outdoors.
+
 ## 1.0.0
 
 ### What's new

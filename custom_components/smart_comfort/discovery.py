@@ -1,6 +1,8 @@
 """Discovery: rooms from the Home Assistant areas, with their sensors and devices.
 
-Every area that is not outdoors becomes a room, with what it has: sensors, openings, devices.
+Every area that is not outdoors and has something to follow (a comfort sensor, an air conditioner, a fan or a
+purifier) becomes a room, with what it has: sensors, openings, devices. The others (a hallway with only its door,
+a room with nothing) are left out, and so are the outdoor areas without a sensor.
 Sensors and openings that belong to an air conditioner, fan or purifier are left out (internal
 temperatures, filter states…), and so are the heating thermostats (a climate without cooling).
 The outdoor areas become outdoor places, with their temperature, air quality and noise sensors. Outdoor
@@ -70,8 +72,111 @@ MANUAL_WORDS = ("manual", "manuel", "favorite", "favori", "manuell")
 QUIET_WORDS = ("sleep", "silent", "quiet", "night", "nuit", "nacht", "noche", "schlaf", "sommeil", "leise")
 LOW_WORDS = ("low", "bas", "faible", "niedrig", "bajo", "min")
 # Domains of the devices whose own sensors are not room sensors.
+# What makes a room worth following: a comfort sensor or a device (openings alone are not enough).
+TRACKED = (
+    k.CONF_TEMPERATURE,
+    k.CONF_CO2,
+    k.CONF_HUMIDITY,
+    k.CONF_NOISE,
+    k.CONF_CLIMATE,
+    k.CONF_FANS,
+    k.CONF_PURIFIERS,
+)
+# Integrations of machines whose temperatures are not the room's (NAS, boxes, servers, UPS, printers…).
+EQUIPMENT_PLATFORMS = frozenset(
+    {
+        "ugreen",
+        "synology_dsm",
+        "qnap",
+        "qnap_qsw",
+        "truenas",
+        "unraid",
+        "freebox",
+        "livebox",
+        "bbox",
+        "sfr_box",
+        "fritz",
+        "fritzbox_callmonitor",
+        "netgear",
+        "unifi",
+        "tplink_omada",
+        "systemmonitor",
+        "glances",
+        "proxmoxve",
+        "hddtemp",
+        "nut",
+        "apcupsd",
+        "octoprint",
+        "ipp",
+        "hpprinter",
+        "brother",
+        "snmp",
+        "esxi_stats",
+    }
+)
+# Words (whole words of the entity id or name) of machine and appliance temperatures.
+EQUIPMENT_WORDS = frozenset(
+    {
+        "cpu",
+        "gpu",
+        "soc",
+        "chipset",
+        "motherboard",
+        "processor",
+        "processeur",
+        "disk",
+        "disque",
+        "hdd",
+        "ssd",
+        "nvme",
+        "nas",
+        "server",
+        "serveur",
+        "router",
+        "routeur",
+        "freebox",
+        "livebox",
+        "bbox",
+        "modem",
+        "switch",
+        "printer",
+        "imprimante",
+        "ups",
+        "onduleur",
+        "inverter",
+        "battery",
+        "batterie",
+        "coil",
+        "pipe",
+        "discharge",
+        "compressor",
+        "compresseur",
+        "boiler",
+        "chaudiere",
+        "fridge",
+        "refrigerator",
+        "refrigerateur",
+        "frigo",
+        "freezer",
+        "congelateur",
+        "oven",
+        "four",
+        "aquarium",
+        "probe",
+        "nvr",
+        "camera",
+    }
+)
 BUSY_DOMAINS = {"climate", "fan", "humidifier", "water_heater", "vacuum"}
 OPENING_CLASSES = {"window", "door", "opening"}
+
+
+def _equipment(e: _Entity) -> bool:
+    """A sensor of a machine (NAS, box, server, printer, fridge…), not of the air around it."""
+    if e.platform in EQUIPMENT_PLATFORMS:
+        return True
+    tokens = set(slugify(f"{e.entity_id} {e.name}").split("_"))
+    return bool(tokens & EQUIPMENT_WORDS)
 
 
 def _has(text: str, words: tuple[str, ...]) -> bool:
@@ -256,7 +361,7 @@ def discover_rooms(hass: HomeAssistant) -> Found:
     rooms = found.rooms
     # Sensors in no area: an outdoor module named so, a city air quality index.
     for e in sorted(unassigned, key=lambda e: e.entity_id):
-        if e.domain != "sensor" or busy(e):
+        if e.domain != "sensor" or busy(e) or _equipment(e):
             continue
         if _is_air(e, outdoor=True):
             found.outdoor_air.append(e.entity_id)
@@ -266,7 +371,7 @@ def discover_rooms(hass: HomeAssistant) -> Found:
             elif e.device_class == "sound_pressure":
                 found.outdoor_noise.append(e.entity_id)
     for area in sorted(areas, key=lambda a: a.name.casefold()):
-        sensors = [e for e in area.entities if e.domain == "sensor" and not busy(e)]
+        sensors = [e for e in area.entities if e.domain == "sensor" and not busy(e) and not _equipment(e)]
         temps = [e for e in sensors if e.device_class == "temperature"]
         if _has(area.name, OUTDOOR_WORDS) or _has(area.area_id, OUTDOOR_WORDS):
             place: dict[str, Any] = {k.CONF_NAME: area.name, k.CONF_AREA: area.area_id}
@@ -277,7 +382,8 @@ def discover_rooms(hass: HomeAssistant) -> Found:
             ):
                 if items:
                     place[key] = sorted(e.entity_id for e in items)
-            found.outdoors.append(place)
+            if len(place) > 2:  # Not without a sensor.
+                found.outdoors.append(place)
             continue
         indoor = [e for e in temps if not _has(e.name, OUTDOOR_WORDS) and not _has(e.entity_id, OUTDOOR_WORDS)]
         room: dict[str, Any] = {k.CONF_NAME: area.name, k.CONF_AREA: area.area_id}
@@ -314,7 +420,8 @@ def discover_rooms(hass: HomeAssistant) -> Found:
             room[k.CONF_FANS] = fans
         if purifiers:
             room[k.CONF_PURIFIERS] = purifiers
-        rooms.append(room)
+        if any(key in room for key in TRACKED):
+            rooms.append(room)
     if not found.outdoor and not any(p.get(k.CONF_TEMPERATURE) for p in found.outdoors):
         # No outdoor temperature sensor: the weather entity's.
         found.outdoor = sorted(s.entity_id for s in hass.states.async_all("weather"))[:1]

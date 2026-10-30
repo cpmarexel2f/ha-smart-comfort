@@ -283,8 +283,10 @@ class SmartComfort:
 
     # Readings.
 
-    def outdoor(self) -> float | None:
-        values = [v for e in self.settings.outdoor if (v := _temperature(self.hass.states.get(e))) is not None]
+    def outdoor(self, entities: tuple[str, ...] | None = None) -> float | None:
+        """Outdoor temperature: the sensors combined as set (min by default), None without one available."""
+        sensors = self.settings.outdoor if entities is None else entities
+        values = [v for e in sensors if (v := _temperature(self.hass.states.get(e))) is not None]
         if not values:
             return None
         if self.settings.aggregate == "max":
@@ -293,14 +295,16 @@ class SmartComfort:
             return round(sum(values) / len(values), 2)
         return min(values)
 
-    def outdoor_noise(self) -> float | None:
+    def outdoor_noise(self, entities: tuple[str, ...] | None = None) -> float | None:
         """Mean of the outdoor noise sensors (dB), None without one available."""
-        values = [v for e in self.settings.outdoor_noise if (v := _float(self.hass.states.get(e))) is not None]
+        sensors = self.settings.outdoor_noise if entities is None else entities
+        values = [v for e in sensors if (v := _float(self.hass.states.get(e))) is not None]
         return round(sum(values) / len(values), 1) if values else None
 
-    def outdoor_air(self) -> float | None:
+    def outdoor_air(self, entities: tuple[str, ...] | None = None) -> float | None:
         """Worst level of the outdoor air quality sensors, None without one available."""
-        values = [v for e in self.settings.outdoor_air if (v := air_level(self.hass.states.get(e))) is not None]
+        sensors = self.settings.outdoor_air if entities is None else entities
+        values = [v for e in sensors if (v := air_level(self.hass.states.get(e))) is not None]
         return max(values) if values else None
 
     def _outdoor_gone(self, settled: bool) -> bool:

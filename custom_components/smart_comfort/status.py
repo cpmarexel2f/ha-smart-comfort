@@ -68,6 +68,16 @@ def status(manager: SmartComfort, now: datetime) -> dict[str, Any]:
         "outdoor_air": manager.outdoor_air(),
         "night": manager.settings.night(dt_util.as_local(now).time()),
         "rooms": [{"name": r.name, **room_info(manager, r, now)} for r in manager.settings.rooms],
+        "outdoors": [
+            {
+                "name": o.name,
+                "temperature": manager.outdoor(o.temperature),
+                "air_quality": manager.outdoor_air(o.air_quality),
+                "noise": manager.outdoor_noise(o.noise),
+                "sensors": [*o.temperature, *o.air_quality, *o.noise],
+            }
+            for o in manager.settings.outdoors
+        ],
         "notifications_enabled": manager.notifications_enabled,
         "control_enabled": manager.control_enabled,
         "last_notification": manager.last_notification,
