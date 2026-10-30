@@ -38,6 +38,10 @@ custom_components/smart_comfort/
 - State (episodes, snoozes, last notified keys, targets, overrides, pre-boost states, last notification, switches) in `Store` `smart_comfort`, and in `hass.data[DOMAIN]["state"]` across entry reloads; `async_stop` waits for the evaluation in progress first. `async_remove_entry` deletes both.
 - Notification texts: translations `common.*` with `str.format`; a broken template falls back to English (message.FALLBACK).
 
+## Noise and quiet night
+- Kinds `noise_high` (room `noise`, sound_pressure sensor) and `noisy_outside` (opening open, `outdoor_noise` mean > threshold); `ventilate` is false while the outdoor noise is above `max_outdoor_noise` (unknown noise: no objection). `RoomReading.outdoor_noise` carries the global value to each room; `GLOBAL_SOURCES` are not room fields.
+- `Settings.night(local)` (control `night_start`/`night_end`, none when either is unset). Device `quiet` = has night settings. Targets `cool_night` / `on_night` / `night` (purifier), normalized at each evaluation so day <-> night switches send only what changes (climate already cooling: fan mode only). No window boost at night for quiet devices. A purifier's night, like its boost, saves `_snapshot` (on, preset, percentage, mode option) in `before_boost` when it has no closed preset/mode, restored at `normal`.
+
 ## Panel
 - Registered at entry setup when `frontend` is loaded, kept across entry reloads (saving reloads the entry; an open panel must not vanish), removed in `async_remove_entry`.
 - Labels come from the translations through `frontend/get_translations` (category `options`: the options flow steps general / alert / control (+ sections) / room (+ section overrides); category `selector`: kinds, severities, aggregates). Panel-only strings are in `STRINGS` of the JS (en/fr/de/es).

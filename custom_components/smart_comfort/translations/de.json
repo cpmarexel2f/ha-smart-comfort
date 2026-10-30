@@ -44,6 +44,7 @@
           "notify": "Benachrichtigungsaktionen",
           "outdoor_temperature": "Außentemperatur",
           "outdoor_aggregate": "Außensensoren kombinieren",
+          "outdoor_noise": "Außenlärm",
           "digest_window": "Sammelfenster",
           "reminder": "Erinnerung",
           "snooze_duration": "Stummschaltdauer",
@@ -60,6 +61,7 @@
           "notify": "Wohin die Meldungen gehen (notify.mobile_app_…, eine notify-Gruppe…).",
           "outdoor_temperature": "Ein oder mehrere Außensensoren; nicht verfügbare werden ignoriert.",
           "outdoor_aggregate": "Das Minimum vermeidet einen Sensor in der Sonne.",
+          "outdoor_noise": "Schallpegelsensoren draußen (dB): kein Lüftungsvorschlag bei Lärm und eine Meldung, wenn Fenster im Lärm offen sind.",
           "digest_window": "Minuten, die auf weitere Meldungen gewartet wird, bevor eine gesammelte Benachrichtigung gesendet wird. Kritische warten nicht.",
           "reminder": "Minuten, nach denen ein weiterhin bestehendes Problem erneut gemeldet wird. 0: nie (nur bei Verschlechterung).",
           "snooze_duration": "Minuten der Schaltfläche „Stumm“ der Benachrichtigung und standardmäßig der Aktion snooze.",
@@ -87,6 +89,7 @@
           "min_indoor": "Mindest-Innentemperatur",
           "min_outdoor": "Mindest-Außentemperatur",
           "max_outdoor": "Höchst-Außentemperatur",
+          "max_outdoor_noise": "Maximaler Außenlärm",
           "hysteresis": "Hysterese",
           "delay": "Verzögerung",
           "severity": "Schweregrad",
@@ -97,6 +100,7 @@
           "min_indoor": "Lüften nur vorschlagen, wenn der Raum mindestens so warm ist.",
           "min_outdoor": "Nur wenn es draußen mindestens so warm ist.",
           "max_outdoor": "Nur wenn es draußen höchstens so warm ist.",
+          "max_outdoor_noise": "Kein Vorschlag, solange der Außenlärm darüber liegt (mit Außenlärmsensor).",
           "hysteresis": "Das Problem endet erst, wenn der Wert um diesen Betrag über den Schwellenwert zurückgekehrt ist: kein Flattern.",
           "delay": "Minuten, die die Bedingung anhalten muss, bevor sie ein Problem ist.",
           "escalation": "Erneut melden, wenn sich der Wert seit der letzten Meldung um so viel verschlechtert. 0: nie."
@@ -109,12 +113,15 @@
           "start": "Fenster-Boost ab",
           "end": "Fenster-Boost bis",
           "manual_override": "Manuelle Übersteuerung",
-          "suppress_when_handled": "Keine Meldung, wenn behandelt"
+          "suppress_when_handled": "Keine Meldung, wenn behandelt",
+          "night_start": "Ruhige Nacht ab",
+          "night_end": "Ruhige Nacht bis"
         },
         "data_description": {
           "start": "Lüfter und Luftreiniger laufen beim Öffnen nur zwischen diesen Zeiten auf voller Stufe. Beide leer: ganztägig.",
           "manual_override": "Minuten, die ein von Hand geändertes Gerät in Ruhe gelassen wird. 0: nie.",
-          "suppress_when_handled": "Keine „zu warm“-Meldung für einen Raum, dessen Klimaanlage oder Lüfter Smart Comfort eingeschaltet hat."
+          "suppress_when_handled": "Keine „zu warm“-Meldung für einen Raum, dessen Klimaanlage oder Lüfter Smart Comfort eingeschaltet hat.",
+          "night_start": "Zwischen diesen Zeiten nutzen die Geräte ihre Nachteinstellungen (leisere Stufe, Voreinstellung oder Lüftermodus) und es gibt keinen Fenster-Boost."
         },
         "sections": {
           "climate": {
@@ -125,7 +132,8 @@
               "setpoint": "Sollwert",
               "fan_mode": "Lüftermodus",
               "closed_for": "Öffnungen geschlossen seit (min)",
-              "off_on_open": "Aus, wenn offen seit (min)"
+              "off_on_open": "Aus, wenn offen seit (min)",
+              "night_fan_mode": "Lüftermodus nachts"
             }
           },
           "fans": {
@@ -137,7 +145,9 @@
               "preset": "Voreinstellung",
               "open_percentage": "Geschwindigkeit, Fenster offen",
               "open_preset": "Voreinstellung, Fenster offen",
-              "off_preset": "Voreinstellung vor dem Ausschalten"
+              "off_preset": "Voreinstellung vor dem Ausschalten",
+              "night_percentage": "Geschwindigkeit nachts",
+              "night_preset": "Voreinstellung nachts"
             },
             "description": "„Ein ab“ und „Aus unter“ leer lassen für Lüfter, die nur über die Fenster gesteuert werden."
           },
@@ -147,7 +157,10 @@
               "open_percentage": "Geschwindigkeit, Fenster offen",
               "open_preset": "Voreinstellung, Fenster offen",
               "closed_preset": "Voreinstellung, Fenster zu",
-              "keep_on": "Eingeschaltet halten"
+              "keep_on": "Eingeschaltet halten",
+              "night_percentage": "Geschwindigkeit nachts",
+              "night_preset": "Voreinstellung nachts",
+              "night_mode": "Modus-Option nachts"
             },
             "data_description": {
               "keep_on": "Schaltet einen Luftreiniger wieder ein, der seit 10 s aus ist (Stromausfall, Störung)."
@@ -162,6 +175,7 @@
           "temperature": "Temperatur",
           "co2": "CO₂",
           "humidity": "Luftfeuchtigkeit",
+          "noise": "Lärm",
           "openings": "Fenster und Türen",
           "climate": "Klimaanlage",
           "fans": "Lüfter",
@@ -195,6 +209,7 @@
           "temperature": "Temperatur",
           "co2": "CO₂",
           "humidity": "Luftfeuchtigkeit",
+          "noise": "Lärm",
           "openings": "Fenster und Türen",
           "climate": "Klimaanlage",
           "fans": "Lüfter",
@@ -249,7 +264,9 @@
         "too_cold": "Zu kalt",
         "window_open_cold": "Fenster offen bei Kälte",
         "co2_high": "Hoher CO₂-Wert",
-        "humidity_high": "Hohe Luftfeuchtigkeit"
+        "humidity_high": "Hohe Luftfeuchtigkeit",
+        "noise_high": "Lauter Raum",
+        "noisy_outside": "Fenster schließen (draußen laut)"
       }
     },
     "severity": {
@@ -293,7 +310,9 @@
           "too_cold": "Zu kalt",
           "window_open_cold": "Fenster offen bei Kälte",
           "co2_high": "Hoher CO₂-Wert",
-          "humidity_high": "Hohe Luftfeuchtigkeit"
+          "humidity_high": "Hohe Luftfeuchtigkeit",
+          "noise_high": "Lauter Raum",
+          "noisy_outside": "Fenster schließen (draußen laut)"
         }
       },
       "last_notification": {
@@ -381,6 +400,8 @@
     "line_window_open_cold": "{openings} offen, {outdoor} °C außen",
     "line_co2_high": "CO₂ {value} ppm — lüften",
     "line_humidity_high": "Luftfeuchtigkeit {value} % — lüften",
+    "line_noise_high": "Lärm {value} dB, über {threshold} dB",
+    "line_noisy_outside": "{value} dB draußen — schließen: {openings}",
     "action_snooze": "{hours} Std. stumm",
     "action_snooze_minutes": "{minutes} Min. stumm",
     "action_ack": "Verstanden"

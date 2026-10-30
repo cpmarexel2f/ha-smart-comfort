@@ -23,6 +23,12 @@ TARGET_OFF_OPEN = "off_open"
 TARGET_ON = "on"
 TARGET_BOOST = "boost"
 TARGET_NORMAL = "normal"
+# Quiet night variants: the device's night settings.
+TARGET_COOL_NIGHT = "cool_night"
+TARGET_ON_NIGHT = "on_night"
+TARGET_NIGHT = "night"
+COOLING = frozenset({TARGET_COOL, TARGET_COOL_NIGHT})
+BLOWING = frozenset({TARGET_ON, TARGET_ON_NIGHT, TARGET_BOOST})
 
 
 @dataclass
@@ -35,6 +41,7 @@ class DeviceState:
     preset: str | None = None
     percentage: int | None = None
     option: str | None = None  # Current option of the purifier's mode select.
+    fan_mode: str | None = None  # Air conditioner.
     off_since: datetime | None = None
 
 
@@ -159,9 +166,9 @@ class Controller:
             target, state = self.targets.get(entity_id), states.get(entity_id)
             if state is None or not state.available:
                 continue
-            if target == TARGET_COOL and state.hvac_mode == "cool":
+            if target in COOLING and state.hvac_mode == "cool":
                 return True
-            if target in (TARGET_ON, TARGET_BOOST) and state.on and any(f.entity_id == entity_id for f in room.fans):
+            if target in BLOWING and state.on and any(f.entity_id == entity_id for f in room.fans):
                 return True
         return False
 
@@ -174,15 +181,19 @@ class Controller:
         if not self.settings.control_enabled:
             return []
         boost_hours = in_window(local, self.settings.control_start, self.settings.control_end)
+        night = self.settings.night(local)
         cmds: list[Command] = []
         if room.climate:
-            cmds += self._device(now, room.climate.entity_id, states, self._climate(room.climate, ctx, now))
+            cmds += self._device(now, room.climate.entity_id, states, self._climate(room.climate, ctx, now, night))
         for fan in room.fans:
-            cmds += self._device(now, fan.entity_id, states, self._fan(fan, ctx, boost_hours))
+            # No window boost at night for a device that has night settings: it would be loud.
+            boost = boost_hours and not (night and fan.quiet)
+            cmds += self._device(now, fan.entity_id, states, self._fan(fan, ctx, boost, night))
         for purifier in room.purifiers:
             state = states.get(purifier.entity_id)
+            boost = boost_hours and not (night and purifier.quiet)
             cmds += self._keep_on(now, purifier, state)
-            cmds += self._device(now, purifier.entity_id, states, self._purifier(purifier, ctx, boost_hours))
+            cmds += self._device(now, purifier.entity_id, states, self._purifier(purifier, ctx, boost, night))
         return cmds
 
     def _device(self, now: datetime, entity_id: str, states: dict[str, DeviceState], decision: Any) -> list[Command]:
@@ -212,7 +223,7 @@ class Controller:
 
     # Air conditioner: cool / off.
 
-    def _climate(self, dev: ClimateDevice, ctx: RoomContext, now: datetime) -> Any:
+    def _climate(self, dev: ClimateDevice, ctx: RoomContext, now: datetime, night: bool = False) -> Any:
         temp, current = ctx.temperature, self.targets.get(dev.entity_id)
         target = current
         open_for = now - ctx.open_since if ctx.open_since else None
@@ -231,17 +242,24 @@ class Controller:
             target = TARGET_OFF
         elif ctx.any_open:
             return None  # Opening just opened: wait for off_on_open.
+        if target in COOLING:
+            # Cooling, with the night fan mode in the night hours.
+            target = TARGET_COOL_NIGHT if night and dev.night_fan_mode else TARGET_COOL
+        fan_mode = dev.night_fan_mode if target == TARGET_COOL_NIGHT else dev.fan_mode
 
         def commands(state: DeviceState) -> list[Command]:
             if target in (TARGET_OFF, TARGET_OFF_OPEN):
                 return [Command(dev.entity_id, "climate", "turn_off")]
+            if state.hvac_mode == "cool":
+                # Already cooling (day <-> night): only the fan mode changes.
+                return [Command(dev.entity_id, "climate", "set_fan_mode", {"fan_mode": fan_mode})] if fan_mode else []
             cmds = [
                 # Two actions: some integrations (generic_thermostat…) ignore hvac_mode in set_temperature.
                 Command(dev.entity_id, "climate", "set_hvac_mode", {"hvac_mode": "cool"}),
                 Command(dev.entity_id, "climate", "set_temperature", {"temperature": dev.setpoint}),
             ]
-            if dev.fan_mode:
-                cmds.append(Command(dev.entity_id, "climate", "set_fan_mode", {"fan_mode": dev.fan_mode}))
+            if fan_mode:
+                cmds.append(Command(dev.entity_id, "climate", "set_fan_mode", {"fan_mode": fan_mode}))
             return cmds
 
         def satisfied(state: DeviceState) -> bool:
@@ -249,13 +267,15 @@ class Controller:
                 return state.hvac_mode == "off"  # Any mode, heating included, while an opening stays open.
             if state.hvac_mode not in (None, "off", "cool"):
                 return True  # Heating, drying…: left alone by the temperature control.
-            return (state.hvac_mode == "cool") == (target == TARGET_COOL)
+            if target not in COOLING:
+                return state.hvac_mode != "cool"
+            return state.hvac_mode == "cool" and (not fan_mode or state.fan_mode is None or state.fan_mode == fan_mode)
 
         return target, commands, satisfied
 
     # Fan: boost (opening open, in the hours) / on (warm) / off.
 
-    def _fan(self, dev: FanDevice, ctx: RoomContext, boost_hours: bool) -> Any:
+    def _fan(self, dev: FanDevice, ctx: RoomContext, boost_hours: bool, night: bool = False) -> Any:
         current = self.targets.get(dev.entity_id)
         temp = ctx.temperature
         boost = bool(ctx.any_open) and boost_hours and (dev.open_percentage is not None or dev.open_preset)
@@ -274,12 +294,21 @@ class Controller:
             target = TARGET_OFF
         else:
             target = current
+        if target in (TARGET_ON, TARGET_ON_NIGHT):
+            target = TARGET_ON_NIGHT if night and dev.quiet else TARGET_ON
+        night_pct = dev.night_percentage if dev.night_percentage is not None else dev.percentage
+        night_preset = dev.night_preset or dev.preset
+
+        def wanted() -> tuple[int | None, str | None]:
+            if target == TARGET_BOOST:
+                return dev.open_percentage, dev.open_preset
+            if target == TARGET_ON_NIGHT:
+                return night_pct, night_preset
+            return dev.percentage, dev.preset
 
         def commands(state: DeviceState) -> list[Command]:
-            if target == TARGET_BOOST:
-                return _fan_commands(dev.entity_id, dev.open_percentage, dev.open_preset)
-            if target == TARGET_ON:
-                return _fan_commands(dev.entity_id, dev.percentage, dev.preset)
+            if target in (TARGET_BOOST, TARGET_ON, TARGET_ON_NIGHT):
+                return _fan_commands(dev.entity_id, *wanted())
             cmds = []
             if dev.off_preset:
                 cmds.append(Command(dev.entity_id, "fan", "set_preset_mode", {"preset_mode": dev.off_preset}))
@@ -288,9 +317,7 @@ class Controller:
         def satisfied(state: DeviceState) -> bool:
             if target == TARGET_OFF:
                 return state.on is False
-            pct, preset = (
-                (dev.open_percentage, dev.open_preset) if target == TARGET_BOOST else (dev.percentage, dev.preset)
-            )
+            pct, preset = wanted()
             return (
                 bool(state.on) and (pct is None or state.percentage == pct) and (not preset or state.preset == preset)
             )
@@ -299,10 +326,15 @@ class Controller:
 
     # Air purifier: boost (opening open, in the hours) / normal.
 
-    def _purifier(self, dev: PurifierDevice, ctx: RoomContext, boost_hours: bool) -> Any:
+    def _purifier(self, dev: PurifierDevice, ctx: RoomContext, boost_hours: bool, night: bool = False) -> Any:
         if ctx.has_openings and ctx.any_open is None:
             return None
-        target = TARGET_BOOST if ctx.any_open and boost_hours else TARGET_NORMAL
+        if ctx.any_open and boost_hours:
+            target = TARGET_BOOST
+        elif night and dev.quiet:
+            target = TARGET_NIGHT
+        else:
+            target = TARGET_NORMAL
         # Without a "windows closed" preset or mode, normal is the state the purifier had before the boost.
         restore = None if dev.closed_preset or (dev.mode_select and dev.closed_mode) else self.before_boost
         saved = (restore or {}).get(dev.entity_id) if target == TARGET_NORMAL else None
@@ -314,15 +346,29 @@ class Controller:
                 return True
             if saved.get("on") is False:
                 return state.on is False
+            if dev.mode_select and saved.get("option") and state.option != saved["option"]:
+                return False
             if saved.get("preset"):
                 return bool(state.on) and state.preset == saved["preset"]
             return bool(state.on) and (saved.get("percentage") is None or state.percentage == saved["percentage"])
 
         def commands(state: DeviceState) -> list[Command]:
             cmds = []
-            if target == TARGET_BOOST:
+            if target == TARGET_NIGHT:
+                # Like the boost, the state before the night is restored when it ends (no closed preset/mode).
                 if restore is not None and dev.entity_id not in restore:
-                    restore[dev.entity_id] = {"on": state.on, "preset": state.preset, "percentage": state.percentage}
+                    restore[dev.entity_id] = self._snapshot(dev, state)
+                if not state.on:
+                    return cmds  # Off stays off at night (keep_on turns it back on, quietly next time).
+                if dev.mode_select and dev.night_mode:
+                    cmds.append(Command(dev.mode_select, "select", "select_option", {"option": dev.night_mode}))
+                if dev.night_preset:
+                    cmds.append(Command(dev.entity_id, "fan", "set_preset_mode", {"preset_mode": dev.night_preset}))
+                if dev.night_percentage is not None:
+                    cmds.append(Command(dev.entity_id, "fan", "set_percentage", {"percentage": dev.night_percentage}))
+            elif target == TARGET_BOOST:
+                if restore is not None and dev.entity_id not in restore:
+                    restore[dev.entity_id] = self._snapshot(dev, state)
                 if not state.on:
                     cmds.append(Command(dev.entity_id, "fan", "turn_on"))
                 if dev.mode_select and dev.open_mode:
@@ -339,6 +385,16 @@ class Controller:
                 if saved is not None:
                     # Forgotten now, put back by command_failed() if the restore can't be sent.
                     self.before_boost.pop(dev.entity_id, None)
+                    if dev.mode_select and saved.get("option") and saved.get("on") is not False:
+                        cmds.append(
+                            Command(
+                                dev.mode_select,
+                                "select",
+                                "select_option",
+                                {"option": saved["option"]},
+                                restores=saved,
+                            )
+                        )
                     if saved.get("on") is False:
                         cmds.append(Command(dev.entity_id, "fan", "turn_off", restores=saved))
                     elif saved.get("preset"):
@@ -364,6 +420,12 @@ class Controller:
             return cmds
 
         def satisfied(state: DeviceState) -> bool:
+            if target == TARGET_NIGHT:
+                return state.on is False or (
+                    (not (dev.mode_select and dev.night_mode) or state.option == dev.night_mode)
+                    and (not dev.night_preset or state.preset == dev.night_preset)
+                    and (dev.night_percentage is None or state.percentage == dev.night_percentage)
+                )
             if target == TARGET_BOOST:
                 return (
                     bool(state.on)
@@ -380,6 +442,14 @@ class Controller:
             )
 
         return target, commands, satisfied
+
+    @staticmethod
+    def _snapshot(dev: PurifierDevice, state: DeviceState) -> dict[str, Any]:
+        """State of a purifier to put back after its boost or the night."""
+        snapshot = {"on": state.on, "preset": state.preset, "percentage": state.percentage}
+        if dev.mode_select and state.option:
+            snapshot["option"] = state.option
+        return snapshot
 
     def _keep_on(self, now: datetime, dev: PurifierDevice, state: DeviceState | None) -> list[Command]:
         """Turn a purifier back on when it has been off for a few seconds (power cut, glitch…)."""

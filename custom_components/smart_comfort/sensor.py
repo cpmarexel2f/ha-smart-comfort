@@ -68,7 +68,7 @@ class RoomSensor(SmartComfortEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options: ClassVar[list[str]] = [STATE_OK, *KINDS]
     _unrecorded_attributes = frozenset(
-        {"temperature", "co2", "humidity", "open", "ignored_openings", "alerts", "handled", "devices"}
+        {"temperature", "co2", "humidity", "noise", "open", "ignored_openings", "alerts", "handled", "devices"}
     )
 
     def __init__(self, manager: Any, entry_id: str, room: Room) -> None:

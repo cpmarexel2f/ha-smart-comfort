@@ -574,3 +574,28 @@ async def test_purifier_changed_by_hand_after_mode_select_is_manual(hass: HomeAs
     hass.states.async_set("binary_sensor.w_sejour", "on")
     await _evaluate(hass, entry)
     assert [c.data["option"] for c in select] == ["manual", "auto"]
+
+
+async def test_noise(hass: HomeAssistant, notify) -> None:
+    hass.states.async_set("sensor.t", "21")
+    hass.states.async_set("sensor.n", "72")
+    hass.states.async_set("sensor.street", "70")
+    hass.states.async_set("sensor.street2", "64")
+    hass.states.async_set("binary_sensor.w", "on")
+    options = {
+        "notify": ["notify.phone"],
+        "digest_window": 0,
+        "startup_grace": 0,
+        "outdoor_noise": ["sensor.street", "sensor.street2"],
+        "alerts": {"noise_high": {"delay": 0}, "noisy_outside": {"delay": 0}},
+        "rooms": [{"name": "Bureau", "temperature": "sensor.t", "noise": "sensor.n", "openings": ["binary_sensor.w"]}],
+    }
+    entry = await _setup(hass, options)
+    await _evaluate(hass, entry)
+    manager = entry.runtime_data
+    assert manager.outdoor_noise() == 67.0  # Mean of the outdoor sensors.
+    assert sorted(manager.engine.episodes) == ["bureau|noise_high", "bureau|noisy_outside"]
+    assert len(notify) == 1
+    assert "72 dB" in notify[0].data["message"]
+    attrs = hass.states.get("sensor.smart_comfort_bureau_comfort").attributes
+    assert attrs["noise"] == 72.0

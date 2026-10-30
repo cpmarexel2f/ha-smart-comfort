@@ -24,6 +24,8 @@ snooze:
             - window_open_cold
             - co2_high
             - humidity_high
+            - noise_high
+            - noisy_outside
 unsnooze:
   fields:
     rooms:
@@ -49,4 +51,6 @@ acknowledge:
             - window_open_cold
             - co2_high
             - humidity_high
+            - noise_high
+            - noisy_outside
 notify_now:

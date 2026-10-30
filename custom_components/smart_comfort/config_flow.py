@@ -133,6 +133,9 @@ def _general_schema(hass: HomeAssistant, o: dict[str, Any], first: bool = False)
     }
     if first:
         return vol.Schema(schema)
+    schema[_opt(k.CONF_OUTDOOR_NOISE, list(o.get(k.CONF_OUTDOOR_NOISE, [])))] = _entity(
+        "sensor", multiple=True, device_class="sound_pressure"
+    )
     schema.update(
         {
             vol.Required(
@@ -167,7 +170,7 @@ def _alert_schema(kind: str, current: dict[str, Any]) -> vol.Schema:
     schema: dict[Any, Any] = {vol.Required(k.CONF_ENABLED, default=d[k.CONF_ENABLED]): BooleanSelector()}
     if k.CONF_THRESHOLD in k.DEFAULT_ALERTS[kind]:
         schema[vol.Required(k.CONF_THRESHOLD, default=d[k.CONF_THRESHOLD])] = _number(unit)
-    for key in (k.CONF_MIN_INDOOR, k.CONF_MIN_OUTDOOR, k.CONF_MAX_OUTDOOR):
+    for key in (k.CONF_MIN_INDOOR, k.CONF_MIN_OUTDOOR, k.CONF_MAX_OUTDOOR, k.CONF_MAX_NOISE):
         if key in k.DEFAULT_ALERTS[kind]:
             schema[_opt(key, d[key])] = _number("°C")
     schema.update(
@@ -193,6 +196,8 @@ def _control_schema(c: dict[str, Any]) -> vol.Schema:
             _opt(k.CONF_END, d[k.CONF_END]): TimeSelector(),
             vol.Required(k.CONF_MANUAL_OVERRIDE, default=d[k.CONF_MANUAL_OVERRIDE]): _minutes(),
             vol.Required(k.CONF_SUPPRESS_HANDLED, default=d[k.CONF_SUPPRESS_HANDLED]): BooleanSelector(),
+            _opt(k.CONF_NIGHT_START, d[k.CONF_NIGHT_START]): TimeSelector(),
+            _opt(k.CONF_NIGHT_END, d[k.CONF_NIGHT_END]): TimeSelector(),
             vol.Required(k.CONF_CLIMATE): section(
                 vol.Schema(
                     {
@@ -202,6 +207,7 @@ def _control_schema(c: dict[str, Any]) -> vol.Schema:
                         _opt(k.CONF_FAN_MODE, cl[k.CONF_FAN_MODE]): TEXT,
                         vol.Required(k.CONF_CLOSED_FOR, default=cl[k.CONF_CLOSED_FOR]): _minutes(),
                         vol.Required(k.CONF_OFF_ON_OPEN, default=cl[k.CONF_OFF_ON_OPEN]): _minutes(),
+                        _opt(k.CONF_NIGHT_FAN_MODE, cl[k.CONF_NIGHT_FAN_MODE]): TEXT,
                     }
                 ),
                 {"collapsed": True},
@@ -216,6 +222,8 @@ def _control_schema(c: dict[str, Any]) -> vol.Schema:
                         _opt(k.CONF_OPEN_PERCENTAGE, fa[k.CONF_OPEN_PERCENTAGE]): PERCENT,
                         _opt(k.CONF_OPEN_PRESET, fa[k.CONF_OPEN_PRESET]): TEXT,
                         _opt(k.CONF_OFF_PRESET, fa[k.CONF_OFF_PRESET]): TEXT,
+                        _opt(k.CONF_NIGHT_PERCENTAGE, fa[k.CONF_NIGHT_PERCENTAGE]): PERCENT,
+                        _opt(k.CONF_NIGHT_PRESET, fa[k.CONF_NIGHT_PRESET]): TEXT,
                     }
                 ),
                 {"collapsed": True},
@@ -227,6 +235,8 @@ def _control_schema(c: dict[str, Any]) -> vol.Schema:
                         _opt(k.CONF_OPEN_PRESET, pu[k.CONF_OPEN_PRESET]): TEXT,
                         _opt(k.CONF_CLOSED_PRESET, pu[k.CONF_CLOSED_PRESET]): TEXT,
                         vol.Required(k.CONF_KEEP_ON, default=pu[k.CONF_KEEP_ON]): BooleanSelector(),
+                        _opt(k.CONF_NIGHT_PERCENTAGE, pu[k.CONF_NIGHT_PERCENTAGE]): PERCENT,
+                        _opt(k.CONF_NIGHT_PRESET, pu[k.CONF_NIGHT_PRESET]): TEXT,
                     }
                 ),
                 {"collapsed": True},
@@ -253,6 +263,7 @@ def _room_schema(room: dict[str, Any]) -> vol.Schema:
             _opt(k.CONF_TEMPERATURE, room.get(k.CONF_TEMPERATURE)): _entity("sensor", device_class="temperature"),
             _opt(k.CONF_CO2, room.get(k.CONF_CO2)): _entity("sensor", device_class="carbon_dioxide"),
             _opt(k.CONF_HUMIDITY, room.get(k.CONF_HUMIDITY)): _entity("sensor", device_class="humidity"),
+            _opt(k.CONF_NOISE, room.get(k.CONF_NOISE)): _entity("sensor", device_class="sound_pressure"),
             _opt(k.CONF_OPENINGS, list(room.get(k.CONF_OPENINGS) or [])): _entity("binary_sensor", multiple=True),
             _opt(k.CONF_CLIMATE, climate[0] if climate else None): _entity("climate"),
             _opt(k.CONF_FANS, ids(k.CONF_FANS)): _entity("fan", multiple=True),
@@ -296,7 +307,7 @@ def _keep_items(old: Any, new_ids: list[str]) -> list[Any]:
 def _room_from_form(user_input: dict[str, Any], old: dict[str, Any]) -> dict[str, Any]:
     room = copy.deepcopy(old)
     room[k.CONF_NAME] = user_input[k.CONF_NAME].strip()
-    for key in (k.CONF_TEMPERATURE, k.CONF_CO2, k.CONF_HUMIDITY):
+    for key in (k.CONF_TEMPERATURE, k.CONF_CO2, k.CONF_HUMIDITY, k.CONF_NOISE):
         if user_input.get(key):
             room[key] = user_input[key]
         else:

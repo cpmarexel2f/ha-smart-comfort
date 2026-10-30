@@ -16,7 +16,7 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
 
 ## Features
 
-- **Seven alerts per room**: too hot, too cold, open the windows (warmer inside than outside), close the windows (hotter outside), window open in the cold, high CO₂, high humidity — each with its threshold, hysteresis, delay, severity and escalation step, globally and per room
+- **Nine alerts per room**: too hot, too cold, open the windows (warmer inside than outside), close the windows (hotter outside), window open in the cold, high CO₂, high humidity, noisy room, close the windows (noisy outside) — each with its threshold, hysteresis, delay, severity and escalation step, globally and per room
 - **Episodes, not cooldowns**: one notification when a problem starts, none while it lasts; again when it gets worse by the escalation step, or after the reminder delay (off by default)
 - **Hysteresis and delay**: a problem starts once its condition has held for the delay, and ends only once the value is back past the threshold by the hysteresis — no flapping. An unavailable sensor changes nothing
 - **Digest**: what comes up within the digest window (5 minutes by default) goes out in **one** notification listing every current problem, replacing the previous one on the phone (notification `tag`) instead of piling up
@@ -30,6 +30,8 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
   - **air purifiers**: boost while a window is open during the day (preset, speed, or a mode select such as `manual`/`automatic`), back to normal when closed (the closed preset / mode, or else the state it had before the boost), and optionally **kept on** (turned back on after a power cut)
   - commands are sent only when the target changes and the device isn't already in that state; a device changed **by hand** is left alone for an hour (configurable)
   - a room whose air conditioner or fan Smart Comfort has turned on gets no "too hot" alert (a device turned on by hand doesn't count)
+  - **quiet night**: in the night hours (22:00–07:00 by default), devices with night settings run quieter — a fan at a lower speed or a sleep preset, a purifier in its sleep preset or mode, an air conditioner in its silent fan mode — and get no window boost; the day settings (or the state before the night) come back in the morning
+- **Noise**: a sound level sensor per room (noisy room alert), and outdoor noise sensors: no suggestion to open the windows while it is noisy outside, and an alert to close them when they are open in the noise
 - **No re-notification after a restart**: episodes, snoozes and device targets are stored; nothing is sent during the startup grace period
 - **YAML or UI**: configure everything in YAML (imported at startup), in the **Smart Comfort panel** of the sidebar, or in the integration options — rooms, alerts, control
 - Sensors for the active alerts and the comfort of each room, switches to pause the notifications or the device control, buttons, actions and events
@@ -106,6 +108,7 @@ smart_comfort:
     - sensor.outdoor_north_temperature
     - sensor.outdoor_south_temperature
   outdoor_aggregate: min       # min avoids a sensor in the sun
+  outdoor_noise: [sensor.street_sound_level]
   quiet_start: "22:30"
   quiet_end: "08:00"
   presence: zone.home
@@ -119,7 +122,10 @@ smart_comfort:
   control:
     start: "09:00"             # window boost hours
     end: "21:00"
-    fans: { on_above: 23, off_below: 22, percentage: 50, open_percentage: 100 }
+    night_start: "22:00"       # quiet night
+    night_end: "07:00"
+    climate: { night_fan_mode: silent }
+    fans: { on_above: 23, off_below: 22, percentage: 50, open_percentage: 100, night_percentage: 20 }
     purifiers: { open_percentage: 100, keep_on: true }
 
   rooms:
@@ -142,6 +148,7 @@ smart_comfort:
 
     - name: Bedroom
       temperature: sensor.bedroom_temperature
+      noise: sensor.bedroom_sound_level
       openings: [binary_sensor.bedroom_window]
       alerts:
         too_hot: { threshold: 25 }   # overrides for this room only
@@ -149,6 +156,7 @@ smart_comfort:
         - entity_id: fan.bedroom_purifier
           open_preset: Favorite
           closed_preset: Auto
+          night_preset: Sleep        # quieter at night
 
     - name: Bathroom
       humidity: sensor.bathroom_humidity
@@ -161,6 +169,7 @@ smart_comfort:
 | `notify` | none | Notify actions the alerts go to |
 | `outdoor_temperature` | none | Outdoor sensors (or `weather` entities, their `temperature` attribute); unavailable ones are ignored |
 | `outdoor_aggregate` | `min` | `min`, `max` or `mean` of the outdoor sensors |
+| `outdoor_noise` | none | Outdoor sound level sensors (dB, mean of the available ones) for the noise alerts |
 | `digest_window` | 5 min | Wait for other alerts before sending one grouped notification. Critical alerts don't wait |
 | `reminder` | 0 | Minutes after which a problem still going on is notified again. 0: never (only when it gets worse) |
 | `snooze_duration` | 240 min | Duration of the **Snooze** button and of the `snooze` action by default |
@@ -185,12 +194,16 @@ Set under `alerts:` for every room, and under `rooms[].alerts:` for one room.
 | `window_open_cold` | an opening open for the delay, outdoor ≤ `max_outdoor` | 12 °C, 20 min, **disabled** |
 | `co2_high` | CO₂ > `threshold` | 1200 ppm, info |
 | `humidity_high` | humidity > `threshold` | 70 %, info |
+| `noise_high` | room noise > `threshold` (room `noise` sensor) | 60 dB, info |
+| `noisy_outside` | an opening open, outdoor noise > `threshold` (`outdoor_noise` sensors) | 65 dB, info |
+
+`ventilate` also takes `max_outdoor_noise` (65 dB): no suggestion to open while the outdoor noise is above it. Without an outdoor noise sensor (or while it is unavailable) noise doesn't hold anything back.
 
 Each alert also takes `enabled`, `hysteresis` (how far back past the threshold the value must go for the problem to end), `delay` (minutes the condition must hold), `severity` (`info`, `warning`, `critical`) and `escalation` (notify again when the value gets this much worse; 0: never).
 
 ### Device control
 
-The first four rows (`enabled`, `start` / `end`, `manual_override`, `suppress_when_handled`) are global: set them under `control:` only. The `climate.*`, `fans.*` and `purifiers.*` options are set under `control:` for every room, under `rooms[].control:` for one room, and on the device item itself for one device (without the `climate.` / `fans.` / `purifiers.` prefix).
+The first five rows (`enabled`, `start` / `end`, `manual_override`, `suppress_when_handled`, `night_start` / `night_end`) are global: set them under `control:` only. The `climate.*`, `fans.*` and `purifiers.*` options are set under `control:` for every room, under `rooms[].control:` for one room, and on the device item itself for one device (without the `climate.` / `fans.` / `purifiers.` prefix).
 
 | Option | Default | Description |
 |---|---|---|
@@ -198,17 +211,21 @@ The first four rows (`enabled`, `start` / `end`, `manual_override`, `suppress_wh
 | `start` / `end` | 09:00 / 21:00 | Window boost hours of the fans and purifiers. Both empty (or equal): all day |
 | `manual_override` | 60 min | A device changed by hand is left alone this long, then its target is applied again. 0: never paused |
 | `suppress_when_handled` | `true` | No "too hot" alert for a room whose air conditioner or fan is running on Smart Comfort's command |
+| `night_start` / `night_end` | 22:00 / 07:00 | Quiet night hours: devices with night settings use them, and get no window boost |
 | `climate.cool_above` / `off_below` | 23 / 21 °C | Cool above, turn off below |
 | `climate.setpoint` / `fan_mode` | 22 °C / none | Setpoint and fan mode when cooling |
 | `climate.closed_for` / `off_on_open` | 2 / 1 min | Openings closed for this long before cooling; off when one stays open this long |
+| `climate.night_fan_mode` | none | Fan mode when cooling at night (e.g. `silent`) |
 | `fans.on_above` / `off_below` | 23 / 22 °C | On above, off below. Leave both empty for fans driven by the windows only |
 | `fans.percentage` / `preset` | 50 % / none | When on |
 | `fans.open_percentage` / `open_preset` | 100 % / none | While a window is open in the boost hours |
 | `fans.off_preset` | none | Preset set before turning off (the fan restarts in it) |
+| `fans.night_percentage` / `night_preset` | none | Speed and preset when on at night (unset: the day ones) |
 | `purifiers.open_percentage` / `open_preset` | 100 % / none | While a window is open in the boost hours |
 | `purifiers.closed_preset` | none | When the windows are closed. Without it (nor `closed_mode`), the purifier goes back to the state it had before the boost |
 | `purifiers.mode_select` / `open_mode` / `closed_mode` | none | A `select` entity and its options for the two states (e.g. `manual` / `automatic`) |
 | `purifiers.keep_on` | `false` | Turn the purifier back on when it has been off for 10 seconds |
+| `purifiers.night_percentage` / `night_preset` / `night_mode` | none | At night: speed, preset, mode select option (e.g. `Sleep`). An off purifier stays off; the state before the night comes back in the morning (or the closed preset / mode) |
 
 An air conditioner in another mode than `cool` or `off` (heat, dry…) is left alone by the temperature control, but turned off when an opening stays open.
 

@@ -11,6 +11,7 @@ TITLE: Final = "Smart Comfort"
 CONF_NOTIFY: Final = "notify"
 CONF_OUTDOOR: Final = "outdoor_temperature"
 CONF_OUTDOOR_AGGREGATE: Final = "outdoor_aggregate"
+CONF_OUTDOOR_NOISE: Final = "outdoor_noise"
 CONF_DIGEST_WINDOW: Final = "digest_window"
 CONF_STARTUP_GRACE: Final = "startup_grace"
 CONF_REMINDER: Final = "reminder"
@@ -32,6 +33,7 @@ CONF_AREA: Final = "area"
 CONF_TEMPERATURE: Final = "temperature"
 CONF_CO2: Final = "co2"
 CONF_HUMIDITY: Final = "humidity"
+CONF_NOISE: Final = "noise"
 CONF_OPENINGS: Final = "openings"
 CONF_CLIMATE: Final = "climate"
 CONF_FANS: Final = "fans"
@@ -48,6 +50,7 @@ CONF_ESCALATION: Final = "escalation"
 CONF_MIN_OUTDOOR: Final = "min_outdoor"
 CONF_MAX_OUTDOOR: Final = "max_outdoor"
 CONF_MIN_INDOOR: Final = "min_indoor"
+CONF_MAX_NOISE: Final = "max_outdoor_noise"
 
 # Control settings.
 CONF_START: Final = "start"
@@ -71,6 +74,13 @@ CONF_MODE_SELECT: Final = "mode_select"
 CONF_OPEN_MODE: Final = "open_mode"
 CONF_CLOSED_MODE: Final = "closed_mode"
 CONF_KEEP_ON: Final = "keep_on"
+# Quiet night: devices quieter between night_start and night_end.
+CONF_NIGHT_START: Final = "night_start"
+CONF_NIGHT_END: Final = "night_end"
+CONF_NIGHT_FAN_MODE: Final = "night_fan_mode"
+CONF_NIGHT_PERCENTAGE: Final = "night_percentage"
+CONF_NIGHT_PRESET: Final = "night_preset"
+CONF_NIGHT_MODE: Final = "night_mode"
 
 # Alert kinds, in display order.
 KIND_TOO_HOT: Final = "too_hot"
@@ -80,6 +90,8 @@ KIND_CLOSE_WINDOWS: Final = "close_windows"
 KIND_WINDOW_OPEN_COLD: Final = "window_open_cold"
 KIND_CO2: Final = "co2_high"
 KIND_HUMIDITY: Final = "humidity_high"
+KIND_NOISE: Final = "noise_high"
+KIND_NOISY_OUTSIDE: Final = "noisy_outside"
 KINDS: Final = (
     KIND_TOO_HOT,
     KIND_CLOSE_WINDOWS,
@@ -88,6 +100,8 @@ KINDS: Final = (
     KIND_WINDOW_OPEN_COLD,
     KIND_CO2,
     KIND_HUMIDITY,
+    KIND_NOISE,
+    KIND_NOISY_OUTSIDE,
 )
 
 SEVERITY_INFO: Final = "info"
@@ -131,6 +145,8 @@ DEFAULT_ALERTS: Final[dict[str, dict]] = {
         CONF_ENABLED: True,
         CONF_THRESHOLD: 2.0,
         CONF_MIN_INDOOR: 24.0,
+        # Not suggested while the outdoor noise is above this (with an outdoor noise sensor).
+        CONF_MAX_NOISE: 65.0,
         CONF_HYSTERESIS: 0.5,
         CONF_DELAY: 15,
         CONF_SEVERITY: SEVERITY_INFO,
@@ -171,6 +187,24 @@ DEFAULT_ALERTS: Final[dict[str, dict]] = {
         CONF_SEVERITY: SEVERITY_INFO,
         CONF_ESCALATION: 10.0,
     },
+    # Room noise level above the threshold (sound pressure sensor, dB).
+    KIND_NOISE: {
+        CONF_ENABLED: True,
+        CONF_THRESHOLD: 60.0,
+        CONF_HYSTERESIS: 5.0,
+        CONF_DELAY: 10,
+        CONF_SEVERITY: SEVERITY_INFO,
+        CONF_ESCALATION: 10.0,
+    },
+    # Opening open while the outdoor noise is above the threshold: close it.
+    KIND_NOISY_OUTSIDE: {
+        CONF_ENABLED: True,
+        CONF_THRESHOLD: 65.0,
+        CONF_HYSTERESIS: 5.0,
+        CONF_DELAY: 5,
+        CONF_SEVERITY: SEVERITY_INFO,
+        CONF_ESCALATION: 10.0,
+    },
 }
 
 DEFAULT_CONTROL: Final[dict] = {
@@ -180,6 +214,9 @@ DEFAULT_CONTROL: Final[dict] = {
     CONF_END: "21:00",
     CONF_MANUAL_OVERRIDE: DEFAULT_MANUAL_OVERRIDE,
     CONF_SUPPRESS_HANDLED: True,
+    # Quiet night: the night settings of each device apply in these hours, and no window boost.
+    CONF_NIGHT_START: "22:00",
+    CONF_NIGHT_END: "07:00",
     CONF_CLIMATE: {
         CONF_COOL_ABOVE: 23.0,
         CONF_OFF_BELOW: 21.0,
@@ -187,6 +224,7 @@ DEFAULT_CONTROL: Final[dict] = {
         CONF_FAN_MODE: None,
         CONF_CLOSED_FOR: 2,
         CONF_OFF_ON_OPEN: 1,
+        CONF_NIGHT_FAN_MODE: None,
     },
     CONF_FANS: {
         CONF_ON_ABOVE: 23.0,
@@ -196,6 +234,8 @@ DEFAULT_CONTROL: Final[dict] = {
         CONF_OPEN_PERCENTAGE: 100,
         CONF_OPEN_PRESET: None,
         CONF_OFF_PRESET: None,
+        CONF_NIGHT_PERCENTAGE: None,
+        CONF_NIGHT_PRESET: None,
     },
     CONF_PURIFIERS: {
         CONF_OPEN_PERCENTAGE: 100,
@@ -205,6 +245,9 @@ DEFAULT_CONTROL: Final[dict] = {
         CONF_OPEN_MODE: None,
         CONF_CLOSED_MODE: None,
         CONF_KEEP_ON: False,
+        CONF_NIGHT_PERCENTAGE: None,
+        CONF_NIGHT_PRESET: None,
+        CONF_NIGHT_MODE: None,
     },
 }
 

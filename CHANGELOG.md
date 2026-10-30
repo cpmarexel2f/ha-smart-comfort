@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0
+
+### What's new
+- **Noise alerts**: a room `noise` sensor (sound level, dB) and a **noisy room** alert (60 dB by default); outdoor noise sensors (`outdoor_noise`) with a **close the windows (noisy outside)** alert when an opening is open in the noise (65 dB), and no suggestion to open the windows while it is noisy outside (`ventilate.max_outdoor_noise`, 65 dB).
+- **Quiet night**: between `night_start` and `night_end` (22:00–07:00 by default), devices with night settings run quieter — fans at `night_percentage` / `night_preset`, purifiers at `night_preset` / `night_percentage` / `night_mode` (mode select), air conditioners with `night_fan_mode` — and get no window boost. The day settings, or the state before the night, come back in the morning. An off purifier stays off at night.
+- Discover fills in the room noise sensors, the outdoor noise sensors of the outdoor areas, and the night settings from the quiet presets and fan modes (sleep, silent…); devices already configured get the settings they don't have yet.
+- Panel: noise in the overview (outdoor noise, quiet night, room noise) and in the forms.
+
+### Fixes
+- A purifier driven by a mode select gets its mode option back too when the state it had before a window boost is restored.
+
+### Maintenance
+- The panel subscription test no longer depends on the order of the unload and setup messages, which differs on Home Assistant 2024.12 (the minimum version job failed since 0.3.1).
+
 ## 0.3.1
 
 ### Fixes

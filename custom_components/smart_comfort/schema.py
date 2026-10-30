@@ -45,6 +45,8 @@ ALERT = vol.Schema(
         vol.Optional(k.CONF_MIN_OUTDOOR): vol.Any(None, NUMBER),
         vol.Optional(k.CONF_MAX_OUTDOOR): vol.Any(None, NUMBER),
         vol.Optional(k.CONF_MIN_INDOOR): vol.Any(None, NUMBER),
+        vol.Optional(k.CONF_MAX_NOISE): vol.Any(None, NUMBER),
+        vol.Optional(k.CONF_MAX_NOISE): vol.Any(None, NUMBER),
     }
 )
 ALERTS = vol.Schema({vol.Optional(kind): ALERT for kind in k.KINDS})
@@ -56,6 +58,7 @@ CLIMATE = {
     vol.Optional(k.CONF_FAN_MODE): OPT_STR,
     vol.Optional(k.CONF_CLOSED_FOR): MINUTES,
     vol.Optional(k.CONF_OFF_ON_OPEN): MINUTES,
+    vol.Optional(k.CONF_NIGHT_FAN_MODE): OPT_STR,
 }
 FAN = {
     vol.Optional(k.CONF_ON_ABOVE): vol.Any(None, NUMBER),
@@ -65,6 +68,8 @@ FAN = {
     vol.Optional(k.CONF_OPEN_PERCENTAGE): vol.Any(None, PERCENT),
     vol.Optional(k.CONF_OPEN_PRESET): OPT_STR,
     vol.Optional(k.CONF_OFF_PRESET): OPT_STR,
+    vol.Optional(k.CONF_NIGHT_PERCENTAGE): vol.Any(None, PERCENT),
+    vol.Optional(k.CONF_NIGHT_PRESET): OPT_STR,
 }
 PURIFIER = {
     vol.Optional(k.CONF_OPEN_PERCENTAGE): vol.Any(None, PERCENT),
@@ -74,6 +79,9 @@ PURIFIER = {
     vol.Optional(k.CONF_OPEN_MODE): OPT_STR,
     vol.Optional(k.CONF_CLOSED_MODE): OPT_STR,
     vol.Optional(k.CONF_KEEP_ON): cv.boolean,
+    vol.Optional(k.CONF_NIGHT_PERCENTAGE): vol.Any(None, PERCENT),
+    vol.Optional(k.CONF_NIGHT_PRESET): OPT_STR,
+    vol.Optional(k.CONF_NIGHT_MODE): OPT_STR,
 }
 DEVICE_SECTIONS = vol.Schema(
     {
@@ -89,6 +97,8 @@ CONTROL = DEVICE_SECTIONS.extend(
         vol.Optional(k.CONF_END): time_string,
         vol.Optional(k.CONF_MANUAL_OVERRIDE): MINUTES,
         vol.Optional(k.CONF_SUPPRESS_HANDLED): cv.boolean,
+        vol.Optional(k.CONF_NIGHT_START): time_string,
+        vol.Optional(k.CONF_NIGHT_END): time_string,
     }
 )
 
@@ -110,6 +120,7 @@ ROOM = vol.Schema(
         vol.Optional(k.CONF_TEMPERATURE): vol.Any(None, cv.entity_id),
         vol.Optional(k.CONF_CO2): vol.Any(None, cv.entity_id),
         vol.Optional(k.CONF_HUMIDITY): vol.Any(None, cv.entity_id),
+        vol.Optional(k.CONF_NOISE): vol.Any(None, cv.entity_id),
         vol.Optional(k.CONF_OPENINGS): cv.entity_ids,
         vol.Optional(k.CONF_CLIMATE): vol.Any(
             None,
@@ -128,6 +139,7 @@ OPTIONS = vol.Schema(
         vol.Optional(k.CONF_NOTIFY): vol.All(cv.ensure_list, [notify_service]),
         vol.Optional(k.CONF_OUTDOOR): cv.entity_ids,
         vol.Optional(k.CONF_OUTDOOR_AGGREGATE): vol.In(k.AGGREGATES),
+        vol.Optional(k.CONF_OUTDOOR_NOISE): cv.entity_ids,
         vol.Optional(k.CONF_DIGEST_WINDOW): MINUTES,
         vol.Optional(k.CONF_STARTUP_GRACE): MINUTES,
         vol.Optional(k.CONF_REMINDER): MINUTES,

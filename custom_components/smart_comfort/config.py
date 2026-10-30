@@ -34,11 +34,19 @@ from .const import (
     CONF_HYSTERESIS,
     CONF_KEEP_ON,
     CONF_MANUAL_OVERRIDE,
+    CONF_MAX_NOISE,
     CONF_MAX_OUTDOOR,
     CONF_MIN_INDOOR,
     CONF_MIN_OUTDOOR,
     CONF_MODE_SELECT,
     CONF_NAME,
+    CONF_NIGHT_END,
+    CONF_NIGHT_FAN_MODE,
+    CONF_NIGHT_MODE,
+    CONF_NIGHT_PERCENTAGE,
+    CONF_NIGHT_PRESET,
+    CONF_NIGHT_START,
+    CONF_NOISE,
     CONF_NOTIFY,
     CONF_OFF_BELOW,
     CONF_OFF_ON_OPEN,
@@ -50,6 +58,7 @@ from .const import (
     CONF_OPENINGS,
     CONF_OUTDOOR,
     CONF_OUTDOOR_AGGREGATE,
+    CONF_OUTDOOR_NOISE,
     CONF_PERCENTAGE,
     CONF_PRESENCE,
     CONF_PRESET,
@@ -133,6 +142,7 @@ class AlertSettings:
     min_outdoor: float | None = None
     max_outdoor: float | None = None
     min_indoor: float | None = None
+    max_noise: float | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AlertSettings:
@@ -146,6 +156,7 @@ class AlertSettings:
             min_outdoor=_float(data.get(CONF_MIN_OUTDOOR)),
             max_outdoor=_float(data.get(CONF_MAX_OUTDOOR)),
             min_indoor=_float(data.get(CONF_MIN_INDOOR)),
+            max_noise=_float(data.get(CONF_MAX_NOISE)),
         )
 
 
@@ -158,6 +169,7 @@ class ClimateDevice:
     fan_mode: str | None
     closed_for: int
     off_on_open: int
+    night_fan_mode: str | None = None
 
 
 @dataclass(frozen=True)
@@ -170,6 +182,13 @@ class FanDevice:
     open_percentage: int | None
     open_preset: str | None
     off_preset: str | None
+    night_percentage: int | None = None
+    night_preset: str | None = None
+
+    @property
+    def quiet(self) -> bool:
+        """Has night settings: quieter at night."""
+        return self.night_percentage is not None or bool(self.night_preset)
 
 
 @dataclass(frozen=True)
@@ -182,6 +201,16 @@ class PurifierDevice:
     open_mode: str | None
     closed_mode: str | None
     keep_on: bool
+    night_percentage: int | None = None
+    night_preset: str | None = None
+    night_mode: str | None = None
+
+    @property
+    def quiet(self) -> bool:
+        """Has night settings: quieter at night."""
+        return (
+            self.night_percentage is not None or bool(self.night_preset) or bool(self.mode_select and self.night_mode)
+        )
 
 
 def _device_items(raw: Any) -> list[tuple[str, dict[str, Any]]]:
@@ -210,6 +239,7 @@ class Room:
     temperature: str | None = None
     co2: str | None = None
     humidity: str | None = None
+    noise: str | None = None
     openings: tuple[str, ...] = ()
     climate: ClimateDevice | None = None
     fans: tuple[FanDevice, ...] = ()
@@ -223,7 +253,7 @@ class Room:
 
     @property
     def sensors(self) -> list[str]:
-        return [e for e in (self.temperature, self.co2, self.humidity) if e] + list(self.openings)
+        return [e for e in (self.temperature, self.co2, self.humidity, self.noise) if e] + list(self.openings)
 
 
 @dataclass(frozen=True)
@@ -231,6 +261,7 @@ class Settings:
     notify: tuple[str, ...] = ()
     outdoor: tuple[str, ...] = ()
     aggregate: str = "min"
+    outdoor_noise: tuple[str, ...] = ()
     digest_window: int = DEFAULT_DIGEST_WINDOW
     startup_grace: int = DEFAULT_STARTUP_GRACE
     reminder: int = DEFAULT_REMINDER
@@ -247,7 +278,15 @@ class Settings:
     control_end: time | None = None
     manual_override: int = 60
     suppress_handled: bool = True
+    night_start: time | None = None
+    night_end: time | None = None
     rooms: tuple[Room, ...] = ()
+
+    def night(self, local: time) -> bool:
+        """Quiet night hours (none when either bound is unset)."""
+        if self.night_start is None or self.night_end is None or self.night_start == self.night_end:
+            return False
+        return in_window(local, self.night_start, self.night_end)
 
     def room(self, room_id: str) -> Room | None:
         return next((r for r in self.rooms if r.id == room_id), None)
@@ -275,6 +314,7 @@ def _room(raw: dict[str, Any], alerts: dict[str, dict], control: dict[str, Any],
             fan_mode=c[CONF_FAN_MODE],
             closed_for=int(c[CONF_CLOSED_FOR]),
             off_on_open=int(c[CONF_OFF_ON_OPEN]),
+            night_fan_mode=c[CONF_NIGHT_FAN_MODE] or None,
         )
     fans = []
     for entity_id, own in _device_items(raw.get(CONF_FANS)):
@@ -289,6 +329,8 @@ def _room(raw: dict[str, Any], alerts: dict[str, dict], control: dict[str, Any],
                 open_percentage=_int(f[CONF_OPEN_PERCENTAGE]),
                 open_preset=f[CONF_OPEN_PRESET],
                 off_preset=f[CONF_OFF_PRESET],
+                night_percentage=_int(f[CONF_NIGHT_PERCENTAGE]),
+                night_preset=f[CONF_NIGHT_PRESET] or None,
             )
         )
     purifiers = []
@@ -304,6 +346,9 @@ def _room(raw: dict[str, Any], alerts: dict[str, dict], control: dict[str, Any],
                 open_mode=p[CONF_OPEN_MODE],
                 closed_mode=p[CONF_CLOSED_MODE],
                 keep_on=bool(p[CONF_KEEP_ON]),
+                night_percentage=_int(p[CONF_NIGHT_PERCENTAGE]),
+                night_preset=p[CONF_NIGHT_PRESET] or None,
+                night_mode=p[CONF_NIGHT_MODE] or None,
             )
         )
     openings = raw.get(CONF_OPENINGS) or []
@@ -313,6 +358,7 @@ def _room(raw: dict[str, Any], alerts: dict[str, dict], control: dict[str, Any],
         temperature=raw.get(CONF_TEMPERATURE) or None,
         co2=raw.get(CONF_CO2) or None,
         humidity=raw.get(CONF_HUMIDITY) or None,
+        noise=raw.get(CONF_NOISE) or None,
         openings=tuple([openings] if isinstance(openings, str) else openings),
         climate=climate,
         fans=tuple(fans),
@@ -332,10 +378,12 @@ def build_settings(options: dict[str, Any]) -> Settings:
     rooms = tuple(_room(r, alerts, control, used) for r in options.get(CONF_ROOMS) or [])
     notify = options.get(CONF_NOTIFY) or []
     outdoor = options.get(CONF_OUTDOOR) or []
+    noise = options.get(CONF_OUTDOOR_NOISE) or []
     return Settings(
         notify=tuple(f"notify.{n.removeprefix('notify.')}" for n in ([notify] if isinstance(notify, str) else notify)),
         outdoor=tuple([outdoor] if isinstance(outdoor, str) else outdoor),
         aggregate=str(options.get(CONF_OUTDOOR_AGGREGATE) or "min"),
+        outdoor_noise=tuple([noise] if isinstance(noise, str) else noise),
         digest_window=int(options.get(CONF_DIGEST_WINDOW, DEFAULT_DIGEST_WINDOW)),
         startup_grace=int(options.get(CONF_STARTUP_GRACE, DEFAULT_STARTUP_GRACE)),
         reminder=int(options.get(CONF_REMINDER, DEFAULT_REMINDER)),
@@ -352,5 +400,7 @@ def build_settings(options: dict[str, Any]) -> Settings:
         control_end=parse_time(control[CONF_END]),
         manual_override=int(control[CONF_MANUAL_OVERRIDE]),
         suppress_handled=bool(control[CONF_SUPPRESS_HANDLED]),
+        night_start=parse_time(control[CONF_NIGHT_START]),
+        night_end=parse_time(control[CONF_NIGHT_END]),
         rooms=rooms,
     )

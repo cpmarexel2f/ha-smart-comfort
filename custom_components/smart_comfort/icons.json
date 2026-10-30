@@ -12,7 +12,9 @@
           "close_windows": "mdi:window-closed-variant",
           "window_open_cold": "mdi:snowflake-alert",
           "co2_high": "mdi:molecule-co2",
-          "humidity_high": "mdi:water-percent-alert"
+          "humidity_high": "mdi:water-percent-alert",
+          "noise_high": "mdi:volume-high",
+          "noisy_outside": "mdi:volume-off"
         }
       },
       "last_notification": { "default": "mdi:bell-ring-outline" }

@@ -133,6 +133,6 @@ def ws_subscribe(hass: HomeAssistant, connection: websocket_api.ActiveConnection
 @callback
 def ws_discover(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
     """The options being edited, with the rooms found in the areas merged in (not saved)."""
-    found, outdoor = discover_rooms(hass)
-    options, report = merge(msg["options"], found, outdoor)
+    found, outdoor, outdoor_noise = discover_rooms(hass)
+    options, report = merge(msg["options"], found, outdoor, outdoor_noise)
     connection.send_result(msg["id"], {"options": options, "report": report.as_dict()})

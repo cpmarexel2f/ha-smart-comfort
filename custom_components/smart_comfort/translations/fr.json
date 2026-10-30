@@ -44,6 +44,7 @@
           "notify": "Actions de notification",
           "outdoor_temperature": "Température extérieure",
           "outdoor_aggregate": "Combinaison des capteurs extérieurs",
+          "outdoor_noise": "Bruit extérieur",
           "digest_window": "Fenêtre de regroupement",
           "reminder": "Rappel",
           "snooze_duration": "Durée de mise en sourdine",
@@ -60,6 +61,7 @@
           "notify": "Où envoyer les alertes (notify.mobile_app_…, un groupe notify…).",
           "outdoor_temperature": "Un ou plusieurs capteurs extérieurs ; ceux indisponibles sont ignorés.",
           "outdoor_aggregate": "Le minimum évite un capteur au soleil.",
+          "outdoor_noise": "Capteurs de niveau sonore dehors (dB) : pas de suggestion d'aérer quand c'est bruyant, et une alerte si des fenêtres sont ouvertes dans le bruit.",
           "digest_window": "Minutes d'attente d'autres alertes avant d'envoyer une notification groupée. Les alertes critiques n'attendent pas.",
           "reminder": "Minutes après lesquelles un problème toujours présent est renotifié. 0 : jamais (seulement s'il s'aggrave).",
           "snooze_duration": "Minutes du bouton « Ignorer » de la notification et de l'action snooze par défaut.",
@@ -87,6 +89,7 @@
           "min_indoor": "Température intérieure minimale",
           "min_outdoor": "Température extérieure minimale",
           "max_outdoor": "Température extérieure maximale",
+          "max_outdoor_noise": "Bruit extérieur maximal",
           "hysteresis": "Hystérésis",
           "delay": "Délai",
           "severity": "Gravité",
@@ -97,6 +100,7 @@
           "min_indoor": "Ne suggère d'aérer que si la pièce est au moins à cette température.",
           "min_outdoor": "Seulement s'il fait au moins cette température dehors.",
           "max_outdoor": "Seulement s'il fait au plus cette température dehors.",
+          "max_outdoor_noise": "Pas de suggestion au-delà de ce bruit extérieur (avec un capteur de bruit extérieur).",
           "hysteresis": "Le problème ne se termine qu'une fois la valeur revenue de cet écart sous le seuil : pas de yo-yo.",
           "delay": "Minutes pendant lesquelles la condition doit tenir avant de devenir un problème.",
           "escalation": "Renotifie quand la valeur s'aggrave de cet écart depuis la dernière notification. 0 : jamais."
@@ -109,12 +113,15 @@
           "start": "Boost fenêtre à partir de",
           "end": "Boost fenêtre jusqu'à",
           "manual_override": "Reprise manuelle",
-          "suppress_when_handled": "Pas d'alerte si traité"
+          "suppress_when_handled": "Pas d'alerte si traité",
+          "night_start": "Nuit calme à partir de",
+          "night_end": "Nuit calme jusqu'à"
         },
         "data_description": {
           "start": "Ventilateurs et purificateurs passent à fond à l'ouverture d'une fenêtre seulement entre ces heures. Les deux vides : toute la journée.",
           "manual_override": "Minutes pendant lesquelles un appareil modifié à la main est laissé tranquille. 0 : jamais.",
-          "suppress_when_handled": "Pas d'alerte « trop chaud » pour une pièce dont Smart Comfort a allumé la clim ou le ventilateur."
+          "suppress_when_handled": "Pas d'alerte « trop chaud » pour une pièce dont Smart Comfort a allumé la clim ou le ventilateur.",
+          "night_start": "Entre ces heures, les appareils utilisent leurs réglages de nuit (vitesse, mode ou ventilation plus silencieux) et n'ont pas de boost fenêtre."
         },
         "sections": {
           "climate": {
@@ -125,7 +132,8 @@
               "setpoint": "Consigne",
               "fan_mode": "Mode de ventilation",
               "closed_for": "Ouvertures fermées depuis (min)",
-              "off_on_open": "Éteindre si ouvert depuis (min)"
+              "off_on_open": "Éteindre si ouvert depuis (min)",
+              "night_fan_mode": "Ventilation la nuit"
             }
           },
           "fans": {
@@ -137,7 +145,9 @@
               "preset": "Mode",
               "open_percentage": "Vitesse, fenêtre ouverte",
               "open_preset": "Mode, fenêtre ouverte",
-              "off_preset": "Mode avant extinction"
+              "off_preset": "Mode avant extinction",
+              "night_percentage": "Vitesse la nuit",
+              "night_preset": "Mode la nuit"
             },
             "description": "Laissez « Allumer à partir de » et « Éteindre sous » vides pour des ventilateurs pilotés par les fenêtres seulement."
           },
@@ -147,7 +157,10 @@
               "open_percentage": "Vitesse, fenêtre ouverte",
               "open_preset": "Mode, fenêtre ouverte",
               "closed_preset": "Mode, fenêtres fermées",
-              "keep_on": "Garder allumé"
+              "keep_on": "Garder allumé",
+              "night_percentage": "Vitesse la nuit",
+              "night_preset": "Mode la nuit",
+              "night_mode": "Option du mode la nuit"
             },
             "data_description": {
               "keep_on": "Rallume un purificateur éteint depuis 10 s (coupure, bug)."
@@ -162,6 +175,7 @@
           "temperature": "Température",
           "co2": "CO₂",
           "humidity": "Humidité",
+          "noise": "Bruit",
           "openings": "Fenêtres et portes",
           "climate": "Climatiseur",
           "fans": "Ventilateurs",
@@ -195,6 +209,7 @@
           "temperature": "Température",
           "co2": "CO₂",
           "humidity": "Humidité",
+          "noise": "Bruit",
           "openings": "Fenêtres et portes",
           "climate": "Climatiseur",
           "fans": "Ventilateurs",
@@ -249,7 +264,9 @@
         "too_cold": "Trop froid",
         "window_open_cold": "Fenêtre ouverte par temps froid",
         "co2_high": "CO₂ élevé",
-        "humidity_high": "Humidité élevée"
+        "humidity_high": "Humidité élevée",
+        "noise_high": "Pièce bruyante",
+        "noisy_outside": "Fermer les fenêtres (bruit dehors)"
       }
     },
     "severity": {
@@ -293,7 +310,9 @@
           "too_cold": "Trop froid",
           "window_open_cold": "Fenêtre ouverte par temps froid",
           "co2_high": "CO₂ élevé",
-          "humidity_high": "Humidité élevée"
+          "humidity_high": "Humidité élevée",
+          "noise_high": "Pièce bruyante",
+          "noisy_outside": "Fermer les fenêtres (bruit dehors)"
         }
       },
       "last_notification": {
@@ -381,6 +400,8 @@
     "line_window_open_cold": "{openings} ouvert, {outdoor} °C dehors",
     "line_co2_high": "CO₂ {value} ppm — aérez",
     "line_humidity_high": "humidité {value} % — aérez",
+    "line_noise_high": "bruit {value} dB, au-dessus de {threshold} dB",
+    "line_noisy_outside": "{value} dB dehors — fermez {openings}",
     "action_snooze": "Ignorer {hours} h",
     "action_snooze_minutes": "Ignorer {minutes} min",
     "action_ack": "C'est noté"

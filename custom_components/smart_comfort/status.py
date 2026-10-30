@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.util import dt as dt_util
+
 from .config import Room
 from .engine import HANDLED_KINDS, Episode
 
@@ -38,6 +40,7 @@ def room_info(manager: SmartComfort, room: Room, now: datetime) -> dict[str, Any
         "temperature": reading.temperature,
         "co2": reading.co2,
         "humidity": reading.humidity,
+        "noise": reading.noise,
         "open": reading.open,
         "ignored_openings": manager.ignored_openings(room, now),
         "alerts": [e.kind for e in manager.engine.active() if e.room == room.id],
@@ -61,6 +64,8 @@ def status(manager: SmartComfort, now: datetime) -> dict[str, Any]:
         "alerts": [episode_info(manager, ep, now) for ep in engine.active()],
         "snoozes": {k: v.isoformat() for k, v in engine.snoozes.items() if v > now},
         "outdoor_temperature": manager.outdoor(),
+        "outdoor_noise": manager.outdoor_noise(),
+        "night": manager.settings.night(dt_util.as_local(now).time()),
         "rooms": [{"name": r.name, **room_info(manager, r, now)} for r in manager.settings.rooms],
         "notifications_enabled": manager.notifications_enabled,
         "control_enabled": manager.control_enabled,

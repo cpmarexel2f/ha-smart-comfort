@@ -9,6 +9,8 @@ from .const import (
     KIND_CLOSE_WINDOWS,
     KIND_CO2,
     KIND_HUMIDITY,
+    KIND_NOISE,
+    KIND_NOISY_OUTSIDE,
     KIND_TOO_COLD,
     KIND_TOO_HOT,
     KIND_VENTILATE,
@@ -26,6 +28,8 @@ ICONS = {
     KIND_WINDOW_OPEN_COLD: "🥶",
     KIND_CO2: "🌬️",
     KIND_HUMIDITY: "💧",
+    KIND_NOISE: "🔊",
+    KIND_NOISY_OUTSIDE: "🔇",
 }
 
 # English fallbacks, used when a translation is missing or broken.
@@ -45,12 +49,14 @@ FALLBACK = {
     "line_window_open_cold": "{openings} open, {outdoor} °C outside",
     "line_co2_high": "CO₂ {value} ppm — air the room",
     "line_humidity_high": "humidity {value} % — air the room",
+    "line_noise_high": "noise {value} dB, above {threshold} dB",
+    "line_noisy_outside": "{value} dB outside — close {openings}",
     "action_snooze": "Snooze {hours} h",
     "action_snooze_minutes": "Snooze {minutes} min",
     "action_ack": "Got it",
 }
 
-DIGITS = {KIND_CO2: 0, KIND_HUMIDITY: 0}
+DIGITS = {KIND_CO2: 0, KIND_HUMIDITY: 0, KIND_NOISE: 0, KIND_NOISY_OUTSIDE: 0}
 
 
 def format_text(texts: dict[str, str], key: str, **values: object) -> str:

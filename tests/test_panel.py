@@ -93,13 +93,15 @@ async def test_subscribe_follows_reloads(hass: HomeAssistant, hass_ws_client) ->
     # A reload (options saved) keeps the subscription alive.
     hass.config_entries.async_update_entry(entry, options={**OPTIONS, "rooms": [{"name": "Office"}]})
     await hass.async_block_till_done()
-    # The unload sends no status; the setup sends the new one at once, not at the next evaluation.
-    msg = await client.receive_json()
-    assert msg["event"]["status"] is None
-    msg = await client.receive_json()
-    status = msg["event"]["status"]
-    assert status is not None
-    assert [r["name"] for r in status["rooms"]] == ["Office"]
+    # The setup sends the new status at once, not at the next evaluation. Before it, the unload may send
+    # none (no loaded entry) or, on older Home Assistant versions, the status of the entry being unloaded.
+    for _ in range(3):
+        msg = await client.receive_json()
+        status = msg["event"]["status"]
+        if status is not None and [r["name"] for r in status["rooms"]] == ["Office"]:
+            break
+    else:
+        raise AssertionError("no status with the new rooms")
 
 
 async def test_not_admin(hass: HomeAssistant, hass_ws_client, hass_read_only_access_token) -> None:

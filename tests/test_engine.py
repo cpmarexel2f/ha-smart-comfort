@@ -14,6 +14,7 @@ from custom_components.smart_comfort.engine import (
     Digest,
     Engine,
     Gates,
+    Item,
     RoomReading,
 )
 from custom_components.smart_comfort.message import render
@@ -383,3 +384,59 @@ def test_digest_not_marked_until_sent():
     # Not sent (every notifier failed): due again at the next evaluation.
     assert e.episodes["sejour|too_hot"].notified_at is None
     assert isinstance(run(e, 21, hot())[1], Digest)
+
+
+def test_noise_alerts_and_noisy_outside():
+    s = build_settings(
+        {
+            "outdoor_noise": ["sensor.street"],
+            "alerts": {"noise_high": {"delay": 0}, "noisy_outside": {"delay": 0}, "ventilate": {"delay": 0}},
+            "rooms": [
+                {"name": "Bureau", "temperature": "sensor.t", "noise": "sensor.n", "openings": ["binary_sensor.w"]}
+            ],
+        }
+    )
+    e = Engine(s)
+    quiet_closed = {"bureau": RoomReading(temperature=21, noise=45, has_openings=True, open=[], outdoor_noise=50)}
+    run(e, 0, quiet_closed)
+    assert not e.episodes
+    # Loud room.
+    loud = {"bureau": RoomReading(temperature=21, noise=70, has_openings=True, open=[], outdoor_noise=50)}
+    run(e, 1, loud)
+    assert e.episodes["bureau|noise_high"].active
+    # Hysteresis: 57 dB is still a problem (60 - 5), 54 dB is over.
+    run(e, 2, {"bureau": RoomReading(temperature=21, noise=57, has_openings=True, open=[], outdoor_noise=50)})
+    assert "bureau|noise_high" in e.episodes
+    run(e, 3, quiet_closed)
+    assert "bureau|noise_high" not in e.episodes
+    # Window open in the street noise: close it.
+    open_loud = {
+        "bureau": RoomReading(temperature=21, noise=50, has_openings=True, open=["binary_sensor.w"], outdoor_noise=72)
+    }
+    run(e, 4, open_loud)
+    ep = e.episodes["bureau|noisy_outside"]
+    assert ep.value == 72 and ep.details["openings"] == ["binary_sensor.w"]
+    _title, message, _ = render(Digest([Item(ep, "Bureau", "info", "new")], "info"), {}, T0)
+    assert message == "72 dB outside — close binary_sensor.w"
+
+
+def test_no_ventilate_suggestion_when_noisy_outside():
+    s = build_settings(
+        {
+            "outdoor_noise": ["sensor.street"],
+            "alerts": {"ventilate": {"delay": 0}},
+            "rooms": [{"name": "Bureau", "temperature": "sensor.t", "openings": ["binary_sensor.w"]}],
+        }
+    )
+    e = Engine(s)
+    warm = {"temperature": 27, "has_openings": True, "open": []}
+    run(e, 0, {"bureau": RoomReading(**warm, outdoor_noise=70)}, outdoor=20)
+    assert "bureau|ventilate" not in e.episodes
+    run(e, 1, {"bureau": RoomReading(**warm, outdoor_noise=50)}, outdoor=20)
+    assert "bureau|ventilate" in e.episodes
+    # Unknown noise: no objection.
+    run(e, 2, {"bureau": RoomReading(**warm, outdoor_noise=None)}, outdoor=20)
+    assert "bureau|ventilate" in e.episodes
+    # Noisy again: the suggestion is withdrawn.
+    run(e, 3, {"bureau": RoomReading(**warm, outdoor_noise=70)}, outdoor=20)
+    assert "bureau|ventilate" not in e.episodes

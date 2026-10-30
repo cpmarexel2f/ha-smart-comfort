@@ -17,6 +17,8 @@ from .const import (
     KIND_CLOSE_WINDOWS,
     KIND_CO2,
     KIND_HUMIDITY,
+    KIND_NOISE,
+    KIND_NOISY_OUTSIDE,
     KIND_TOO_COLD,
     KIND_TOO_HOT,
     KIND_VENTILATE,
@@ -35,7 +37,10 @@ REASON_ONGOING = "ongoing"
 HANDLED_KINDS = frozenset({KIND_TOO_HOT})
 # Kinds that need the outdoor temperature.
 OUTDOOR_KINDS = frozenset({KIND_VENTILATE, KIND_CLOSE_WINDOWS, KIND_WINDOW_OPEN_COLD})
-# Readings each kind is computed from (RoomReading field names, "outdoor" for the outdoor temperature).
+# Kinds that need the outdoor noise.
+NOISE_OUTDOOR_KINDS = frozenset({KIND_NOISY_OUTSIDE})
+# Readings each kind is computed from (RoomReading field names, "outdoor" for the outdoor temperature,
+# "outdoor_noise" for the outdoor noise).
 SOURCES: dict[str, tuple[str, ...]] = {
     KIND_TOO_HOT: ("temperature",),
     KIND_TOO_COLD: ("temperature",),
@@ -44,7 +49,10 @@ SOURCES: dict[str, tuple[str, ...]] = {
     KIND_WINDOW_OPEN_COLD: ("outdoor",),
     KIND_CO2: ("co2",),
     KIND_HUMIDITY: ("humidity",),
+    KIND_NOISE: ("noise",),
+    KIND_NOISY_OUTSIDE: ("outdoor_noise",),
 }
+GLOBAL_SOURCES = frozenset({"outdoor", "outdoor_noise"})
 # Kinds whose value gets worse when it goes down.
 DOWNWARD_KINDS = frozenset({KIND_TOO_COLD, KIND_WINDOW_OPEN_COLD})
 
@@ -56,6 +64,9 @@ class RoomReading:
     temperature: float | None = None
     co2: float | None = None
     humidity: float | None = None
+    noise: float | None = None
+    # Outdoor noise level (same for every room), None when unknown or without a sensor.
+    outdoor_noise: float | None = None
     # Names of the openings that are open; None when one of them is unknown.
     open: list[str] | None = field(default_factory=list)
     has_openings: bool = False
@@ -101,6 +112,15 @@ def check(kind: str, s: AlertSettings, r: RoomReading, outdoor: float | None, ac
         return Check(_above(r.co2, s.threshold, h), r.co2, {"threshold": s.threshold})
     if kind == KIND_HUMIDITY:
         return Check(_above(r.humidity, s.threshold, h), r.humidity, {"threshold": s.threshold})
+    if kind == KIND_NOISE:
+        return Check(_above(r.noise, s.threshold, h), r.noise, {"threshold": s.threshold})
+    if kind == KIND_NOISY_OUTSIDE:
+        if not r.has_openings:
+            return Check(False)
+        if r.outdoor_noise is None or r.any_open is None or s.threshold is None:
+            return Check(None)
+        details = {"outdoor_noise": r.outdoor_noise, "openings": list(r.open or [])}
+        return Check(bool(r.any_open) and r.outdoor_noise > s.threshold - h, r.outdoor_noise, details)
     if kind == KIND_VENTILATE:
         if r.temperature is None or outdoor is None or s.threshold is None:
             return Check(None)
@@ -112,7 +132,9 @@ def check(kind: str, s: AlertSettings, r: RoomReading, outdoor: float | None, ac
             if r.any_open:  # Already aired.
                 return Check(False, diff, details)
         warm = s.min_indoor is None or r.temperature >= s.min_indoor - h
-        return Check(warm and diff >= s.threshold - h, diff, details)
+        # Not when it is too noisy outside to open (unknown noise: no objection).
+        noisy = s.max_noise is not None and r.outdoor_noise is not None and r.outdoor_noise > s.max_noise
+        return Check(warm and not noisy and diff >= s.threshold - h, diff, details)
     if kind == KIND_CLOSE_WINDOWS:
         if not r.has_openings:
             return Check(False)
@@ -263,9 +285,11 @@ class Engine:
         """The room still has the sensors the kind is computed from."""
         if kind in OUTDOOR_KINDS and not self.settings.outdoor:
             return False
-        if kind in (KIND_CLOSE_WINDOWS, KIND_WINDOW_OPEN_COLD) and not room.openings:
+        if kind in NOISE_OUTDOOR_KINDS and not self.settings.outdoor_noise:
             return False
-        return all(getattr(room, field) for field in SOURCES[kind] if field != "outdoor")
+        if kind in (KIND_CLOSE_WINDOWS, KIND_WINDOW_OPEN_COLD, KIND_NOISY_OUTSIDE) and not room.openings:
+            return False
+        return all(getattr(room, field) for field in SOURCES[kind] if field not in GLOBAL_SOURCES)
 
     def as_dict(self) -> dict[str, Any]:
         return {

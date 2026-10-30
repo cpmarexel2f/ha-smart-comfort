@@ -314,3 +314,108 @@ def test_fan_without_temperature_control():
     off = {"fan.f": DeviceState(on=False)}
     assert c.evaluate(T0, NOON, room, ctx(30.0), off) == []
     assert c.evaluate(T0, NOON, room, ctx(30.0, opened=True), off) != []
+
+
+MORNING = time(7, 30)
+
+
+def test_fan_quieter_at_night():
+    s = room_settings(
+        fans=[{"entity_id": "fan.f", "preset": "Natural", "night_preset": "Sleep", "night_percentage": 20}]
+    )
+    c, room = Controller(s), s.rooms[0]
+    off = {"fan.f": DeviceState(on=False)}
+    assert calls(c.evaluate(T0, NIGHT, room, ctx(24.0), off)) == [
+        ("fan.f", "fan.turn_on", {}),
+        ("fan.f", "fan.set_preset_mode", {"preset_mode": "Sleep"}),
+        ("fan.f", "fan.set_percentage", {"percentage": 20}),
+    ]
+    on_night = {"fan.f": DeviceState(on=True, preset="Sleep", percentage=20)}
+    assert c.handled(room, on_night)
+    assert c.evaluate(T0, NIGHT, room, ctx(24.0), on_night) == []
+    # Morning, still warm: day settings again.
+    assert calls(c.evaluate(T0, MORNING, room, ctx(24.0), on_night))[1:] == [
+        ("fan.f", "fan.set_preset_mode", {"preset_mode": "Natural"}),
+        ("fan.f", "fan.set_percentage", {"percentage": 50}),
+    ]
+
+
+def test_no_window_boost_at_night_for_quiet_devices():
+    s = build_settings(
+        {
+            "control": {"start": "00:00", "end": "23:59"},  # Boost hours all day long.
+            "rooms": [
+                {
+                    "name": "Séjour",
+                    "temperature": "sensor.t",
+                    "openings": ["binary_sensor.w"],
+                    "fans": [{"entity_id": "fan.quiet", "night_percentage": 20}, "fan.loud"],
+                    "purifiers": [{"entity_id": "fan.p", "night_preset": "Sleep"}],
+                }
+            ],
+        }
+    )
+    c, room = Controller(s), s.rooms[0]
+    states = {
+        "fan.quiet": DeviceState(on=False),
+        "fan.loud": DeviceState(on=False),
+        "fan.p": DeviceState(on=True, preset="Auto", percentage=30),
+    }
+    cmds = calls(c.evaluate(T0, NIGHT, room, ctx(21.0, opened=True), states))
+    # The fan without night settings still boosts; the quiet one and the purifier don't.
+    assert ("fan.loud", "fan.set_percentage", {"percentage": 100}) in cmds
+    assert not any(e == "fan.quiet" for e, _, _ in cmds)
+    assert cmds[-1] == ("fan.p", "fan.set_preset_mode", {"preset_mode": "Sleep"})
+
+
+def test_purifier_night_mode_and_restore():
+    s = room_settings(
+        purifiers=[
+            {"entity_id": "fan.p", "mode_select": "select.p_mode", "night_mode": "sleep", "night_percentage": 10}
+        ]
+    )
+    c, room = Controller(s), s.rooms[0]
+    day = {"fan.p": DeviceState(on=True, option="auto", preset="Auto", percentage=40)}
+    assert c.evaluate(T0, NOON, room, ctx(21.0), day) == []
+    assert calls(c.evaluate(T0, NIGHT, room, ctx(21.0), day)) == [
+        ("select.p_mode", "select.select_option", {"option": "sleep"}),
+        ("fan.p", "fan.set_percentage", {"percentage": 10}),
+    ]
+    night = {"fan.p": DeviceState(on=True, option="sleep", preset="Auto", percentage=10)}
+    # Morning: the state before the night comes back (no closed preset or mode configured).
+    assert calls(c.evaluate(T0, MORNING, room, ctx(21.0), night)) == [
+        ("select.p_mode", "select.select_option", {"option": "auto"}),
+        ("fan.p", "fan.set_preset_mode", {"preset_mode": "Auto"}),
+    ]
+    # Off at night stays off.
+    c2 = Controller(s)
+    assert c2.evaluate(T0, NIGHT, room, ctx(21.0), {"fan.p": DeviceState(on=False)}) == []
+
+
+def test_climate_silent_at_night():
+    s = room_settings(climate={"entity_id": "climate.ac", "fan_mode": "auto", "night_fan_mode": "silent"})
+    c, room = Controller(s), s.rooms[0]
+    off = {"climate.ac": DeviceState(on=False, hvac_mode="off")}
+    assert calls(c.evaluate(T0, NIGHT, room, ctx(24.0), off))[-1] == (
+        "climate.ac",
+        "climate.set_fan_mode",
+        {"fan_mode": "silent"},
+    )
+    cooling_night = {"climate.ac": DeviceState(on=True, hvac_mode="cool", fan_mode="silent")}
+    assert c.handled(room, cooling_night)
+    assert c.evaluate(T0, NIGHT, room, ctx(23.0), cooling_night) == []
+    # Morning in the hysteresis band: still cooling, the day fan mode only.
+    assert calls(c.evaluate(T0, MORNING, room, ctx(22.0), cooling_night)) == [
+        ("climate.ac", "climate.set_fan_mode", {"fan_mode": "auto"}),
+    ]
+
+
+def test_no_night_settings_no_change():
+    s = room_settings(fans=["fan.f"])
+    c, room = Controller(s), s.rooms[0]
+    assert calls(c.evaluate(T0, NIGHT, room, ctx(24.0), {"fan.f": DeviceState(on=False)}))[-1] == (
+        "fan.f",
+        "fan.set_percentage",
+        {"percentage": 50},
+    )
+    assert not s.night(NOON) and s.night(NIGHT) and s.night(time(3, 0)) and not s.night(MORNING)

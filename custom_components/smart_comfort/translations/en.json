@@ -44,6 +44,7 @@
           "notify": "Notify actions",
           "outdoor_temperature": "Outdoor temperature",
           "outdoor_aggregate": "Combine outdoor sensors",
+          "outdoor_noise": "Outdoor noise",
           "digest_window": "Digest window",
           "reminder": "Reminder",
           "snooze_duration": "Snooze duration",
@@ -60,6 +61,7 @@
           "notify": "Where the alerts go (notify.mobile_app_…, a notify group…).",
           "outdoor_temperature": "One or more outdoor sensors; unavailable ones are ignored.",
           "outdoor_aggregate": "Minimum avoids a sensor in the sun.",
+          "outdoor_noise": "Sound level sensors outside (dB): no suggestion to open the windows while it's noisy, and an alert when windows are open in the noise.",
           "digest_window": "Minutes to wait for other alerts before sending one grouped notification. Critical alerts don't wait.",
           "reminder": "Minutes after which a problem still going on is notified again. 0: never (only when it gets worse).",
           "snooze_duration": "Minutes of the notification's Snooze button and of the snooze action by default.",
@@ -87,6 +89,7 @@
           "min_indoor": "Minimum indoor temperature",
           "min_outdoor": "Minimum outdoor temperature",
           "max_outdoor": "Maximum outdoor temperature",
+          "max_outdoor_noise": "Maximum outdoor noise",
           "hysteresis": "Hysteresis",
           "delay": "Delay",
           "severity": "Severity",
@@ -97,6 +100,7 @@
           "min_indoor": "Suggest opening only when the room is at least this warm.",
           "min_outdoor": "Only when it is at least this hot outside.",
           "max_outdoor": "Only when it is this cold or colder outside.",
+          "max_outdoor_noise": "Not suggested while the outdoor noise is above this (needs an outdoor noise sensor).",
           "hysteresis": "The problem ends only once the value is back past the threshold by this much: no flapping.",
           "delay": "Minutes the condition must hold before it is a problem.",
           "escalation": "Notify again when the value gets this much worse than when last notified. 0: never."
@@ -109,12 +113,15 @@
           "start": "Window boost from",
           "end": "Window boost until",
           "manual_override": "Manual override",
-          "suppress_when_handled": "No alert when handled"
+          "suppress_when_handled": "No alert when handled",
+          "night_start": "Quiet night from",
+          "night_end": "Quiet night until"
         },
         "data_description": {
           "start": "Fans and purifiers go to full speed when an opening opens only between these times. Both empty: all day.",
           "manual_override": "Minutes a device changed by hand is left alone. 0: never paused.",
-          "suppress_when_handled": "No “too hot” alert for a room whose air conditioner or fan Smart Comfort has turned on."
+          "suppress_when_handled": "No “too hot” alert for a room whose air conditioner or fan Smart Comfort has turned on.",
+          "night_start": "Between these times the devices use their night settings (quieter speed, preset or fan mode) and there is no window boost for them."
         },
         "sections": {
           "climate": {
@@ -125,7 +132,8 @@
               "setpoint": "Setpoint",
               "fan_mode": "Fan mode",
               "closed_for": "Openings closed for (min)",
-              "off_on_open": "Off when open for (min)"
+              "off_on_open": "Off when open for (min)",
+              "night_fan_mode": "Fan mode at night"
             }
           },
           "fans": {
@@ -137,7 +145,9 @@
               "preset": "Preset",
               "open_percentage": "Speed, window open",
               "open_preset": "Preset, window open",
-              "off_preset": "Preset before turning off"
+              "off_preset": "Preset before turning off",
+              "night_percentage": "Speed at night",
+              "night_preset": "Preset at night"
             },
             "description": "Leave “On from” and “Off below” empty for fans driven by the windows only."
           },
@@ -147,7 +157,10 @@
               "open_percentage": "Speed, window open",
               "open_preset": "Preset, window open",
               "closed_preset": "Preset, windows closed",
-              "keep_on": "Keep on"
+              "keep_on": "Keep on",
+              "night_percentage": "Speed at night",
+              "night_preset": "Preset at night",
+              "night_mode": "Mode option at night"
             },
             "data_description": {
               "keep_on": "Turn a purifier back on when it has been off for 10 s (power cut, glitch)."
@@ -162,6 +175,7 @@
           "temperature": "Temperature",
           "co2": "CO₂",
           "humidity": "Humidity",
+          "noise": "Noise",
           "openings": "Windows and doors",
           "climate": "Air conditioner",
           "fans": "Fans",
@@ -195,6 +209,7 @@
           "temperature": "Temperature",
           "co2": "CO₂",
           "humidity": "Humidity",
+          "noise": "Noise",
           "openings": "Windows and doors",
           "climate": "Air conditioner",
           "fans": "Fans",
@@ -249,7 +264,9 @@
         "too_cold": "Too cold",
         "window_open_cold": "Window open in the cold",
         "co2_high": "High CO₂",
-        "humidity_high": "High humidity"
+        "humidity_high": "High humidity",
+        "noise_high": "Noisy room",
+        "noisy_outside": "Close the windows (noisy outside)"
       }
     },
     "severity": {
@@ -293,7 +310,9 @@
           "too_cold": "Too cold",
           "window_open_cold": "Window open in the cold",
           "co2_high": "High CO₂",
-          "humidity_high": "High humidity"
+          "humidity_high": "High humidity",
+          "noise_high": "Noisy room",
+          "noisy_outside": "Close the windows (noisy outside)"
         }
       },
       "last_notification": {
@@ -381,6 +400,8 @@
     "line_window_open_cold": "{openings} open, {outdoor} °C outside",
     "line_co2_high": "CO₂ {value} ppm — air the room",
     "line_humidity_high": "humidity {value} % — air the room",
+    "line_noise_high": "noise {value} dB, above {threshold} dB",
+    "line_noisy_outside": "{value} dB outside — close {openings}",
     "action_snooze": "Snooze {hours} h",
     "action_snooze_minutes": "Snooze {minutes} min",
     "action_ack": "Got it"

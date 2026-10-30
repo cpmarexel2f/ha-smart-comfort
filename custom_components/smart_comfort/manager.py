@@ -147,7 +147,7 @@ class SmartComfort:
 
     def _track(self) -> None:
         s = self.settings
-        sensors = {e for r in s.rooms for e in r.sensors} | set(s.outdoor)
+        sensors = {e for r in s.rooms for e in r.sensors} | set(s.outdoor) | set(s.outdoor_noise)
         if s.presence:
             sensors.add(s.presence)
         devices = {e for r in s.rooms for e in r.devices}
@@ -243,6 +243,11 @@ class SmartComfort:
             return round(sum(values) / len(values), 2)
         return min(values)
 
+    def outdoor_noise(self) -> float | None:
+        """Mean of the outdoor noise sensors (dB), None without one available."""
+        values = [v for e in self.settings.outdoor_noise if (v := _float(self.hass.states.get(e))) is not None]
+        return round(sum(values) / len(values), 1) if values else None
+
     def _outdoor_gone(self, settled: bool) -> bool:
         """Every outdoor temperature entity no longer exists (not just unavailable)."""
         outdoor = self.settings.outdoor
@@ -286,14 +291,24 @@ class SmartComfort:
         opened, open_since, closed_since = self._openings(room, now)
         temperature = _temperature(self.hass.states.get(room.temperature)) if room.temperature else None
         settled = self._settled(now)
-        sources = (("temperature", room.temperature), ("co2", room.co2), ("humidity", room.humidity))
+        sources = (
+            ("temperature", room.temperature),
+            ("co2", room.co2),
+            ("humidity", room.humidity),
+            ("noise", room.noise),
+        )
         missing = {n for n, entity_id in sources if entity_id and settled and self.hass.states.get(entity_id) is None}
         if self._outdoor_gone(settled):
             missing.add("outdoor")
+        noise_sensors = self.settings.outdoor_noise
+        if settled and noise_sensors and all(self.hass.states.get(e) is None for e in noise_sensors):
+            missing.add("outdoor_noise")
         reading = RoomReading(
             temperature=temperature,
             co2=_float(self.hass.states.get(room.co2)) if room.co2 else None,
             humidity=_float(self.hass.states.get(room.humidity)) if room.humidity else None,
+            noise=_float(self.hass.states.get(room.noise)) if room.noise else None,
+            outdoor_noise=self.outdoor_noise(),
             open=opened,
             has_openings=bool(room.openings),
             missing=frozenset(missing),
@@ -326,6 +341,7 @@ class SmartComfort:
                 preset=state.attributes.get("preset_mode"),
                 percentage=state.attributes.get("percentage"),
                 option=option,
+                fan_mode=state.attributes.get("fan_mode") if is_climate else None,
                 off_since=state.last_changed if not on else None,
             )
         return out
