@@ -1,0 +1,439 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Smart Comfort",
+        "data": {
+          "notify": "Akcije za obaveštenja",
+          "outdoor_temperature": "Spoljašnja temperatura",
+          "outdoor_aggregate": "Kombinovanje spoljašnjih senzora"
+        },
+        "description": "Manje, pametnije poruke o komforu i kontrola vaših klima uređaja, ventilatora i prečišćivača vazduha. Dodajte sobe nakon ovoga u opcijama ili konfigurišite sve u YAML-u.",
+        "data_description": {
+          "notify": "Gde se šalju obaveštenja (notify.mobile_app_…, grupa za obaveštenja…).",
+          "outdoor_temperature": "Jedan ili više spoljašnjih senzora; nedostupni senzori se ignorišu.",
+          "outdoor_aggregate": "Minimum sprečava uticaj senzora koji je na suncu."
+        }
+      }
+    },
+    "error": {
+      "invalid_options": "Neke vrednosti su neispravne, proverite ih."
+    },
+    "abort": {
+      "already_configured": "Smart Comfort je već konfigurisan.",
+      "single_instance_allowed": "Smart Comfort je već konfigurisan."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Smart Comfort opcije",
+        "description": "Konfigurisano soba: {rooms}. Ako koristite YAML, promena koda će zameniti ove opcije pri sledećem ponovnom pokretanju.",
+        "menu_options": {
+          "general": "Obaveštenja",
+          "alerts": "Upozorenja",
+          "control": "Kontrola uređaja",
+          "add_room": "Dodaj sobu",
+          "edit_room": "Izmeni sobu",
+          "remove_room": "Ukloni sobe"
+        }
+      },
+      "general": {
+        "title": "Obaveštenja",
+        "data": {
+          "notify": "Akcije za obaveštenja",
+          "outdoor_temperature": "Spoljašnja temperatura",
+          "outdoor_aggregate": "Kombinovanje spoljašnjih senzora",
+          "outdoor_noise": "Spoljašnja buka",
+          "outdoor_air_quality": "Spoljašnji kvalitet vazduha",
+          "digest_window": "Prozor za sažetak",
+          "reminder": "Podsetnik",
+          "snooze_duration": "Trajanje odlaganja",
+          "startup_grace": "Period mirovanja pri pokretanju",
+          "quiet_start": "Početak tihog perioda",
+          "quiet_end": "Kraj tihog perioda",
+          "presence": "Prisustvo",
+          "clear_when_resolved": "Ukloni kada se reši",
+          "critical_volume": "Jačina zvuka kritičnog upozorenja",
+          "url": "Akcija na dodir",
+          "tag": "Oznaka obaveštenja"
+        },
+        "data_description": {
+          "notify": "Gde se šalju obaveštenja (notify.mobile_app_…, grupa za obaveštenja…).",
+          "outdoor_temperature": "Spoljašnji senzori van spoljašnjih mesta (vremenska prognoza, senzor koji nije dodeljen zoni); nedostupni senzori se ignorišu.",
+          "outdoor_aggregate": "Minimum sprečava uticaj senzora koji je na suncu.",
+          "outdoor_noise": "Spoljašnji senzori nivoa zvuka (dB), dodati onima sa spoljašnjih mesta: nema predloga za otvaranje prozora dok je bučno, i šalje se upozorenje ako su prozori otvoreni u buci.",
+          "outdoor_air_quality": "Senzori indeksa kvaliteta vazduha napolju ili u gradu (Atmo France, AQI…), dodati onima sa spoljašnjih mesta: nema predloga za otvaranje prozora dok je vazduh loš, i šalje se upozorenje ako su prozori tada otvoreni. Računa se najgori indeks.",
+          "digest_window": "Minuti čekanja na druga upozorenja pre slanja jednog grupisanog obaveštenja. Kritična upozorenja ne čekaju.",
+          "reminder": "Minuti nakon kojih se ponovo šalje obaveštenje za problem koji još uvek traje. 0: nikada (samo kada se pogorša).",
+          "snooze_duration": "Minuti za dugme 'Odloži' na obaveštenju i za podrazumevanu akciju odlaganja.",
+          "startup_grace": "Minuti nakon pokretanja Home Assistant-a tokom kojih se ništa ne šalje.",
+          "quiet_start": "Od tada pa do kraja šalju se samo kritična upozorenja; ostala se šalju na kraju ako su i dalje aktuelna.",
+          "presence": "Zona, osoba, grupa ili boolean: dok niko nije kod kuće, šalju se samo kritična upozorenja.",
+          "clear_when_resolved": "Uklonite obaveštenje sa telefona čim se reši svaki problem o kome ste obavešteni.",
+          "critical_volume": "iOS jačina zvuka kritičnog upozorenja, od 0 do 1.",
+          "url": "Otvara se kada se dodirne obaveštenje, npr. homeassistant://navigate/lovelace/comfort",
+          "tag": "Svako obaveštenje zamenjuje prethodno sa ovom oznakom umesto da se gomilaju."
+        }
+      },
+      "alerts": {
+        "title": "Upozorenja",
+        "data": {
+          "kind": "Upozorenje"
+        },
+        "description": "Podešavanja upozorenja za svaku sobu. Soba može da pregazi pragove za pretoplo / prehladno u svom obrascu, a sve u YAML-u."
+      },
+      "alert": {
+        "title": "Podešavanja upozorenja",
+        "data": {
+          "enabled": "Omogućeno",
+          "threshold": "Prag",
+          "min_indoor": "Minimalna unutrašnja temperatura",
+          "min_outdoor": "Minimalna spoljašnja temperatura",
+          "max_outdoor": "Maksimalna spoljašnja temperatura",
+          "max_outdoor_noise": "Maksimalna spoljašnja buka",
+          "max_outdoor_air": "Maksimalni nivo spoljašnjeg kvaliteta vazduha",
+          "hysteresis": "Histerezis",
+          "delay": "Kašnjenje",
+          "severity": "Ozbiljnost",
+          "escalation": "Korak eskalacije"
+        },
+        "data_description": {
+          "threshold": "Pretoplo/prehladno, CO₂, vlažnost vazduha: vrednost. Otvaranje/zatvaranje prozora: razlika između unutrašnje i spoljašnje vrednosti.",
+          "min_indoor": "Predlog za otvaranje samo kada je u prostoriji barem ovoliko toplo.",
+          "min_outdoor": "Samo kada je napolju barem ovoliko toplo.",
+          "max_outdoor": "Samo kada je napolju ovoliko hladno ili hladnije.",
+          "max_outdoor_noise": "Ne predlaže se dok je spoljašnja buka iznad ovoga (zahteva spoljašnji senzor buke).",
+          "max_outdoor_air": "Ne predlaže se dok je spoljašnji kvalitet vazduha lošiji od ovog nivoa, od 1 (dobar) do 6 (izuzetno loš).",
+          "hysteresis": "Problem se završava tek kada se vrednost vrati preko praga za ovoliko: sprečava nestabilnost (flapping).",
+          "delay": "Minuti tokom kojih uslov mora biti ispunjen pre nego što se proglasi problem.",
+          "escalation": "Ponovo obavesti kada se vrednost pogorša za ovoliko u odnosu na poslednje obaveštenje. 0: nikada."
+        }
+      },
+      "control": {
+        "title": "Kontrola uređaja",
+        "data": {
+          "enabled": "Kontroliši uređaje",
+          "start": "Pojačanje zbog prozora од",
+          "end": "Pojačanje zbog prozora до",
+          "manual_override": "Ručno premošćavanje",
+          "suppress_when_handled": "Bez upozorenja kada je rešeno",
+          "night_start": "Mirna noć od",
+          "night_end": "Mirna noć do"
+        },
+        "data_description": {
+          "start": "Ventilatori i prečišćivači prelaze na maksimalnu brzinu kada se prozor/vrata otvori samo između ovih vremena. Ako su oba prazna: ceo dan.",
+          "manual_override": "Minuti tokom kojih se ručno promenjen uređaj ne dira. 0: nikada se ne pauzira.",
+          "suppress_when_handled": "Bez upozorenja „pretoplo“ за собу u kojoj je Smart Comfort uključio klima uređaj ili ventilator.",
+          "night_start": "Između ovih vremena uređaji koriste svoja noćna podešavanja (tiša brzina, predefinisani režim или režim ventilatora) i za njih nema pojačanja zbog otvaranja prozora."
+        },
+        "sections": {
+          "climate": {
+            "name": "Klima uređaji",
+            "data": {
+              "cool_above": "Hladi iznad",
+              "off_below": "Isključi ispod",
+              "setpoint": "Zadata temperatura",
+              "fan_mode": "Režim ventilatora",
+              "closed_for": "Prozori/vrata zatvoreni (min)",
+              "off_on_open": "Isključi kada je otvoreno (min)",
+              "night_fan_mode": "Režim ventilatora noću"
+            }
+          },
+          "fans": {
+            "name": "Ventilatori",
+            "data": {
+              "on_above": "Uključi iznad",
+              "off_below": "Isključi ispod",
+              "percentage": "Brzina",
+              "preset": "Predefinisani režim",
+              "open_percentage": "Brzina, otvoren prozor",
+              "open_preset": "Predefinisani režim, otvoren prozor",
+              "off_preset": "Predefinisani režim pre isključivanja",
+              "night_percentage": "Brzina noću",
+              "night_preset": "Predefinisani režim noću"
+            },
+            "description": "Ostavite „Uključi iznad“ i „Isključi ispod“ praznim za ventilatore koji se pokreću isključivo otvaranjem prozora."
+          },
+          "purifiers": {
+            "name": "Prečišćivači vazduha",
+            "data": {
+              "open_percentage": "Brzina, otvoren prozor",
+              "open_preset": "Predefinisani režim, otvoren prozor",
+              "closed_preset": "Predefinisani režim, zatvoreni prozori",
+              "keep_on": "Zadrži uključeno",
+              "night_percentage": "Brzina noću",
+              "night_preset": "Predefinisani režim noću",
+              "night_mode": "Opcija režima noću"
+            },
+            "data_description": {
+              "keep_on": "Ponovo uključi prečišćivač kada je isključen 10 sekundi (prekid struje, greška u radu)."
+            }
+          }
+        }
+      },
+      "add_room": {
+        "title": "Dodaj sobu",
+        "data": {
+          "name": "Ime",
+          "temperature": "Temperatura",
+          "co2": "CO₂",
+          "humidity": "Vlažnost vazduha",
+          "noise": "Buka",
+          "openings": "Prozori i vrata",
+          "climate": "Klima uređaj",
+          "fans": "Ventilatori",
+          "purifiers": "Prečišćivači vazduha"
+        },
+        "description": "Senzori i uređaji u sobi. Ostavite prazno ono što soba nema.",
+        "sections": {
+          "overrides": {
+            "name": "Podešavanja sobe",
+            "description": "Pregazi globalna podešavanja za ovu sobu. Podešavanja po pojedinačnim uređajima se vrše isključivo u YAML-u.",
+            "data": {
+              "too_hot_threshold": "Pretoplo iznad",
+              "too_cold_threshold": "Prehladno ispod",
+              "fan_preset": "Predefinisani režim ventilatora",
+              "fan_open_preset": "Predefinisani režim ventilatora, otvoren prozor",
+              "fan_off_preset": "Predefinisani režim ventilatora pre isključivanja",
+              "purifier_open_preset": "Predefinisani režim prečišćivača, otvoren prozor",
+              "purifier_closed_preset": "Predefinisani režim prečišćivača, zatvoreni prozori",
+              "purifier_mode_select": "Izbor režima prečišćivača",
+              "purifier_open_mode": "Opcija režima, otvoren prozor",
+              "purifier_closed_mode": "Opcija režima, zatvoreni prozori",
+              "purifier_keep_on": "Zadrži prečišćivače uključenim"
+            }
+          }
+        }
+      },
+      "room": {
+        "title": "Izmeni sobu",
+        "data": {
+          "name": "Ime",
+          "temperature": "Temperatura",
+          "co2": "CO₂",
+          "humidity": "Vlažnost vazduha",
+          "noise": "Buka",
+          "openings": "Prozori i vrata",
+          "climate": "Klima uređaj",
+          "fans": "Ventilatori",
+          "purifiers": "Prečišćivači vazduha"
+        },
+        "description": "Senzori i uređaji u sobi. Ostavite prazno ono što soba nema.",
+        "sections": {
+          "overrides": {
+            "name": "Podešavanja sobe",
+            "description": "Pregazi globalna podešavanja za ovu sobu. Podešavanja po pojedinačnim uređajima se vrše isključivo u YAML-u.",
+            "data": {
+              "too_hot_threshold": "Pretoplo iznad",
+              "too_cold_threshold": "Prehladno ispod",
+              "fan_preset": "Predefinisani režim ventilatora",
+              "fan_open_preset": "Predefinisani režim ventilatora, otvoren prozor",
+              "fan_off_preset": "Predefinisani režim ventilatora pre isključivanja",
+              "purifier_open_preset": "Predefinisani režim prečišćivača, otvoren prozor",
+              "purifier_closed_preset": "Predefinisani režim prečišćivača, zatvoreni prozori",
+              "purifier_mode_select": "Izbor režima prečišćivača",
+              "purifier_open_mode": "Opcija režima, otvoren prozor",
+              "purifier_closed_mode": "Opcija režima, zatvoreni prozori",
+              "purifier_keep_on": "Zadrži prečišćivače uključenim"
+            }
+          }
+        }
+      },
+      "outdoor": {
+        "title": "Spoljašnji prostor",
+        "data": {
+          "name": "Ime",
+          "temperature": "Temperatura",
+          "air_quality": "Kvalitet vazduha",
+          "noise": "Buka"
+        }
+      },
+      "edit_room": {
+        "title": "Izmeni sobu",
+        "data": {
+          "room": "Soba"
+        }
+      },
+      "remove_room": {
+        "title": "Ukloni sobe",
+        "data": {
+          "rooms": "Sobe"
+        }
+      }
+    },
+    "error": {
+      "name_required": "Dajte ime sobi.",
+      "name_exists": "Soba sa ovim imenom već postoji.",
+      "invalid_options": "Neke vrednosti su neispravne, proverite ih."
+    }
+  },
+  "selector": {
+    "kind": {
+      "options": {
+        "too_hot": "Pretoplo",
+        "close_windows": "Zatvorite prozore (toplije je napolju)",
+        "ventilate": "Otvorite prozore (svežije je napolju)",
+        "too_cold": "Prehladno",
+        "window_open_cold": "Prozor otvoren na hladnoći",
+        "co2_high": "Visok nivo CO₂",
+        "humidity_high": "Visoka vlažnost vazduha",
+        "noise_high": "Bučna soba",
+        "noisy_outside": "Zatvorite prozore (bučno je napolju)",
+        "bad_air_outside": "Zatvorite prozore (loš vazduh napolju)"
+      }
+    },
+    "severity": {
+      "options": {
+        "info": "Informacija (nečujno)",
+        "warning": "Upozorenje (vremenski osetljivo, zvuk)",
+        "critical": "Kritično (zaobilazi tihi period i nečujni režim)"
+      }
+    },
+    "outdoor_aggregate": {
+      "options": {
+        "min": "Minimum",
+        "max": "Maximum",
+        "mean": "Prosek"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "alerts": {
+        "name": "Aktivna upozorenja",
+        "state_attributes": {
+          "alerts": {
+            "name": "Upozorenja"
+          },
+          "snoozes": {
+            "name": "Odložena upozorenja"
+          },
+          "outdoor_temperature": {
+            "name": "Spoljašnja temperatura"
+          },
+          "outdoor_noise": {
+            "name": "Spoljašnja buka"
+          },
+          "outdoor_air_quality": {
+            "name": "Spoljašnji kvalitet vazduha"
+          }
+        }
+      },
+      "room": {
+        "name": "{room} komfor",
+        "state": {
+          "ok": "U redu",
+          "too_hot": "Pretoplo",
+          "close_windows": "Zatvorite prozore (toplije je napolju)",
+          "ventilate": "Otvorite prozore (svežije je napolju)",
+          "too_cold": "Prehladno",
+          "window_open_cold": "Prozor otvoren na hladnoći",
+          "co2_high": "Visok nivo CO₂",
+          "humidity_high": "Visoka vlažnost vazduha",
+          "noise_high": "Bučna soba",
+          "noisy_outside": "Zatvorite prozore (bučno je napolju)",
+          "bad_air_outside": "Zatvorite prozore (loš vazduh napolju)"
+        }
+      },
+      "last_notification": {
+        "name": "Poslednje obaveštenje"
+      }
+    },
+    "switch": {
+      "notifications": {
+        "name": "Obaveštenja"
+      },
+      "control": {
+        "name": "Kontrola uređaja"
+      }
+    },
+    "button": {
+      "notify_now": {
+        "name": "Obavesti odmah"
+      },
+      "unsnooze": {
+        "name": "Poništi odlaganja"
+      }
+    }
+  },
+  "services": {
+    "snooze": {
+      "name": "Odloži",
+      "description": "Privremeno prekida slanje obaveštenja za upozorenja iz izabranih soba i vrsta (podrazumevano za sve).",
+      "fields": {
+        "duration": {
+          "name": "Trajanje",
+          "description": "Minuti; podrazumevano je trajanje odlaganja iz opcija."
+        },
+        "rooms": {
+          "name": "Sobe",
+          "description": "Imena ili ID-ovi soba; podrazumevano za sve."
+        },
+        "kinds": {
+          "name": "Upozorenja",
+          "description": "Ako je podešeno, odlažu se samo trenutna upozorenja ovih vrsta."
+        }
+      }
+    },
+    "unsnooze": {
+      "name": "Poništi odlaganja",
+      "description": "Ponovo šalje obaveštenja za odložena upozorenja iz izabranih soba (podrazumevano za sve).",
+      "fields": {
+        "rooms": {
+          "name": "Sobe",
+          "description": "Imena ili ID-ovi soba; podrazumevano za sve."
+        }
+      }
+    },
+    "acknowledge": {
+      "name": "Potvrdi",
+      "description": "Isključuje podsetnike i eskalaciju za trenutna upozorenja sve dok se ona ne završe.",
+      "fields": {
+        "rooms": {
+          "name": "Sobe",
+          "description": "Imena ili ID-ovi soba; podrazumevano za sve."
+        },
+        "kinds": {
+          "name": "Upozorenja",
+          "description": "Vrste upozorenja; podrazumevano za sve."
+        }
+      }
+    },
+    "notify_now": {
+      "name": "Obavesti odmah",
+      "description": "Šalje sve trenutne probleme u jednom obaveštenju, ignorišući tihi period i prozor za sažetak."
+    }
+  },
+  "common": {
+    "title_one": "{room}",
+    "title_many": "Upozorenja o komforu ({count})",
+    "room_line": "{room}: {problem}",
+    "decimal": ",",
+    "duration_minutes": "{minutes} min",
+    "duration_hours": "{hours} h {minutes:02d} min",
+    "since": "već {duration}",
+    "worse": "pogoršava se",
+    "line_too_hot": "{value} °C, iznad {threshold} °C",
+    "line_too_cold": "{value} °C, ispod {threshold} °C",
+    "line_ventilate": "{temperature} °C unutra, {outdoor} °C napolju — otvorite prozore",
+    "line_close_windows": "{outdoor} °C napolju, {temperature} °C unutra — zatvorite {openings}",
+    "line_window_open_cold": "{openings} otvoreno, {outdoor} °C napolju",
+    "line_co2_high": "CO₂ {value} ppm — provetrite sobu",
+    "line_humidity_high": "vlažnost {value} % — provetrite sobu",
+    "line_noise_high": "buka {value} dB, iznad {threshold} dB",
+    "line_noisy_outside": "{value} dB napolju — zatvorite {openings}",
+    "line_bad_air_outside": "spoljašnji kvalitet vazduha {value}/6 — zatvorite {openings}",
+    "action_snooze": "Odloži na {hours} h",
+    "action_snooze_minutes": "Odloži na {minutes} min",
+    "action_ack": "Potvrdi"
+  },
+  "exceptions": {
+    "not_loaded": {
+      "message": "Smart Comfort nije učitan."
+    },
+    "unknown_room": {
+      "message": "Nepoznata soba: {room}."
+    }
+  }
+}
