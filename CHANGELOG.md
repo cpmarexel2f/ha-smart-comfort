@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+
+### Fixes
+- Panel: the overview no longer shows "Smart Comfort is not loaded" for up to 30 s after a reload (options saved, restart, integration reloaded): the status sent at the end of the setup is now taken into account, and the overview follows the live status instead of the state read when the panel opened.
+
 ## 0.3.0
 
 ### What's new
