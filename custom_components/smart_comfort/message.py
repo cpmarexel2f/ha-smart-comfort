@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 
 from .const import (
+    KIND_BAD_AIR_OUTSIDE,
     KIND_CLOSE_WINDOWS,
     KIND_CO2,
     KIND_HUMIDITY,
@@ -30,6 +31,7 @@ ICONS = {
     KIND_HUMIDITY: "💧",
     KIND_NOISE: "🔊",
     KIND_NOISY_OUTSIDE: "🔇",
+    KIND_BAD_AIR_OUTSIDE: "😷",
 }
 
 # English fallbacks, used when a translation is missing or broken.
@@ -51,12 +53,13 @@ FALLBACK = {
     "line_humidity_high": "humidity {value} % — air the room",
     "line_noise_high": "noise {value} dB, above {threshold} dB",
     "line_noisy_outside": "{value} dB outside — close {openings}",
+    "line_bad_air_outside": "outdoor air quality {value}/6 — close {openings}",
     "action_snooze": "Snooze {hours} h",
     "action_snooze_minutes": "Snooze {minutes} min",
     "action_ack": "Got it",
 }
 
-DIGITS = {KIND_CO2: 0, KIND_HUMIDITY: 0, KIND_NOISE: 0, KIND_NOISY_OUTSIDE: 0}
+DIGITS = {KIND_CO2: 0, KIND_HUMIDITY: 0, KIND_NOISE: 0, KIND_NOISY_OUTSIDE: 0, KIND_BAD_AIR_OUTSIDE: 0}
 
 
 def format_text(texts: dict[str, str], key: str, **values: object) -> str:

@@ -16,7 +16,7 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
 
 ## Features
 
-- **Nine alerts per room**: too hot, too cold, open the windows (warmer inside than outside), close the windows (hotter outside), window open in the cold, high CO₂, high humidity, noisy room, close the windows (noisy outside) — each with its threshold, hysteresis, delay, severity and escalation step, globally and per room
+- **Ten alerts per room**: too hot, too cold, open the windows (warmer inside than outside), close the windows (hotter outside), window open in the cold, high CO₂, high humidity, noisy room, close the windows (noisy outside), close the windows (poor air outside) — each with its threshold, hysteresis, delay, severity and escalation step, globally and per room
 - **Episodes, not cooldowns**: one notification when a problem starts, none while it lasts; again when it gets worse by the escalation step, or after the reminder delay (off by default)
 - **Hysteresis and delay**: a problem starts once its condition has held for the delay, and ends only once the value is back past the threshold by the hysteresis — no flapping. An unavailable sensor changes nothing
 - **Digest**: what comes up within the digest window (5 minutes by default) goes out in **one** notification listing every current problem, replacing the previous one on the phone (notification `tag`) instead of piling up
@@ -31,7 +31,9 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
   - commands are sent only when the target changes and the device isn't already in that state; a device changed **by hand** is left alone for an hour (configurable)
   - a room whose air conditioner or fan Smart Comfort has turned on gets no "too hot" alert (a device turned on by hand doesn't count)
   - **quiet night**: in the night hours (22:00–07:00 by default), devices with night settings run quieter — a fan at a lower speed or a sleep preset, a purifier in its sleep preset or mode, an air conditioner in its silent fan mode — and get no window boost; the day settings (or the state before the night) come back in the morning
+- **Outdoors**: outdoor places (garden, terrace…) with their temperature, air quality and noise sensors, plus sensors in no area (weather entity, a city air quality index such as Atmo France)
 - **Noise**: a sound level sensor per room (noisy room alert), and outdoor noise sensors: no suggestion to open the windows while it is noisy outside, and an alert to close them when they are open in the noise
+- **Outdoor air quality**: an index from 1 (good) to 6 (extremely poor) — European indexes (Atmo, EAQI) as is, US AQI by its bands, text states (good, poor…) — the worst sensor counts: no suggestion to open the windows while the air is poor, and an alert to close them when they are open then
 - **No re-notification after a restart**: episodes, snoozes and device targets are stored; nothing is sent during the startup grace period
 - **YAML or UI**: configure everything in YAML (imported at startup), in the **Smart Comfort panel** of the sidebar, or in the integration options — rooms, alerts, control
 - Sensors for the active alerts and the comfort of each room, switches to pause the notifications or the device control, buttons, actions and events
@@ -41,7 +43,7 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
 
 - Home Assistant 2024.12 or newer
 - A notify action: the [Companion app](https://companion.home-assistant.io/) (`notify.mobile_app_…`) or a notify group of several phones. The snooze buttons, replacement and clearing of notifications need the Companion app; other notifiers get the title and message (and no clearing message)
-- Temperature (and optionally CO₂ / humidity) sensors per room, door/window `binary_sensor`s, and outdoor temperature sensors for the window alerts
+- Temperature (and optionally CO₂ / humidity / noise) sensors per room, door/window `binary_sensor`s, and outdoor temperature sensors (or a weather entity) for the window alerts; optionally outdoor air quality and noise sensors
 
 ## Installation
 
@@ -75,8 +77,8 @@ Both ways can be used together:
 
 Once set up, Smart Comfort adds a **Smart Comfort** page to the sidebar, for administrators:
 
-- **Overview**: the active alerts with their state (notified, snoozed, acknowledged, handled by a running device) and **Snooze** / **Got it** buttons, the readings and devices of each room with their targets and manual overrides, the last notification, and switches for the notifications and the device control
-- **Rooms**: **Discover** adds a room for every Home Assistant area except the outdoor ones (garden, terrace, balcony…) and sets it up: temperature, CO₂ and humidity sensors (a weather station preferred over a device's own sensor), windows and doors, air conditioner (only one that can cool), fans with their natural / direct presets, purifiers with their auto / manual mode select or presets; the temperature sensors of the outdoor areas become the outdoor temperature. What is already set is kept, and running it again only adds what is new. Nothing is saved until **Save**. Then add, remove and reorder rooms; their sensors and openings; their air conditioner, fans and purifiers, each with its own settings (presets offered from the device, mode select and its options); and alert overrides for the room
+- **Overview**: while nothing is set up (no room nor outdoor place), a **Discover** button that runs the discovery and opens its result in the Rooms tab; the active alerts with their state (notified, snoozed, acknowledged, handled by a running device) and **Snooze** / **Got it** buttons, the readings and devices of each room with their targets and manual overrides, the last notification, and switches for the notifications and the device control
+- **Rooms**: **Discover** adds a room for every Home Assistant area and sets it up: temperature, CO₂, humidity and noise sensors (a weather station preferred over a device's own sensor), windows and doors, air conditioner (only one that can cool), fans with their natural / direct presets, purifiers with their auto / manual mode select or presets, and the night settings from their quiet presets and fan modes. The outdoor areas (garden, terrace, balcony…) go to the **Outdoors** category below the rooms, with their temperature, air quality and noise sensors (an outdoor module counts by its device's area); outdoor sensors in no area — a sensor named outdoor, a city air quality index (Atmo France, WAQI…), and the weather entity when there is no outdoor temperature sensor — go to the Notifications tab. What is already set is kept, and running it again only adds what is new. Nothing is saved until **Save**. Then add, remove and reorder rooms; their sensors and openings; their air conditioner, fans and purifiers, each with its own settings (presets offered from the device, mode select and its options); and alert overrides for the room; and add or remove outdoor places
 - **Alerts**, **Notifications**, **Device control**: the global settings, with their defaults
 
 Changes are checked and saved with **Save** (or dropped with **Discard**); the integration reloads with them, and the page keeps following its status. Only the settings that differ from the defaults are stored. When the configuration comes from YAML, the page says so: what is saved there stays until the YAML changes.
@@ -88,9 +90,13 @@ Each tab has its own address, e.g. `/smart-comfort/rooms`.
 <details>
 <summary>More screenshots</summary>
 
+![Discover offered in the overview while nothing is set up](screenshots/panel-start.png)
+
 ![Rooms found by Discover, before saving](screenshots/panel-discover.png)
 
 ![A room in the Smart Comfort panel](screenshots/panel-room.png)
+
+![The outdoor places, below the rooms](screenshots/panel-outdoors.png)
 
 ![Alert settings in the Smart Comfort panel](screenshots/panel-alerts.png)
 
@@ -104,11 +110,9 @@ Each tab has its own address, e.g. `/smart-comfort/rooms`.
 smart_comfort:
   notify:
     - notify.family            # a notify group, or notify.mobile_app_…
-  outdoor_temperature:
-    - sensor.outdoor_north_temperature
-    - sensor.outdoor_south_temperature
+  outdoor_temperature: [weather.home]       # outdoor sensors in no outdoor place
   outdoor_aggregate: min       # min avoids a sensor in the sun
-  outdoor_noise: [sensor.street_sound_level]
+  outdoor_air_quality: [sensor.atmo_france_qualite_globale_rennes]
   quiet_start: "22:30"
   quiet_end: "08:00"
   presence: zone.home
@@ -160,6 +164,15 @@ smart_comfort:
 
     - name: Bathroom
       humidity: sensor.bathroom_humidity
+
+  outdoors:
+    - name: Terrace
+      temperature:
+        - sensor.outdoor_north_temperature
+        - sensor.outdoor_south_temperature
+      noise: [sensor.street_sound_level]
+    - name: Garden
+      air_quality: [sensor.garden_aqi]
 ```
 
 ### General options
@@ -167,9 +180,10 @@ smart_comfort:
 | Option | Default | Description |
 |---|---|---|
 | `notify` | none | Notify actions the alerts go to |
-| `outdoor_temperature` | none | Outdoor sensors (or `weather` entities, their `temperature` attribute); unavailable ones are ignored |
-| `outdoor_aggregate` | `min` | `min`, `max` or `mean` of the outdoor sensors |
-| `outdoor_noise` | none | Outdoor sound level sensors (dB, mean of the available ones) for the noise alerts |
+| `outdoor_temperature` | none | Outdoor sensors (or `weather` entities, their `temperature` attribute), with those of the outdoor places; unavailable ones are ignored |
+| `outdoor_aggregate` | `min` | `min`, `max` or `mean` of the outdoor temperature sensors |
+| `outdoor_noise` | none | Outdoor sound level sensors (dB, mean of the available ones, with those of the outdoor places) for the noise alerts |
+| `outdoor_air_quality` | none | Outdoor air quality index sensors (the worst of the available ones, with those of the outdoor places) for the air alerts |
 | `digest_window` | 5 min | Wait for other alerts before sending one grouped notification. Critical alerts don't wait |
 | `reminder` | 0 | Minutes after which a problem still going on is notified again. 0: never (only when it gets worse) |
 | `snooze_duration` | 240 min | Duration of the **Snooze** button and of the `snooze` action by default |
@@ -195,9 +209,16 @@ Set under `alerts:` for every room, and under `rooms[].alerts:` for one room.
 | `co2_high` | CO₂ > `threshold` | 1200 ppm, info |
 | `humidity_high` | humidity > `threshold` | 70 %, info |
 | `noise_high` | room noise > `threshold` (room `noise` sensor) | 60 dB, info |
-| `noisy_outside` | an opening open, outdoor noise > `threshold` (`outdoor_noise` sensors) | 65 dB, info |
+| `noisy_outside` | an opening open, outdoor noise > `threshold` (outdoor noise sensors) | 65 dB, info |
+| `bad_air_outside` | an opening open, outdoor air quality level > `threshold` (outdoor air quality sensors) | 3 (degraded), info |
 
-`ventilate` also takes `max_outdoor_noise` (65 dB): no suggestion to open while the outdoor noise is above it. Without an outdoor noise sensor (or while it is unavailable) noise doesn't hold anything back.
+`ventilate` also takes `max_outdoor_noise` (65 dB) and `max_outdoor_air` (3): no suggestion to open while the outdoor noise or air quality level is above them. Without an outdoor noise or air quality sensor (or while it is unavailable) it doesn't hold anything back.
+
+### Outdoor places
+
+Under `outdoors:`, one entry per place: `name`, and lists of entities `temperature` (sensors or `weather` entities), `air_quality` and `noise`. Their sensors add up with the top-level `outdoor_temperature`, `outdoor_air_quality` and `outdoor_noise`.
+
+Air quality is read as a level from 1 (good) to 6 (extremely poor): a European index (Atmo France, EAQI) as is, a US AQI (device class `aqi`, or a value above 6) by its bands (≤ 50: 1, ≤ 100: 2, ≤ 150: 3, ≤ 200: 4, ≤ 300: 5, above: 6), a text state (`good`, `fair`, `moderate`, `poor`, `very_poor`, `extremely_poor`, `bon`, `mauvais`…) by its name. 0 means no data (Atmo).
 
 Each alert also takes `enabled`, `hysteresis` (how far back past the threshold the value must go for the problem to end), `delay` (minutes the condition must hold), `severity` (`info`, `warning`, `critical`) and `escalation` (notify again when the value gets this much worse; 0: never).
 
@@ -235,7 +256,7 @@ Thresholds and messages are in °C; sensors in °F or K are converted. An openin
 
 | Entity | Description |
 |---|---|
-| `sensor.smart_comfort_active_alerts` | Number of current problems. Attributes: `alerts` (room, kind, value, since, notified_at, snoozed, acknowledged, handled…), `snoozes`, `outdoor_temperature` |
+| `sensor.smart_comfort_active_alerts` | Number of current problems. Attributes: `alerts` (room, kind, value, since, notified_at, snoozed, acknowledged, handled…), `snoozes`, `outdoor_temperature`, `outdoor_noise`, `outdoor_air_quality` |
 | `sensor.smart_comfort_<room>_comfort` | `ok` or the main problem of the room. Attributes: readings, open and ignored openings, alerts, device targets and manual overrides |
 | `sensor.smart_comfort_last_notification` | Time of the last notification. Attributes: `title`, `message`, `severity`, `alerts` |
 | `switch.smart_comfort_notifications` | Send notifications (problems are still tracked when off) |

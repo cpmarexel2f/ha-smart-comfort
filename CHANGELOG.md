@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0
+
+### What's new
+- **Outdoors**: outdoor places (`outdoors:` — garden, terrace…), each with its `temperature`, `air_quality` and `noise` sensors, shown in an **Outdoors** category below the rooms in the panel. Their sensors add up with the top-level outdoor options.
+- **Outdoor air quality**: `outdoor_air_quality` sensors and those of the outdoor places, read as a level from 1 (good) to 6 (extremely poor) — European indexes (Atmo France, EAQI) as is, US AQI by its bands, text states — the worst one counts. A **close the windows (poor air outside)** alert (`bad_air_outside`, above level 3), and no suggestion to open the windows while the air is poor (`ventilate.max_outdoor_air`, 3). Shown in the overview and in the attributes of the active alerts sensor, with the outdoor noise.
+- While nothing is set up (no room nor outdoor place), the overview of the panel offers **Discover**, which opens its result in the Rooms tab.
+- Discover puts the outdoor areas in the Outdoors category instead of leaving them out, with their temperature, air quality and noise sensors (an outdoor module counts by the area of its device); their sensors leave the top-level options, where they would count twice. Outdoor sensors in no area are added to the top-level options: a sensor named outdoor, a city air quality index (Atmo France, WAQI, AirVisual…, not its forecast nor pollen), and the weather entity when there is no outdoor temperature sensor at all.
+
+### Fixes
+- Discover completes the outdoor sensors that are already set instead of skipping them as soon as one is there.
+- Options flow: the noise alerts and the maximum outdoor noise show dB instead of °C.
+
 ## 0.4.0
 
 ### What's new

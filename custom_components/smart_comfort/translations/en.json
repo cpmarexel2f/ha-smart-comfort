@@ -45,6 +45,7 @@
           "outdoor_temperature": "Outdoor temperature",
           "outdoor_aggregate": "Combine outdoor sensors",
           "outdoor_noise": "Outdoor noise",
+          "outdoor_air_quality": "Outdoor air quality",
           "digest_window": "Digest window",
           "reminder": "Reminder",
           "snooze_duration": "Snooze duration",
@@ -59,9 +60,10 @@
         },
         "data_description": {
           "notify": "Where the alerts go (notify.mobile_app_…, a notify group…).",
-          "outdoor_temperature": "One or more outdoor sensors; unavailable ones are ignored.",
+          "outdoor_temperature": "Outdoor sensors outside the outdoor places (weather entity, sensor in no area); unavailable ones are ignored.",
           "outdoor_aggregate": "Minimum avoids a sensor in the sun.",
-          "outdoor_noise": "Sound level sensors outside (dB): no suggestion to open the windows while it's noisy, and an alert when windows are open in the noise.",
+          "outdoor_noise": "Sound level sensors outside (dB), added to those of the outdoor places: no suggestion to open the windows while it's noisy, and an alert when windows are open in the noise.",
+          "outdoor_air_quality": "Air quality index sensors outside or in the city (Atmo France, AQI…), added to those of the outdoor places: no suggestion to open the windows while the air is poor, and an alert when windows are open then. The worst one counts.",
           "digest_window": "Minutes to wait for other alerts before sending one grouped notification. Critical alerts don't wait.",
           "reminder": "Minutes after which a problem still going on is notified again. 0: never (only when it gets worse).",
           "snooze_duration": "Minutes of the notification's Snooze button and of the snooze action by default.",
@@ -90,6 +92,7 @@
           "min_outdoor": "Minimum outdoor temperature",
           "max_outdoor": "Maximum outdoor temperature",
           "max_outdoor_noise": "Maximum outdoor noise",
+          "max_outdoor_air": "Maximum outdoor air quality level",
           "hysteresis": "Hysteresis",
           "delay": "Delay",
           "severity": "Severity",
@@ -101,6 +104,7 @@
           "min_outdoor": "Only when it is at least this hot outside.",
           "max_outdoor": "Only when it is this cold or colder outside.",
           "max_outdoor_noise": "Not suggested while the outdoor noise is above this (needs an outdoor noise sensor).",
+          "max_outdoor_air": "Not suggested while the outdoor air quality is worse than this level, from 1 (good) to 6 (extremely poor).",
           "hysteresis": "The problem ends only once the value is back past the threshold by this much: no flapping.",
           "delay": "Minutes the condition must hold before it is a problem.",
           "escalation": "Notify again when the value gets this much worse than when last notified. 0: never."
@@ -236,6 +240,15 @@
           }
         }
       },
+      "outdoor": {
+        "title": "Outdoor place",
+        "data": {
+          "name": "Name",
+          "temperature": "Temperature",
+          "air_quality": "Air quality",
+          "noise": "Noise"
+        }
+      },
       "edit_room": {
         "title": "Edit a room",
         "data": {
@@ -266,7 +279,8 @@
         "co2_high": "High CO₂",
         "humidity_high": "High humidity",
         "noise_high": "Noisy room",
-        "noisy_outside": "Close the windows (noisy outside)"
+        "noisy_outside": "Close the windows (noisy outside)",
+        "bad_air_outside": "Close the windows (poor air outside)"
       }
     },
     "severity": {
@@ -297,6 +311,12 @@
           },
           "outdoor_temperature": {
             "name": "Outdoor temperature"
+          },
+          "outdoor_noise": {
+            "name": "Outdoor noise"
+          },
+          "outdoor_air_quality": {
+            "name": "Outdoor air quality"
           }
         }
       },
@@ -312,7 +332,8 @@
           "co2_high": "High CO₂",
           "humidity_high": "High humidity",
           "noise_high": "Noisy room",
-          "noisy_outside": "Close the windows (noisy outside)"
+          "noisy_outside": "Close the windows (noisy outside)",
+          "bad_air_outside": "Close the windows (poor air outside)"
         }
       },
       "last_notification": {
@@ -402,6 +423,7 @@
     "line_humidity_high": "humidity {value} % — air the room",
     "line_noise_high": "noise {value} dB, above {threshold} dB",
     "line_noisy_outside": "{value} dB outside — close {openings}",
+    "line_bad_air_outside": "outdoor air quality {value}/6 — close {openings}",
     "action_snooze": "Snooze {hours} h",
     "action_snooze_minutes": "Snooze {minutes} min",
     "action_ack": "Got it"

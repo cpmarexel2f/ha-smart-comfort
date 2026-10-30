@@ -18,7 +18,7 @@ from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
 from homeassistant.util.unit_conversion import TemperatureConverter
 
-from .config import Room, Settings, in_window
+from .config import Room, Settings, in_window, slugify
 from .const import (
     ACTION_ACK,
     ACTION_SNOOZE,
@@ -72,6 +72,56 @@ def _temperature(state: State | None) -> float | None:
         return None
     if unit in TemperatureConverter.VALID_UNITS and unit != UnitOfTemperature.CELSIUS:
         value = round(TemperatureConverter.convert(value, unit, UnitOfTemperature.CELSIUS), 2)
+    return value
+
+
+# Air quality states and their level, 1 (good) to 6 (extremely poor), in slug form (several languages).
+AIR_LEVELS = {
+    "excellent": 1,
+    "very_good": 1,
+    "good": 1,
+    "bon": 1,
+    "tres_bon": 1,
+    "fair": 2,
+    "moderate": 2,
+    "medium": 2,
+    "moyen": 2,
+    "degraded": 3,
+    "degrade": 3,
+    "unhealthy_for_sensitive_groups": 3,
+    "poor": 4,
+    "bad": 4,
+    "unhealthy": 4,
+    "mauvais": 4,
+    "very_poor": 5,
+    "very_bad": 5,
+    "very_unhealthy": 5,
+    "tres_mauvais": 5,
+    "extremely_poor": 6,
+    "hazardous": 6,
+    "extremement_mauvais": 6,
+}
+# US AQI upper bounds of the levels 1 to 5 (above: 6).
+AQI_LEVELS = (50, 100, 150, 200, 300)
+
+
+def air_level(state: State | None) -> float | None:
+    """Air quality level from 1 (good) to 6 (extremely poor).
+
+    A European index (Atmo, EAQI: 1 to 6) as is, a US AQI (device class aqi, or above 6) by its bands,
+    or a text state (good, poor, mauvais…). 0 or below: no data (Atmo).
+    """
+    if state is None or state.state in BAD_STATES:
+        return None
+    try:
+        value = float(state.state)
+    except ValueError:
+        level = AIR_LEVELS.get(slugify(state.state))
+        return None if level is None else float(level)
+    if value <= 0:
+        return None
+    if state.attributes.get("device_class") == "aqi" or value > 6:
+        return float(next((i + 1 for i, top in enumerate(AQI_LEVELS) if value <= top), 6))
     return value
 
 
@@ -147,7 +197,7 @@ class SmartComfort:
 
     def _track(self) -> None:
         s = self.settings
-        sensors = {e for r in s.rooms for e in r.sensors} | set(s.outdoor) | set(s.outdoor_noise)
+        sensors = {e for r in s.rooms for e in r.sensors} | set(s.outdoor) | set(s.outdoor_noise) | set(s.outdoor_air)
         if s.presence:
             sensors.add(s.presence)
         devices = {e for r in s.rooms for e in r.devices}
@@ -248,6 +298,11 @@ class SmartComfort:
         values = [v for e in self.settings.outdoor_noise if (v := _float(self.hass.states.get(e))) is not None]
         return round(sum(values) / len(values), 1) if values else None
 
+    def outdoor_air(self) -> float | None:
+        """Worst level of the outdoor air quality sensors, None without one available."""
+        values = [v for e in self.settings.outdoor_air if (v := air_level(self.hass.states.get(e))) is not None]
+        return max(values) if values else None
+
     def _outdoor_gone(self, settled: bool) -> bool:
         """Every outdoor temperature entity no longer exists (not just unavailable)."""
         outdoor = self.settings.outdoor
@@ -300,15 +355,19 @@ class SmartComfort:
         missing = {n for n, entity_id in sources if entity_id and settled and self.hass.states.get(entity_id) is None}
         if self._outdoor_gone(settled):
             missing.add("outdoor")
-        noise_sensors = self.settings.outdoor_noise
-        if settled and noise_sensors and all(self.hass.states.get(e) is None for e in noise_sensors):
-            missing.add("outdoor_noise")
+        for name, outdoor_sensors in (
+            ("outdoor_noise", self.settings.outdoor_noise),
+            ("outdoor_air", self.settings.outdoor_air),
+        ):
+            if settled and outdoor_sensors and all(self.hass.states.get(e) is None for e in outdoor_sensors):
+                missing.add(name)
         reading = RoomReading(
             temperature=temperature,
             co2=_float(self.hass.states.get(room.co2)) if room.co2 else None,
             humidity=_float(self.hass.states.get(room.humidity)) if room.humidity else None,
             noise=_float(self.hass.states.get(room.noise)) if room.noise else None,
             outdoor_noise=self.outdoor_noise(),
+            outdoor_air=self.outdoor_air(),
             open=opened,
             has_openings=bool(room.openings),
             missing=frozenset(missing),

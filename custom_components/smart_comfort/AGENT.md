@@ -21,7 +21,7 @@ custom_components/smart_comfort/
 ├── button.py        # notify_now, unsnooze
 ├── status.py        # episode_info / room_info / status: shared by the sensors and the panel
 ├── websocket.py     # smart_comfort/config, smart_comfort/config/save (OPTIONS + unique room names), smart_comfort/subscribe (SIGNAL_UPDATE)
-├── discovery.py     # discover_rooms (areas -> rooms, outdoor areas -> outdoor sensors), merge (keeps what is set, matches on area then name)
+├── discovery.py     # discover_rooms -> Found (areas -> rooms, outdoor areas -> outdoor places, outdoor sensors in no area), merge (keeps what is set, matches on area then name; place sensors leave the top-level lists)
 ├── panel.py         # Static path /smart_comfort_static (once per run) + custom panel "smart-comfort" (admin), removed with the entry
 ├── frontend/smart-comfort-panel.js  # Plain web component (no build): tabs overview/rooms/alerts/notifications/control, ha-form
 ├── entity.py / icons.json / services.yaml / translations/{en,fr,de,es}.json / brand/
@@ -40,6 +40,7 @@ custom_components/smart_comfort/
 
 ## Noise and quiet night
 - Kinds `noise_high` (room `noise`, sound_pressure sensor) and `noisy_outside` (opening open, `outdoor_noise` mean > threshold); `ventilate` is false while the outdoor noise is above `max_outdoor_noise` (unknown noise: no objection). `RoomReading.outdoor_noise` carries the global value to each room; `GLOBAL_SOURCES` are not room fields.
+- Outdoors: `outdoors` places (name, area, lists temperature / air_quality / noise); `build_settings` unions them with the top-level `outdoor_temperature` / `outdoor_air_quality` / `outdoor_noise` into `Settings.outdoor` / `outdoor_air` / `outdoor_noise`. Air quality = level 1–6 (`manager.air_level`: European index as is, US AQI by bands when device class aqi or > 6, text states; ≤ 0 = no data), worst sensor wins. Kind `bad_air_outside` (opening open, level > threshold); `ventilate` false while the level is above `max_outdoor_air`.
 - `Settings.night(local)` (control `night_start`/`night_end`, none when either is unset). Device `quiet` = has night settings. Targets `cool_night` / `on_night` / `night` (purifier), normalized at each evaluation so day <-> night switches send only what changes (climate already cooling: fan mode only). No window boost at night for quiet devices. A purifier's night, like its boost, saves `_snapshot` (on, preset, percentage, mode option) in `before_boost` when it has no closed preset/mode, restored at `normal`.
 
 ## Panel

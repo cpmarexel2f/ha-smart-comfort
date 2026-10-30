@@ -12,6 +12,7 @@ CONF_NOTIFY: Final = "notify"
 CONF_OUTDOOR: Final = "outdoor_temperature"
 CONF_OUTDOOR_AGGREGATE: Final = "outdoor_aggregate"
 CONF_OUTDOOR_NOISE: Final = "outdoor_noise"
+CONF_OUTDOOR_AIR: Final = "outdoor_air_quality"
 CONF_DIGEST_WINDOW: Final = "digest_window"
 CONF_STARTUP_GRACE: Final = "startup_grace"
 CONF_REMINDER: Final = "reminder"
@@ -26,6 +27,8 @@ CONF_TAG: Final = "tag"
 CONF_ALERTS: Final = "alerts"
 CONF_CONTROL: Final = "control"
 CONF_ROOMS: Final = "rooms"
+# Outdoor places (garden, terrace…): their sensors give the outdoor temperature, air quality and noise.
+CONF_OUTDOORS: Final = "outdoors"
 
 # Rooms.
 CONF_NAME: Final = "name"
@@ -39,6 +42,7 @@ CONF_CLIMATE: Final = "climate"
 CONF_FANS: Final = "fans"
 CONF_PURIFIERS: Final = "purifiers"
 CONF_ENTITY_ID: Final = "entity_id"
+CONF_AIR_QUALITY: Final = "air_quality"
 
 # Alert settings.
 CONF_ENABLED: Final = "enabled"
@@ -51,6 +55,7 @@ CONF_MIN_OUTDOOR: Final = "min_outdoor"
 CONF_MAX_OUTDOOR: Final = "max_outdoor"
 CONF_MIN_INDOOR: Final = "min_indoor"
 CONF_MAX_NOISE: Final = "max_outdoor_noise"
+CONF_MAX_AIR: Final = "max_outdoor_air"
 
 # Control settings.
 CONF_START: Final = "start"
@@ -92,6 +97,7 @@ KIND_CO2: Final = "co2_high"
 KIND_HUMIDITY: Final = "humidity_high"
 KIND_NOISE: Final = "noise_high"
 KIND_NOISY_OUTSIDE: Final = "noisy_outside"
+KIND_BAD_AIR_OUTSIDE: Final = "bad_air_outside"
 KINDS: Final = (
     KIND_TOO_HOT,
     KIND_CLOSE_WINDOWS,
@@ -102,6 +108,7 @@ KINDS: Final = (
     KIND_HUMIDITY,
     KIND_NOISE,
     KIND_NOISY_OUTSIDE,
+    KIND_BAD_AIR_OUTSIDE,
 )
 
 SEVERITY_INFO: Final = "info"
@@ -147,6 +154,8 @@ DEFAULT_ALERTS: Final[dict[str, dict]] = {
         CONF_MIN_INDOOR: 24.0,
         # Not suggested while the outdoor noise is above this (with an outdoor noise sensor).
         CONF_MAX_NOISE: 65.0,
+        # Nor while the outdoor air quality is worse than this level (1 good … 6 extremely poor).
+        CONF_MAX_AIR: 3.0,
         CONF_HYSTERESIS: 0.5,
         CONF_DELAY: 15,
         CONF_SEVERITY: SEVERITY_INFO,
@@ -204,6 +213,15 @@ DEFAULT_ALERTS: Final[dict[str, dict]] = {
         CONF_DELAY: 5,
         CONF_SEVERITY: SEVERITY_INFO,
         CONF_ESCALATION: 10.0,
+    },
+    # Opening open while the outdoor air quality is worse than the threshold level (1 good … 6 extremely poor).
+    KIND_BAD_AIR_OUTSIDE: {
+        CONF_ENABLED: True,
+        CONF_THRESHOLD: 3.0,
+        CONF_HYSTERESIS: 0.5,
+        CONF_DELAY: 5,
+        CONF_SEVERITY: SEVERITY_INFO,
+        CONF_ESCALATION: 1.0,
     },
 }
 

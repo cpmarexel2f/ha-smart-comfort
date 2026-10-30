@@ -19,9 +19,10 @@ const KIND_ICONS = {
   humidity_high: "mdi:water-percent-alert",
   noise_high: "mdi:volume-high",
   noisy_outside: "mdi:volume-off",
+  bad_air_outside: "mdi:weather-hazy",
 };
 
-const UNITS = { co2_high: "ppm", humidity_high: "%", noise_high: "dB", noisy_outside: "dB" };
+const UNITS = { co2_high: "ppm", humidity_high: "%", noise_high: "dB", noisy_outside: "dB", bad_air_outside: "/6" };
 
 // Strings of the panel itself; field labels come from the integration translations.
 const STRINGS = {
@@ -31,9 +32,9 @@ const STRINGS = {
     discovered_new: "new",
     discovered_updated: "completed",
     discover: "Discover",
-    discover_help: "Adds a room for each Home Assistant area except the outdoor ones (garden, terrace…) and sets it up: temperature, CO₂, humidity and noise sensors, windows and doors, air conditioner, fans and purifiers with their presets and modes. The outdoor areas give the outdoor temperature and noise. Quiet presets and fan modes become the night settings. What is already set is kept. Check the result, then save.",
+    discover_help: "Adds a room for each Home Assistant area and sets it up: temperature, CO₂, humidity and noise sensors, windows and doors, air conditioner, fans and purifiers with their presets and modes. The outdoor areas (garden, terrace…) go to the Outdoors, with their temperature, air quality and noise sensors; a city air quality index (Atmo France…) and the weather entity, for want of an outdoor sensor, go to the Notifications tab. Quiet presets and fan modes become the night settings. What is already set is kept. Check the result, then save.",
     discover_running: "Discovering…",
-    discover_result: "Discovery: {added} room(s) added, {updated} completed{outdoor}. Check them, then save.",
+    discover_result: "Discovery: {added} room(s) added, {updated} completed, {outdoors} outdoor place(s){outdoor}. Check them, then save.",
     discover_outdoor: ", outdoor sensors set",
     discover_none: "Discovery found nothing new.",
     fan: "Fan",
@@ -93,6 +94,14 @@ const STRINGS = {
     default_value: "Default: {value}",
     no_rooms: "No room yet.",
     sensors: "Sensors",
+    outdoor_air: "Outdoor air",
+    outdoors: "Outdoors",
+    outdoors_help: "Their sensors give the outdoor temperature (combined as set in the Notifications tab), air quality (the worst) and noise (the mean), with the other outdoor sensors of the Notifications tab.",
+    add_outdoor: "Add an outdoor place",
+    new_outdoor: "Outdoor",
+    no_outdoors: "No outdoor place yet.",
+    start: "Get started",
+    start_help: "Nothing is set up yet. Discover finds the rooms and outdoor places of your Home Assistant areas with their sensors and devices, and sets them up; you check the result in the Rooms tab before saving.",
   },
   fr: {
     outdoor_noise: "Bruit extérieur",
@@ -100,9 +109,9 @@ const STRINGS = {
     discovered_new: "nouvelle",
     discovered_updated: "complétée",
     discover: "Découvrir",
-    discover_help: "Ajoute chaque pièce de Home Assistant sauf les extérieures (jardin, terrasse…) et la règle : capteurs de température, CO₂, humidité et bruit, fenêtres et portes, climatiseur, ventilateurs et purificateurs avec leurs modes. Les pièces extérieures donnent la température et le bruit extérieurs. Les modes silencieux deviennent les réglages de nuit. Ce qui est déjà réglé est conservé. Vérifiez le résultat, puis enregistrez.",
+    discover_help: "Ajoute chaque pièce de Home Assistant et la règle : capteurs de température, CO₂, humidité et bruit, fenêtres et portes, climatiseur, ventilateurs et purificateurs avec leurs modes. Les pièces extérieures (jardin, terrasse…) vont dans Extérieurs, avec leurs capteurs de température, qualité de l'air et bruit ; un indice de qualité de l'air de la ville (Atmo France…) et l'entité météo, à défaut de capteur extérieur, vont dans l'onglet Notifications. Les modes silencieux deviennent les réglages de nuit. Ce qui est déjà réglé est conservé. Vérifiez le résultat, puis enregistrez.",
     discover_running: "Découverte…",
-    discover_result: "Découverte : {added} pièce(s) ajoutée(s), {updated} complétée(s){outdoor}. Vérifiez-les, puis enregistrez.",
+    discover_result: "Découverte : {added} pièce(s) ajoutée(s), {updated} complétée(s), {outdoors} extérieur(s){outdoor}. Vérifiez-les, puis enregistrez.",
     discover_outdoor: ", capteurs extérieurs renseignés",
     discover_none: "La découverte n'a rien trouvé de nouveau.",
     fan: "Ventilateur",
@@ -162,6 +171,14 @@ const STRINGS = {
     default_value: "Par défaut : {value}",
     no_rooms: "Aucune pièce pour l'instant.",
     sensors: "Capteurs",
+    outdoor_air: "Air extérieur",
+    outdoors: "Extérieurs",
+    outdoors_help: "Leurs capteurs donnent la température extérieure (combinée comme réglé dans l'onglet Notifications), la qualité de l'air (la pire) et le bruit (la moyenne), avec les autres capteurs extérieurs de l'onglet Notifications.",
+    add_outdoor: "Ajouter un extérieur",
+    new_outdoor: "Extérieur",
+    no_outdoors: "Aucun extérieur pour l'instant.",
+    start: "Pour commencer",
+    start_help: "Rien n'est encore configuré. La découverte trouve les pièces et les extérieurs de vos zones Home Assistant avec leurs capteurs et appareils, et les règle ; vous vérifiez le résultat dans l'onglet Pièces avant d'enregistrer.",
   },
   de: {
     outdoor_noise: "Außenlärm",
@@ -169,9 +186,9 @@ const STRINGS = {
     discovered_new: "neu",
     discovered_updated: "ergänzt",
     discover: "Erkennen",
-    discover_help: "Legt für jeden Home-Assistant-Bereich außer den Außenbereichen (Garten, Terrasse…) einen Raum an und richtet ihn ein: Temperatur-, CO₂-, Feuchte- und Lärmsensoren, Fenster und Türen, Klimaanlage, Lüfter und Luftreiniger mit ihren Modi. Die Außenbereiche liefern Außentemperatur und -lärm. Leise Voreinstellungen und Lüftermodi werden zu den Nachteinstellungen. Bereits Eingestelltes bleibt erhalten. Ergebnis prüfen, dann speichern.",
+    discover_help: "Legt für jeden Home-Assistant-Bereich einen Raum an und richtet ihn ein: Temperatur-, CO₂-, Feuchte- und Lärmsensoren, Fenster und Türen, Klimaanlage, Lüfter und Luftreiniger mit ihren Modi. Die Außenbereiche (Garten, Terrasse…) kommen zu „Außen“, mit ihren Temperatur-, Luftqualitäts- und Lärmsensoren; ein städtischer Luftqualitätsindex (Atmo France…) und die Wetter-Entität, mangels Außensensor, in den Reiter Benachrichtigungen. Leise Voreinstellungen und Lüftermodi werden zu den Nachteinstellungen. Bereits Eingestelltes bleibt erhalten. Ergebnis prüfen, dann speichern.",
     discover_running: "Erkennung…",
-    discover_result: "Erkennung: {added} Raum/Räume hinzugefügt, {updated} ergänzt{outdoor}. Prüfen, dann speichern.",
+    discover_result: "Erkennung: {added} Raum/Räume hinzugefügt, {updated} ergänzt, {outdoors} Außenbereich(e){outdoor}. Prüfen, dann speichern.",
     discover_outdoor: ", Außensensoren gesetzt",
     discover_none: "Die Erkennung hat nichts Neues gefunden.",
     fan: "Lüfter",
@@ -231,6 +248,14 @@ const STRINGS = {
     default_value: "Standard: {value}",
     no_rooms: "Noch kein Raum.",
     sensors: "Sensoren",
+    outdoor_air: "Außenluft",
+    outdoors: "Außen",
+    outdoors_help: "Ihre Sensoren liefern Außentemperatur (kombiniert wie im Reiter Benachrichtigungen eingestellt), Luftqualität (die schlechteste) und Lärm (der Mittelwert), zusammen mit den übrigen Außensensoren des Reiters Benachrichtigungen.",
+    add_outdoor: "Außenbereich hinzufügen",
+    new_outdoor: "Außenbereich",
+    no_outdoors: "Noch kein Außenbereich.",
+    start: "Erste Schritte",
+    start_help: "Noch ist nichts eingerichtet. Die Erkennung findet die Räume und Außenbereiche Ihrer Home-Assistant-Bereiche mit ihren Sensoren und Geräten und richtet sie ein; Sie prüfen das Ergebnis im Reiter Räume vor dem Speichern.",
   },
   es: {
     outdoor_noise: "Ruido exterior",
@@ -238,9 +263,9 @@ const STRINGS = {
     discovered_new: "nueva",
     discovered_updated: "completada",
     discover: "Descubrir",
-    discover_help: "Añade una estancia por cada área de Home Assistant salvo las exteriores (jardín, terraza…) y la configura: sensores de temperatura, CO₂, humedad y ruido, ventanas y puertas, aire acondicionado, ventiladores y purificadores con sus modos. Las áreas exteriores dan la temperatura y el ruido exteriores. Los modos silenciosos pasan a ser los ajustes de noche. Lo ya configurado se conserva. Revise el resultado y guarde.",
+    discover_help: "Añade una estancia por cada área de Home Assistant y la configura: sensores de temperatura, CO₂, humedad y ruido, ventanas y puertas, aire acondicionado, ventiladores y purificadores con sus modos. Las áreas exteriores (jardín, terraza…) van a Exteriores, con sus sensores de temperatura, calidad del aire y ruido; un índice de calidad del aire de la ciudad (Atmo France…) y la entidad meteorológica, a falta de sensor exterior, van a la pestaña Notificaciones. Los modos silenciosos pasan a ser los ajustes de noche. Lo ya configurado se conserva. Revise el resultado y guarde.",
     discover_running: "Descubriendo…",
-    discover_result: "Descubrimiento: {added} estancia(s) añadida(s), {updated} completada(s){outdoor}. Revíselas y guarde.",
+    discover_result: "Descubrimiento: {added} estancia(s) añadida(s), {updated} completada(s), {outdoors} exterior(es){outdoor}. Revíselas y guarde.",
     discover_outdoor: ", sensores exteriores configurados",
     discover_none: "El descubrimiento no encontró nada nuevo.",
     fan: "Ventilador",
@@ -300,6 +325,14 @@ const STRINGS = {
     default_value: "Por defecto: {value}",
     no_rooms: "Aún no hay estancias.",
     sensors: "Sensores",
+    outdoor_air: "Aire exterior",
+    outdoors: "Exteriores",
+    outdoors_help: "Sus sensores dan la temperatura exterior (combinada como en la pestaña Notificaciones), la calidad del aire (la peor) y el ruido (la media), junto con los demás sensores exteriores de la pestaña Notificaciones.",
+    add_outdoor: "Añadir un exterior",
+    new_outdoor: "Exterior",
+    no_outdoors: "Aún no hay exteriores.",
+    start: "Para empezar",
+    start_help: "Aún no hay nada configurado. El descubrimiento encuentra las estancias y los exteriores de sus áreas de Home Assistant con sus sensores y dispositivos, y los configura; revise el resultado en la pestaña Estancias antes de guardar.",
   },
 };
 
@@ -321,6 +354,11 @@ function prune(value) {
     return out;
   }
   return value;
+}
+
+/** Indexes of a set once the item at `index` was removed from its list. */
+function shifted(indexes, index) {
+  return new Set([...indexes].filter((i) => i !== index).map((i) => (i > index ? i - 1 : i)));
 }
 
 const TIME = /^\d{1,2}:\d{2}(:\d{2})?$/;
@@ -402,6 +440,7 @@ class SmartComfortPanel extends HTMLElement {
     this._message = null;
     this._saving = false;
     this._expanded = new Set();
+    this._expandedOutdoors = new Set();
   }
 
   set hass(hass) {
@@ -576,12 +615,7 @@ class SmartComfortPanel extends HTMLElement {
       b.className = `tab${tab === this._tab ? " active" : ""}`;
       b.setAttribute("role", "tab");
       b.textContent = this._t(tab);
-      b.addEventListener("click", () => {
-        this._tab = tab;
-        const base = (this.panel?.url_path || "smart-comfort").replace(/^\//, "");
-        history.replaceState(history.state, "", `/${base}${tab === "overview" ? "" : `/${tab}`}`);
-        this._render();
-      });
+      b.addEventListener("click", () => this._goTab(tab));
       tabs.append(b);
     }
     this._renderToolbar();
@@ -708,7 +742,30 @@ class SmartComfortPanel extends HTMLElement {
     return this._hass.callService(DOMAIN, service, data);
   }
 
+  _goTab(tab) {
+    this._tab = tab;
+    const base = (this.panel?.url_path || "smart-comfort").replace(/^\//, "");
+    history.replaceState(history.state, "", `/${base}${tab === "overview" ? "" : `/${tab}`}`);
+    this._render();
+  }
+
+  /** Nothing set up yet: the discovery offered right away, its result opened in the Rooms tab. */
+  _renderStart(content) {
+    const options = this._config.options;
+    if (options.rooms?.length || options.outdoors?.length) return;
+    const card = this._card(this._t("start"), "mdi:home-search-outline");
+    const body = this._el("div", "discover");
+    const button = this._button(this._t("discover"), () => {
+      this._goTab("rooms");
+      this._discover();
+    });
+    body.append(this._el("div", "discover-text", this._t("start_help")), button);
+    card.append(body);
+    content.append(card);
+  }
+
   _renderOverview(content) {
+    this._renderStart(content);
     const s = this._status;
     if (s === undefined) {
       content.append(this._el("div", "banner", "…"));
@@ -732,6 +789,9 @@ class SmartComfortPanel extends HTMLElement {
       tile("mdi:home-thermometer-outline", this._t("outdoor"), `${this._format(s.outdoor_temperature)} °C`),
       ...(typeof s.outdoor_noise === "number"
         ? [tile("mdi:volume-medium", this._t("outdoor_noise"), `${this._format(s.outdoor_noise, 0)} dB`)]
+        : []),
+      ...(typeof s.outdoor_air === "number"
+        ? [tile("mdi:weather-hazy", this._t("outdoor_air"), `${this._format(s.outdoor_air, 0)}/6`)]
         : []),
       ...(s.night ? [tile("mdi:weather-night", this._t("quiet_night"), "")] : []),
       tile(
@@ -770,7 +830,8 @@ class SmartComfortPanel extends HTMLElement {
       body.append(this._el("div", "alert-title", `${a.room_name} · ${this._kindName(a.kind)}`));
       const unit = UNITS[a.kind] || "°C";
       const value = a.kind === "ventilate" || a.kind === "close_windows" ? a.temperature : a.value;
-      const parts = [`${this._format(value, a.kind === "co2_high" ? 0 : 1)} ${unit}`];
+      const digits = ["co2_high", "bad_air_outside"].includes(a.kind) ? 0 : 1;
+      const parts = [`${this._format(value, digits)}${unit === "/6" ? "" : " "}${unit}`];
       parts.push(`${this._t("since")} ${this._time(a.since)}`);
       parts.push(a.notified_at ? `${this._t("notified")} ${this._time(a.notified_at)}` : this._t("pending"));
       body.append(this._el("div", "alert-meta", parts.join(" · ")));
@@ -882,6 +943,7 @@ class SmartComfortPanel extends HTMLElement {
       },
       { name: "outdoor_temperature", selector: entity(["sensor", "weather"], { multiple: true }) },
       { name: "outdoor_noise", selector: entity("sensor", { device_class: "sound_pressure", multiple: true }) },
+      { name: "outdoor_air_quality", selector: entity("sensor", { multiple: true }) },
       { name: "outdoor_aggregate", selector: { select: { mode: "dropdown", options: this._options("outdoor_aggregate", this._config.aggregates) } } },
       { name: "digest_window", selector: minutes() },
       { name: "reminder", selector: minutes() },
@@ -941,6 +1003,7 @@ class SmartComfortPanel extends HTMLElement {
       if (key in defaults) fields.push({ name: key, selector: num("°C") });
     }
     if ("max_outdoor_noise" in defaults) fields.push({ name: "max_outdoor_noise", selector: num("dB", { min: 0 }) });
+    if ("max_outdoor_air" in defaults) fields.push({ name: "max_outdoor_air", selector: num("/6", { min: 1, max: 6 }) });
     fields.push(
       { name: "hysteresis", selector: num(unit, { min: 0 }) },
       { name: "delay", selector: minutes() },
@@ -1093,15 +1156,23 @@ class SmartComfortPanel extends HTMLElement {
       const r = result.report;
       this._draft = result.options;
       // Marked in the list (collapsed, with a summary of what was found) until saved.
-      this._discovered = { added: new Set(r.added), updated: new Set(r.updated) };
+      this._discovered = {
+        added: new Set(r.added),
+        updated: new Set(r.updated),
+        outdoorsAdded: new Set(r.outdoors_added),
+        outdoorsUpdated: new Set(r.outdoors_updated),
+      };
+      const outdoors = r.outdoors_added.length + r.outdoors_updated.length;
+      const sensors = r.outdoor.length + r.outdoor_noise.length + r.outdoor_air.length;
       this._message =
-        r.added.length || r.updated.length || r.outdoor.length || r.outdoor_noise?.length
+        r.added.length || r.updated.length || outdoors || sensors
           ? {
               type: "info",
               text: this._t("discover_result", {
                 added: r.added.length,
                 updated: r.updated.length,
-                outdoor: r.outdoor.length || r.outdoor_noise?.length ? this._t("discover_outdoor") : "",
+                outdoors,
+                outdoor: sensors ? this._t("discover_outdoor") : "",
               }),
             }
           : { type: "info", text: this._t("discover_none") };
@@ -1138,6 +1209,89 @@ class SmartComfortPanel extends HTMLElement {
     });
     add.classList.add("add");
     content.append(add);
+    this._renderOutdoors(content);
+  }
+
+  /** Outdoor places (garden, terrace…): their temperature, air quality and noise sensors. */
+  _renderOutdoors(content) {
+    const title = this._el("div", "section-title");
+    const icon = document.createElement("ha-icon");
+    icon.icon = "mdi:tree-outline";
+    title.append(icon, this._el("span", "", this._t("outdoors")));
+    content.append(title, this._el("div", "help section-help", this._t("outdoors_help")));
+    const places = (this._draft.outdoors = this._draft.outdoors || []);
+    if (!places.length) content.append(this._el("div", "empty card", this._t("no_outdoors")));
+    places.forEach((place, index) => {
+      content.append(this._outdoorCard(place, index, places));
+    });
+    const add = this._button(this._t("add_outdoor"), () => {
+      let name = this._t("new_outdoor");
+      let n = 2;
+      while (places.some((p) => p.name === name)) name = `${this._t("new_outdoor")} ${n++}`;
+      places.push({ name });
+      this._expandedOutdoors.add(places.length - 1);
+      this._changed();
+      this._renderTab();
+    });
+    add.classList.add("add");
+    content.append(add);
+  }
+
+  _outdoorCard(place, index, places) {
+    const card = this._el("div", "card room");
+    const header = this._el("div", "card-header room-header");
+    const open = this._expandedOutdoors.has(index);
+    const toggle = this._el("button", "room-toggle");
+    const chevron = document.createElement("ha-icon");
+    chevron.icon = open ? "mdi:chevron-down" : "mdi:chevron-right";
+    toggle.append(chevron, this._el("span", "", place.name || "—"));
+    toggle.addEventListener("click", () => {
+      if (open) this._expandedOutdoors.delete(index);
+      else this._expandedOutdoors.add(index);
+      this._renderTab();
+    });
+    const summary = this._summary(
+      [
+        ["mdi:thermometer", place.temperature],
+        ["mdi:weather-hazy", place.air_quality],
+        ["mdi:volume-medium", place.noise],
+      ],
+      this._discovered?.outdoorsAdded?.has(place.name),
+      this._discovered?.outdoorsUpdated?.has(place.name)
+    );
+    const tools = this._el("div", "row-actions");
+    tools.append(
+      this._iconButton("mdi:delete-outline", this._t("remove"), () => {
+        places.splice(index, 1);
+        this._expandedOutdoors = shifted(this._expandedOutdoors, index);
+        this._changed();
+        this._renderTab();
+      })
+    );
+    header.append(toggle, summary, tools);
+    card.append(header);
+    if (!open) return card;
+    const keys = ["name", "temperature", "air_quality", "noise"];
+    card.append(
+      this._form(
+        [
+          { name: "name", required: true, selector: text },
+          { name: "temperature", selector: entity(["sensor", "weather"], { multiple: true }) },
+          { name: "air_quality", selector: entity("sensor", { multiple: true }) },
+          { name: "noise", selector: entity("sensor", { device_class: "sound_pressure", multiple: true }) },
+        ],
+        Object.fromEntries(keys.filter((k) => k in place).map((k) => [k, place[k]])),
+        (value) => {
+          for (const key of keys) {
+            if (isEmpty(value[key])) delete place[key];
+            else place[key] = value[key];
+          }
+          toggle.lastChild.textContent = place.name || "—";
+        },
+        (s) => this._label("outdoor", s.name)
+      )
+    );
+    return card;
   }
 
   _roomCard(room, index, rooms) {
@@ -1173,7 +1327,7 @@ class SmartComfortPanel extends HTMLElement {
     tools.append(
       this._iconButton("mdi:delete-outline", this._t("remove"), () => {
         rooms.splice(index, 1);
-        this._expanded = new Set([...this._expanded].filter((i) => i !== index).map((i) => (i > index ? i - 1 : i)));
+        this._expanded = shifted(this._expanded, index);
         this._changed();
         this._renderTab();
       })
@@ -1313,19 +1467,29 @@ class SmartComfortPanel extends HTMLElement {
 
   /** Icons of what the room has (sensors, openings, devices), and a badge after a discovery. */
   _roomSummary(room) {
+    const found = this._discovered;
+    return this._summary(
+      [
+        ["mdi:thermometer", room.temperature],
+        ["mdi:molecule-co2", room.co2],
+        ["mdi:water-percent", room.humidity],
+        ["mdi:volume-medium", room.noise],
+        ["mdi:window-closed-variant", room.openings],
+        ["mdi:air-conditioner", room.climate],
+        ["mdi:fan", room.fans],
+        ["mdi:air-purifier", room.purifiers],
+      ],
+      found?.added.has(room.name),
+      found?.updated.has(room.name)
+    );
+  }
+
+  /** Icons with how many of each, and a badge after a discovery. */
+  _summary(entries, added, updated) {
     const box = this._el("div", "room-summary");
     const count = (v) => (Array.isArray(v) ? v.length : v ? 1 : 0);
-    const items = [
-      ["mdi:thermometer", count(room.temperature)],
-      ["mdi:molecule-co2", count(room.co2)],
-      ["mdi:water-percent", count(room.humidity)],
-      ["mdi:volume-medium", count(room.noise)],
-      ["mdi:window-closed-variant", count(room.openings)],
-      ["mdi:air-conditioner", count(room.climate)],
-      ["mdi:fan", count(room.fans)],
-      ["mdi:air-purifier", count(room.purifiers)],
-    ];
-    for (const [icon, n] of items) {
+    for (const [icon, value] of entries) {
+      const n = count(value);
       if (!n) continue;
       const chip = this._el("span", "summary-item");
       const i = document.createElement("ha-icon");
@@ -1334,9 +1498,8 @@ class SmartComfortPanel extends HTMLElement {
       if (n > 1) chip.append(document.createTextNode(String(n)));
       box.append(chip);
     }
-    const found = this._discovered;
-    if (found?.added.has(room.name)) box.append(this._el("span", "badge new", this._t("discovered_new")));
-    else if (found?.updated.has(room.name)) box.append(this._el("span", "badge new", this._t("discovered_updated")));
+    if (added) box.append(this._el("span", "badge new", this._t("discovered_new")));
+    else if (updated) box.append(this._el("span", "badge new", this._t("discovered_updated")));
     return box;
   }
 
@@ -1566,7 +1729,7 @@ const STYLE = `
   .alert .kind { color: var(--warning-color, #ffa600); margin-top: 2px; }
   .alert .kind.too_cold, .alert .kind.window_open_cold { color: var(--info-color, #039be5); }
   .alert .kind.co2_high, .alert .kind.humidity_high, .alert .kind.ventilate,
-  .alert .kind.noise_high, .alert .kind.noisy_outside { color: var(--primary-color); }
+  .alert .kind.noise_high, .alert .kind.noisy_outside, .alert .kind.bad_air_outside { color: var(--primary-color); }
   .alert .kind.close_windows { color: var(--error-color); }
   .alert-body { flex: 1; min-width: 0; }
   .alert-title { font-weight: 500; }
@@ -1602,6 +1765,9 @@ const STYLE = `
   .room-toggle ha-icon { color: var(--secondary-text-color); }
   .subheader { font-size: 14px; font-weight: 500; color: var(--secondary-text-color); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.04em; }
   .help { font-size: 13px; color: var(--secondary-text-color); margin: -4px 0 8px; }
+  .section-title { display: flex; align-items: center; gap: 8px; font-size: 20px; margin: 28px 0 8px; }
+  .section-title ha-icon { color: var(--secondary-text-color); }
+  .section-help { margin: 0 0 12px; }
   .discover { display: flex; align-items: center; gap: 16px; }
   .discover-text { flex: 1; font-size: 14px; color: var(--secondary-text-color); line-height: 1.4; }
   @media (max-width: 600px) { .discover { flex-direction: column; align-items: flex-start; } }

@@ -440,3 +440,53 @@ def test_no_ventilate_suggestion_when_noisy_outside():
     # Noisy again: the suggestion is withdrawn.
     run(e, 3, {"bureau": RoomReading(**warm, outdoor_noise=70)}, outdoor=20)
     assert "bureau|ventilate" not in e.episodes
+
+
+def test_bad_air_outside():
+    s = build_settings(
+        {
+            "outdoors": [{"name": "Terrasse", "air_quality": ["sensor.atmo"]}],
+            "alerts": {"bad_air_outside": {"delay": 0}, "ventilate": {"delay": 0}},
+            "rooms": [{"name": "Bureau", "temperature": "sensor.t", "openings": ["binary_sensor.w"]}],
+        }
+    )
+    assert s.outdoor_air == ("sensor.atmo",)
+    e = Engine(s)
+
+    def opened(air: float) -> dict[str, RoomReading]:
+        return {"bureau": RoomReading(temperature=21, has_openings=True, open=["binary_sensor.w"], outdoor_air=air)}
+
+    run(e, 0, opened(3), outdoor=15)
+    assert not e.episodes
+    # Poor air outside (4) with a window open: close it.
+    run(e, 1, opened(4), outdoor=15)
+    ep = e.episodes["bureau|bad_air_outside"]
+    assert ep.value == 4 and ep.details["openings"] == ["binary_sensor.w"]
+    _title, message, _ = render(Digest([Item(ep, "Bureau", "info", "new")], "info"), {}, T0)
+    assert message == "outdoor air quality 4/6 — close binary_sensor.w"
+    # Closed: over.
+    run(e, 2, {"bureau": RoomReading(temperature=21, has_openings=True, open=[], outdoor_air=4)}, outdoor=15)
+    assert "bureau|bad_air_outside" not in e.episodes
+    # No suggestion to air the room while the outdoor air is poor.
+    warm = {"temperature": 27, "has_openings": True, "open": []}
+    run(e, 3, {"bureau": RoomReading(**warm, outdoor_air=4)}, outdoor=20)
+    assert "bureau|ventilate" not in e.episodes
+    run(e, 4, {"bureau": RoomReading(**warm, outdoor_air=2)}, outdoor=20)
+    assert "bureau|ventilate" in e.episodes
+
+
+def test_outdoor_places_settings():
+    s = build_settings(
+        {
+            "outdoor_temperature": ["weather.home", "sensor.a"],
+            "outdoor_noise": "sensor.street",
+            "outdoors": [
+                {"name": "Terrasse", "temperature": ["sensor.a", "sensor.b"], "noise": ["sensor.garden_noise"]},
+                {"name": "Jardin", "air_quality": "sensor.aqi"},
+            ],
+        }
+    )
+    assert s.outdoor == ("weather.home", "sensor.a", "sensor.b")
+    assert s.outdoor_noise == ("sensor.street", "sensor.garden_noise")
+    assert s.outdoor_air == ("sensor.aqi",)
+    assert [o.name for o in s.outdoors] == ["Terrasse", "Jardin"]

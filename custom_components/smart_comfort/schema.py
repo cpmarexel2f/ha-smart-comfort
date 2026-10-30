@@ -46,7 +46,7 @@ ALERT = vol.Schema(
         vol.Optional(k.CONF_MAX_OUTDOOR): vol.Any(None, NUMBER),
         vol.Optional(k.CONF_MIN_INDOOR): vol.Any(None, NUMBER),
         vol.Optional(k.CONF_MAX_NOISE): vol.Any(None, NUMBER),
-        vol.Optional(k.CONF_MAX_NOISE): vol.Any(None, NUMBER),
+        vol.Optional(k.CONF_MAX_AIR): vol.Any(None, NUMBER),
     }
 )
 ALERTS = vol.Schema({vol.Optional(kind): ALERT for kind in k.KINDS})
@@ -134,12 +134,24 @@ ROOM = vol.Schema(
     }
 )
 
+OUTDOOR = vol.Schema(
+    {
+        vol.Required(k.CONF_NAME): cv.string,
+        # Home Assistant area the place was discovered from (re-running the discovery updates it).
+        vol.Optional(k.CONF_AREA): cv.string,
+        vol.Optional(k.CONF_TEMPERATURE): cv.entity_ids,
+        vol.Optional(k.CONF_AIR_QUALITY): cv.entity_ids,
+        vol.Optional(k.CONF_NOISE): cv.entity_ids,
+    }
+)
+
 OPTIONS = vol.Schema(
     {
         vol.Optional(k.CONF_NOTIFY): vol.All(cv.ensure_list, [notify_service]),
         vol.Optional(k.CONF_OUTDOOR): cv.entity_ids,
         vol.Optional(k.CONF_OUTDOOR_AGGREGATE): vol.In(k.AGGREGATES),
         vol.Optional(k.CONF_OUTDOOR_NOISE): cv.entity_ids,
+        vol.Optional(k.CONF_OUTDOOR_AIR): cv.entity_ids,
         vol.Optional(k.CONF_DIGEST_WINDOW): MINUTES,
         vol.Optional(k.CONF_STARTUP_GRACE): MINUTES,
         vol.Optional(k.CONF_REMINDER): MINUTES,
@@ -154,6 +166,7 @@ OPTIONS = vol.Schema(
         vol.Optional(k.CONF_ALERTS): ALERTS,
         vol.Optional(k.CONF_CONTROL): CONTROL,
         vol.Optional(k.CONF_ROOMS): vol.All(cv.ensure_list, [ROOM]),
+        vol.Optional(k.CONF_OUTDOORS): vol.All(cv.ensure_list, [OUTDOOR]),
     }
 )
 

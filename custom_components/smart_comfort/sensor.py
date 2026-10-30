@@ -45,7 +45,9 @@ class ActiveAlertsSensor(SmartComfortEntity, SensorEntity):
     """Number of active problems (notified or not), listed in the attributes."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _unrecorded_attributes = frozenset({"alerts", "snoozes", "outdoor_temperature"})
+    _unrecorded_attributes = frozenset(
+        {"alerts", "snoozes", "outdoor_temperature", "outdoor_noise", "outdoor_air_quality"}
+    )
 
     @property
     def native_value(self) -> int:
@@ -59,6 +61,8 @@ class ActiveAlertsSensor(SmartComfortEntity, SensorEntity):
             "alerts": [episode_info(self.manager, ep, now) for ep in engine.active()],
             "snoozes": {k: v.isoformat() for k, v in engine.snoozes.items() if v > now},
             "outdoor_temperature": self.manager.outdoor(),
+            "outdoor_noise": self.manager.outdoor_noise(),
+            "outdoor_air_quality": self.manager.outdoor_air(),
         }
 
 

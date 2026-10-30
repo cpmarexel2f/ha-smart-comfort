@@ -7,12 +7,15 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import time
 from typing import Any
 
 from .const import (
+    CONF_AIR_QUALITY,
     CONF_ALERTS,
+    CONF_AREA,
     CONF_CLEAR_WHEN_RESOLVED,
     CONF_CLIMATE,
     CONF_CLOSED_FOR,
@@ -34,6 +37,7 @@ from .const import (
     CONF_HYSTERESIS,
     CONF_KEEP_ON,
     CONF_MANUAL_OVERRIDE,
+    CONF_MAX_AIR,
     CONF_MAX_NOISE,
     CONF_MAX_OUTDOOR,
     CONF_MIN_INDOOR,
@@ -58,7 +62,9 @@ from .const import (
     CONF_OPENINGS,
     CONF_OUTDOOR,
     CONF_OUTDOOR_AGGREGATE,
+    CONF_OUTDOOR_AIR,
     CONF_OUTDOOR_NOISE,
+    CONF_OUTDOORS,
     CONF_PERCENTAGE,
     CONF_PRESENCE,
     CONF_PRESET,
@@ -143,6 +149,7 @@ class AlertSettings:
     max_outdoor: float | None = None
     min_indoor: float | None = None
     max_noise: float | None = None
+    max_air: float | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AlertSettings:
@@ -157,6 +164,7 @@ class AlertSettings:
             max_outdoor=_float(data.get(CONF_MAX_OUTDOOR)),
             min_indoor=_float(data.get(CONF_MIN_INDOOR)),
             max_noise=_float(data.get(CONF_MAX_NOISE)),
+            max_air=_float(data.get(CONF_MAX_AIR)),
         )
 
 
@@ -257,11 +265,25 @@ class Room:
 
 
 @dataclass(frozen=True)
+class Outdoor:
+    """An outdoor place (garden, terrace…) and its sensors."""
+
+    name: str
+    area: str | None = None
+    temperature: tuple[str, ...] = ()
+    air_quality: tuple[str, ...] = ()
+    noise: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class Settings:
     notify: tuple[str, ...] = ()
+    # Every outdoor sensor: the top-level ones and those of the outdoor places.
     outdoor: tuple[str, ...] = ()
     aggregate: str = "min"
     outdoor_noise: tuple[str, ...] = ()
+    outdoor_air: tuple[str, ...] = ()
+    outdoors: tuple[Outdoor, ...] = ()
     digest_window: int = DEFAULT_DIGEST_WINDOW
     startup_grace: int = DEFAULT_STARTUP_GRACE
     reminder: int = DEFAULT_REMINDER
@@ -367,6 +389,13 @@ def _room(raw: dict[str, Any], alerts: dict[str, dict], control: dict[str, Any],
     )
 
 
+def _ids(value: Any) -> tuple[str, ...]:
+    """Entity ids of an option: one, a list, or none."""
+    if not value:
+        return ()
+    return (value,) if isinstance(value, str) else tuple(value)
+
+
 def build_settings(options: dict[str, Any]) -> Settings:
     """Settings from the options, every missing value taken from the defaults."""
     alerts = {kind: _merge(DEFAULT_ALERTS[kind], (options.get(CONF_ALERTS) or {}).get(kind)) for kind in KINDS}
@@ -377,13 +406,28 @@ def build_settings(options: dict[str, Any]) -> Settings:
     used: set[str] = set()
     rooms = tuple(_room(r, alerts, control, used) for r in options.get(CONF_ROOMS) or [])
     notify = options.get(CONF_NOTIFY) or []
-    outdoor = options.get(CONF_OUTDOOR) or []
-    noise = options.get(CONF_OUTDOOR_NOISE) or []
+    outdoors = tuple(
+        Outdoor(
+            name=str(o[CONF_NAME]),
+            area=o.get(CONF_AREA) or None,
+            temperature=_ids(o.get(CONF_TEMPERATURE)),
+            air_quality=_ids(o.get(CONF_AIR_QUALITY)),
+            noise=_ids(o.get(CONF_NOISE)),
+        )
+        for o in options.get(CONF_OUTDOORS) or []
+    )
+
+    def every(key: str, sensors: Callable[[Outdoor], tuple[str, ...]]) -> tuple[str, ...]:
+        found = list(_ids(options.get(key))) + [e for o in outdoors for e in sensors(o)]
+        return tuple(dict.fromkeys(found))
+
     return Settings(
         notify=tuple(f"notify.{n.removeprefix('notify.')}" for n in ([notify] if isinstance(notify, str) else notify)),
-        outdoor=tuple([outdoor] if isinstance(outdoor, str) else outdoor),
+        outdoor=every(CONF_OUTDOOR, lambda o: o.temperature),
         aggregate=str(options.get(CONF_OUTDOOR_AGGREGATE) or "min"),
-        outdoor_noise=tuple([noise] if isinstance(noise, str) else noise),
+        outdoor_noise=every(CONF_OUTDOOR_NOISE, lambda o: o.noise),
+        outdoor_air=every(CONF_OUTDOOR_AIR, lambda o: o.air_quality),
+        outdoors=outdoors,
         digest_window=int(options.get(CONF_DIGEST_WINDOW, DEFAULT_DIGEST_WINDOW)),
         startup_grace=int(options.get(CONF_STARTUP_GRACE, DEFAULT_STARTUP_GRACE)),
         reminder=int(options.get(CONF_REMINDER, DEFAULT_REMINDER)),

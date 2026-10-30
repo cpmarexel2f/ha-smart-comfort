@@ -34,10 +34,17 @@ class House:
         return device.id
 
     def entity(
-        self, domain: str, object_id: str, state: str, device: str | None = None, area: str | None = None, **attrs
+        self,
+        domain: str,
+        object_id: str,
+        state: str,
+        device: str | None = None,
+        area: str | None = None,
+        platform: str = "test",
+        **attrs,
     ):
         entry = self.entities.async_get_or_create(
-            domain, "test", object_id, suggested_object_id=object_id, device_id=device, config_entry=self.entry
+            domain, platform, object_id, suggested_object_id=object_id, device_id=device, config_entry=self.entry
         )
         if area:
             self.entities.async_update_entity(entry.entity_id, area_id=area)
@@ -85,15 +92,26 @@ def build(hass: HomeAssistant) -> House:
     # Garden: outdoor. Hall: a door, no comfort sensor.
     h.entity("sensor", "garden_temperature", "9", area=garden, device_class="temperature")
     h.entity("sensor", "garden_noise", "50", area=garden, device_class="sound_pressure")
+    h.entity("sensor", "garden_aqi", "42", area=garden, device_class="aqi")
     h.entity("binary_sensor", "hall_door", "off", area=hall, device_class="door")
     return h
 
 
 async def test_discover_rooms(hass: HomeAssistant) -> None:
     build(hass)
-    rooms, outdoor, noise = discover_rooms(hass)
-    assert outdoor == ["sensor.garden_temperature"]
-    assert noise == ["sensor.garden_noise"]
+    found = discover_rooms(hass)
+    rooms = found.rooms
+    # The garden: an outdoor place, with its sensors.
+    assert found.outdoors == [
+        {
+            "name": "Garden",
+            "area": "garden",
+            "temperature": ["sensor.garden_temperature"],
+            "air_quality": ["sensor.garden_aqi"],
+            "noise": ["sensor.garden_noise"],
+        }
+    ]
+    assert found.outdoor == found.outdoor_noise == found.outdoor_air == []
     by_name = {r["name"]: r for r in rooms}
     # Every area but the outdoor ones, even without a comfort sensor (the hall has a door only).
     assert sorted(by_name) == ["Bedroom", "Hall", "Living room"]
@@ -139,9 +157,9 @@ async def test_discover_rooms(hass: HomeAssistant) -> None:
 
 async def test_merge_keeps_what_is_set(hass: HomeAssistant) -> None:
     build(hass)
-    rooms, outdoor, noise = discover_rooms(hass)
+    found = discover_rooms(hass)
     options = {
-        "outdoor_temperature": ["sensor.other"],
+        "outdoor_temperature": ["sensor.other", "sensor.garden_temperature"],
         "rooms": [
             {
                 "name": "Living Room",
@@ -151,11 +169,14 @@ async def test_merge_keeps_what_is_set(hass: HomeAssistant) -> None:
             {"name": "Office", "temperature": "sensor.office"},
         ],
     }
-    merged, report = merge(options, rooms, outdoor, noise)
+    merged, report = merge(options, found)
     assert report.added == ["Bedroom", "Hall"]
     assert report.updated == ["Living Room"]
+    # The garden added as an outdoor place: its sensor leaves the top-level list, the other one stays.
+    assert report.outdoors_added == ["Garden"]
     assert report.outdoor == []
     assert merged["outdoor_temperature"] == ["sensor.other"]
+    assert merged["outdoors"][0]["temperature"] == ["sensor.garden_temperature"]
     living = merged["rooms"][0]
     assert living["temperature"] == "sensor.aq_temperature"  # kept
     assert living["co2"] == "sensor.living_co2"  # filled in
@@ -163,14 +184,14 @@ async def test_merge_keeps_what_is_set(hass: HomeAssistant) -> None:
     assert living["fans"] == [
         {"entity_id": "fan.living_fan", "preset": "Smart", "off_preset": "Natural Wind", "open_preset": "Straight Wind"}
     ]
-    assert merged["outdoor_noise"] == ["sensor.garden_noise"]
+    assert "outdoor_noise" not in merged
     assert living["area"] == "living_room"
     assert merged["rooms"][1] == {"name": "Office", "temperature": "sensor.office"}
     assert merged["rooms"][2]["name"] == "Bedroom"
     # Discovering again changes nothing.
-    again, report = merge(merged, rooms, outdoor, noise)
+    again, report = merge(merged, found)
     assert again == merged
-    assert report.added == report.updated == []
+    assert report.added == report.updated == report.outdoors_added == report.outdoors_updated == []
     # The input isn't modified.
     assert options["rooms"][0] == {
         "name": "Living Room",
@@ -193,14 +214,93 @@ async def test_discover_command(hass: HomeAssistant, hass_ws_client) -> None:
     assert result["report"] == {
         "added": ["Bedroom", "Hall", "Living room"],
         "updated": [],
-        "outdoor": ["sensor.garden_temperature"],
-        "outdoor_noise": ["sensor.garden_noise"],
+        "outdoors_added": ["Garden"],
+        "outdoors_updated": [],
+        "outdoor": [],
+        "outdoor_noise": [],
+        "outdoor_air": [],
     }
-    assert result["options"]["outdoor_temperature"] == ["sensor.garden_temperature"]
+    assert result["options"]["outdoors"][0]["name"] == "Garden"
     # Not saved: the options are only saved by smart_comfort/config/save, which accepts them.
     assert entry.options == {}
     await client.send_json_auto_id({"type": f"{DOMAIN}/config/save", "options": result["options"]})
     msg = await client.receive_json()
     assert msg["success"], msg
     await hass.async_block_till_done()
-    assert [r.name for r in entry.runtime_data.settings.rooms] == ["Bedroom", "Hall", "Living room"]
+    settings = entry.runtime_data.settings
+    assert [r.name for r in settings.rooms] == ["Bedroom", "Hall", "Living room"]
+    assert settings.outdoor == ("sensor.garden_temperature",)
+    assert settings.outdoor_air == ("sensor.garden_aqi",)
+    assert settings.outdoor_noise == ("sensor.garden_noise",)
+
+
+async def test_outdoor_places(hass: HomeAssistant) -> None:
+    """Outdoor modules of an indoor station (the terrace by their device), a city air quality index."""
+    h = House(hass)
+    living, terrace = h.area("Séjour"), h.area("Terrasse")
+    h.entity("sensor", "station_temperature", "20", h.device("Station", living), device_class="temperature")
+    for n in (1, 2):
+        module = h.device(f"Station Météo Extérieur {n}", terrace, model="Smart Outdoor Module")
+        h.entity("sensor", f"exterieur_{n}_temperature", "9", module, device_class="temperature")
+        h.entity("sensor", f"exterieur_{n}_humidity", "81", module, device_class="humidity")
+    # In no area: a module named outdoor, the city index (not its forecast nor pollen), other things.
+    h.entity("sensor", "balcon_temperature", "8", device_class="temperature")
+    atmo = h.device("Atmo France", None)
+    h.entity("sensor", "atmo_qualite_globale_rennes", "3", atmo, platform="atmofrance")
+    h.entity("sensor", "atmo_qualite_globale_rennes_j_1", "2", atmo, platform="atmofrance")
+    h.entity("sensor", "atmo_qualite_globale_pollen_rennes", "1", atmo, platform="atmofrance")
+    h.entity("sensor", "air_quality", "0", platform="spook")
+    h.entity("sensor", "nas_temperature", "50", device_class="temperature")
+    # The outdoor unit of an air conditioner: inside the house, not the outdoor temperature.
+    ac = h.device("Climatiseur", living)
+    h.entity("climate", "climatiseur", "off", ac, hvac_modes=["off", "cool"])
+    h.entity("sensor", "climatiseur_outdoor_temperature", "10", ac, device_class="temperature")
+    hass.states.async_set("weather.home", "sunny", {"temperature": 8})
+    found = discover_rooms(hass)
+    assert [r["name"] for r in found.rooms] == ["Séjour"]
+    assert found.outdoors == [
+        {
+            "name": "Terrasse",
+            "area": "terrasse",
+            "temperature": ["sensor.exterieur_1_temperature", "sensor.exterieur_2_temperature"],
+        }
+    ]
+    assert found.outdoor == ["sensor.balcon_temperature"]
+    assert found.outdoor_air == ["sensor.atmo_qualite_globale_rennes"]
+    # Set before: the terrace sensor moves to its place, the weather entity stays, the place is completed.
+    options = {
+        "outdoor_temperature": ["weather.home", "sensor.exterieur_1_temperature"],
+        "outdoors": [{"name": "Terrasse", "temperature": ["sensor.exterieur_1_temperature"]}],
+    }
+    merged, report = merge(options, found)
+    assert merged["outdoor_temperature"] == ["weather.home", "sensor.balcon_temperature"]
+    assert merged["outdoors"] == [
+        {
+            "name": "Terrasse",
+            "area": "terrasse",
+            "temperature": ["sensor.exterieur_1_temperature", "sensor.exterieur_2_temperature"],
+        }
+    ]
+    assert merged["outdoor_air_quality"] == ["sensor.atmo_qualite_globale_rennes"]
+    assert report.outdoors_updated == ["Terrasse"]
+    assert report.outdoor == ["sensor.balcon_temperature"]
+    assert report.outdoor_air == ["sensor.atmo_qualite_globale_rennes"]
+
+
+async def test_outdoor_weather(hass: HomeAssistant) -> None:
+    """Without an outdoor temperature sensor, the weather entity: only when nothing is set."""
+    h = House(hass)
+    h.entity("sensor", "living_temperature", "20", area=h.area("Living room"), device_class="temperature")
+    hass.states.async_set("weather.home", "sunny", {"temperature": 8})
+    found = discover_rooms(hass)
+    assert found.outdoor == ["weather.home"]
+    merged, report = merge({}, found)
+    assert merged["outdoor_temperature"] == ["weather.home"]
+    assert report.outdoor == ["weather.home"]
+    for options in (
+        {"outdoor_temperature": ["sensor.mine"]},
+        {"outdoors": [{"name": "Garden", "temperature": ["sensor.garden"]}]},
+    ):
+        merged, report = merge(options, found)
+        assert "weather.home" not in merged.get("outdoor_temperature", [])
+        assert report.outdoor == []

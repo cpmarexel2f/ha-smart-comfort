@@ -3,7 +3,9 @@
 Every area that is not outdoors becomes a room, with what it has: sensors, openings, devices.
 Sensors and openings that belong to an air conditioner, fan or purifier are left out (internal
 temperatures, filter states…), and so are the heating thermostats (a climate without cooling).
-Temperature and noise sensors of the outdoor areas become the outdoor temperature and noise.
+The outdoor areas become outdoor places, with their temperature, air quality and noise sensors. Outdoor
+sensors in no area (a module named outdoor, a city air quality index like Atmo France) go to the top-level
+outdoor options; without any outdoor temperature, the weather entity gives it.
 Devices get their night settings when they have a quiet preset or fan mode (sleep, silent…).
 
 The result is merged into the options without replacing what is already set: missing sensors are
@@ -47,6 +49,18 @@ OUTDOOR_WORDS = (
     "pool",
     "aussen",
 )
+# Air quality index sensors (an index, not a pollutant), and what is not the current outdoor air.
+AIR_WORDS = (
+    "air_quality",
+    "qualite_de_l_air",
+    "qualite_air",
+    "qualite_globale",
+    "luftqualitat",
+    "calidad_del_aire",
+    "aqi",
+)
+NOT_AIR_WORDS = ("pollen", "j_1", "tomorrow", "demain", "forecast")
+AIR_PLATFORMS = ("atmofrance", "waqi", "airvisual", "airly", "airnow", "google_air_quality")
 PURIFIER_WORDS = ("purif", "luftreinig", "air_clean")
 NATURAL_WORDS = ("natur",)
 DIRECT_WORDS = ("direct", "straight", "standard", "normal")
@@ -77,6 +91,7 @@ class _Entity:
     device_id: str | None
     device_class: str | None
     attributes: dict[str, Any]
+    platform: str = ""
 
 
 @dataclass
@@ -87,27 +102,48 @@ class _Area:
 
 
 @dataclass
+class Found:
+    """What the discovery found: rooms, outdoor places, and outdoor sensors in no area."""
+
+    rooms: list[dict[str, Any]] = field(default_factory=list)
+    outdoors: list[dict[str, Any]] = field(default_factory=list)
+    outdoor: list[str] = field(default_factory=list)
+    outdoor_noise: list[str] = field(default_factory=list)
+    outdoor_air: list[str] = field(default_factory=list)
+
+
+@dataclass
 class Report:
     added: list[str] = field(default_factory=list)
     updated: list[str] = field(default_factory=list)
+    outdoors_added: list[str] = field(default_factory=list)
+    outdoors_updated: list[str] = field(default_factory=list)
+    # Outdoor sensors in no area added to the top-level options.
     outdoor: list[str] = field(default_factory=list)
     outdoor_noise: list[str] = field(default_factory=list)
+    outdoor_air: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, list[str]]:
         return {
             "added": self.added,
             "updated": self.updated,
+            "outdoors_added": self.outdoors_added,
+            "outdoors_updated": self.outdoors_updated,
             "outdoor": self.outdoor,
             "outdoor_noise": self.outdoor_noise,
+            "outdoor_air": self.outdoor_air,
         }
 
 
-def _collect(hass: HomeAssistant) -> tuple[list[_Area], dict[str, set[str]], dict[str, list[_Entity]]]:
-    """Areas with their entities, the domains of each device, and the entities of each device."""
+def _collect(
+    hass: HomeAssistant,
+) -> tuple[list[_Area], list[_Entity], dict[str, set[str]], dict[str, list[_Entity]]]:
+    """Areas with their entities, the entities in no area, the domains and the entities of each device."""
     areas = {a.id: _Area(a.id, a.name) for a in ar.async_get(hass).async_list_areas()}
     devices = dr.async_get(hass)
     device_domains: dict[str, set[str]] = {}
     by_device: dict[str, list[_Entity]] = {}
+    unassigned: list[_Entity] = []
     for entry in er.async_get(hass).entities.values():
         if entry.disabled_by or entry.hidden_by or entry.entity_category is not None:
             continue
@@ -124,6 +160,7 @@ def _collect(hass: HomeAssistant) -> tuple[list[_Area], dict[str, set[str]], dic
             entry.device_id,
             attributes.get("device_class") or entry.device_class or entry.original_device_class,
             attributes,
+            entry.platform,
         )
         if entry.device_id:
             device_domains.setdefault(entry.device_id, set()).add(entry.domain)
@@ -131,7 +168,9 @@ def _collect(hass: HomeAssistant) -> tuple[list[_Area], dict[str, set[str]], dic
         area_id = entry.area_id or (device.area_id if device else None)
         if area_id in areas:
             areas[area_id].entities.append(ent)
-    return list(areas.values()), device_domains, by_device
+        elif area_id is None:
+            unassigned.append(ent)
+    return list(areas.values()), unassigned, device_domains, by_device
 
 
 def _best(candidates: list[_Entity], by_device: dict[str, list[_Entity]]) -> str | None:
@@ -194,22 +233,51 @@ def _is_purifier(entity: _Entity, by_device: dict[str, list[_Entity]]) -> bool:
     return any(s.device_class in ("pm25", "aqi", "pm10") for s in siblings)
 
 
-def discover_rooms(hass: HomeAssistant) -> tuple[list[dict[str, Any]], list[str], list[str]]:
-    """Rooms found in the areas, and the outdoor temperature and noise sensors."""
-    areas, device_domains, by_device = _collect(hass)
+def _is_air(e: _Entity, outdoor: bool = False) -> bool:
+    """An air quality index sensor (in no area: a city one, like Atmo France, not a forecast nor pollen)."""
+    if e.device_class == "aqi" and (not outdoor or e.platform in AIR_PLATFORMS):
+        return True
+    if not _has(e.name, AIR_WORDS) and not _has(e.entity_id, AIR_WORDS):
+        return False
+    if _has(e.entity_id, NOT_AIR_WORDS):
+        return False
+    # In no area: only the integrations of outdoor air quality (a city index), not any "air quality".
+    return not outdoor or e.platform in AIR_PLATFORMS
+
+
+def discover_rooms(hass: HomeAssistant) -> Found:
+    """Rooms and outdoor places found in the areas, and the outdoor sensors in no area."""
+    areas, unassigned, device_domains, by_device = _collect(hass)
 
     def busy(e: _Entity) -> bool:
         return bool(e.device_id) and bool(device_domains.get(e.device_id, set()) & BUSY_DOMAINS)
 
-    rooms: list[dict[str, Any]] = []
-    outdoor: list[str] = []
-    outdoor_noise: list[str] = []
+    found = Found()
+    rooms = found.rooms
+    # Sensors in no area: an outdoor module named so, a city air quality index.
+    for e in sorted(unassigned, key=lambda e: e.entity_id):
+        if e.domain != "sensor" or busy(e):
+            continue
+        if _is_air(e, outdoor=True):
+            found.outdoor_air.append(e.entity_id)
+        elif _has(e.name, OUTDOOR_WORDS) or _has(e.entity_id, OUTDOOR_WORDS):
+            if e.device_class == "temperature":
+                found.outdoor.append(e.entity_id)
+            elif e.device_class == "sound_pressure":
+                found.outdoor_noise.append(e.entity_id)
     for area in sorted(areas, key=lambda a: a.name.casefold()):
         sensors = [e for e in area.entities if e.domain == "sensor" and not busy(e)]
         temps = [e for e in sensors if e.device_class == "temperature"]
         if _has(area.name, OUTDOOR_WORDS) or _has(area.area_id, OUTDOOR_WORDS):
-            outdoor += sorted(e.entity_id for e in temps)
-            outdoor_noise += sorted(e.entity_id for e in sensors if e.device_class == "sound_pressure")
+            place: dict[str, Any] = {k.CONF_NAME: area.name, k.CONF_AREA: area.area_id}
+            for key, items in (
+                (k.CONF_TEMPERATURE, temps),
+                (k.CONF_AIR_QUALITY, [e for e in sensors if _is_air(e)]),
+                (k.CONF_NOISE, [e for e in sensors if e.device_class == "sound_pressure"]),
+            ):
+                if items:
+                    place[key] = sorted(e.entity_id for e in items)
+            found.outdoors.append(place)
             continue
         indoor = [e for e in temps if not _has(e.name, OUTDOOR_WORDS) and not _has(e.entity_id, OUTDOOR_WORDS)]
         room: dict[str, Any] = {k.CONF_NAME: area.name, k.CONF_AREA: area.area_id}
@@ -247,7 +315,10 @@ def discover_rooms(hass: HomeAssistant) -> tuple[list[dict[str, Any]], list[str]
         if purifiers:
             room[k.CONF_PURIFIERS] = purifiers
         rooms.append(room)
-    return rooms, outdoor, outdoor_noise
+    if not found.outdoor and not any(p.get(k.CONF_TEMPERATURE) for p in found.outdoors):
+        # No outdoor temperature sensor: the weather entity's.
+        found.outdoor = sorted(s.entity_id for s in hass.states.async_all("weather"))[:1]
+    return found
 
 
 def _item_id(item: Any) -> str:
@@ -265,18 +336,13 @@ def _complete(current: Any, new: Any) -> tuple[Any, bool]:
     return {**item, **missing}, True
 
 
-def merge(
-    options: dict[str, Any], found: list[dict[str, Any]], outdoor: list[str], outdoor_noise: list[str] | None = None
-) -> tuple[dict[str, Any], Report]:
-    """Options with the discovered rooms: existing values kept, missing ones filled in, new rooms appended."""
+def merge(options: dict[str, Any], found: Found) -> tuple[dict[str, Any], Report]:
+    """Options with what was discovered: existing values kept, missing ones filled in, new rooms and places appended."""
     out = copy.deepcopy(options)
     report = Report()
     rooms = out.setdefault(k.CONF_ROOMS, [])
-    for new in found:
-        match = next((r for r in rooms if r.get(k.CONF_AREA) == new[k.CONF_AREA]), None) or next(
-            (r for r in rooms if k.CONF_AREA not in r and slugify(r[k.CONF_NAME]) == slugify(new[k.CONF_NAME])),
-            None,
-        )
+    for new in found.rooms:
+        match = _match(rooms, new)
         if match is None:
             rooms.append(new)
             report.added.append(new[k.CONF_NAME])
@@ -292,8 +358,7 @@ def merge(
             match[k.CONF_CLIMATE], completed = _complete(match[k.CONF_CLIMATE], new[k.CONF_CLIMATE])
             changed = changed or completed
         for key in (k.CONF_OPENINGS, k.CONF_FANS, k.CONF_PURIFIERS):
-            current = match.get(key) or []
-            current = [current] if isinstance(current, (str, dict)) else list(current)
+            current = _list(match.get(key))
             found_items = {_item_id(i): i for i in new.get(key, [])}
             completed_items = []
             for item in current:
@@ -309,10 +374,75 @@ def merge(
             report.updated.append(match[k.CONF_NAME])
     if not rooms:
         out.pop(k.CONF_ROOMS)
-    if outdoor and not out.get(k.CONF_OUTDOOR):
-        out[k.CONF_OUTDOOR] = outdoor
-        report.outdoor = outdoor
-    if outdoor_noise and not out.get(k.CONF_OUTDOOR_NOISE):
-        out[k.CONF_OUTDOOR_NOISE] = outdoor_noise
-        report.outdoor_noise = outdoor_noise
+    _merge_outdoors(out, found.outdoors, report)
+    report.outdoor = _add_sensors(out, k.CONF_OUTDOOR, found.outdoor)
+    report.outdoor_noise = _add_sensors(out, k.CONF_OUTDOOR_NOISE, found.outdoor_noise)
+    report.outdoor_air = _add_sensors(out, k.CONF_OUTDOOR_AIR, found.outdoor_air)
     return out, report
+
+
+OUTDOOR_KEYS = (
+    (k.CONF_TEMPERATURE, k.CONF_OUTDOOR),
+    (k.CONF_AIR_QUALITY, k.CONF_OUTDOOR_AIR),
+    (k.CONF_NOISE, k.CONF_OUTDOOR_NOISE),
+)
+
+
+def _merge_outdoors(out: dict[str, Any], found: list[dict[str, Any]], report: Report) -> None:
+    """The outdoor places found merged in; their sensors leave the top-level lists (they count once)."""
+    places = out.setdefault(k.CONF_OUTDOORS, [])
+    for new in found:
+        match = _match(places, new)
+        if match is None:
+            places.append(new)
+            report.outdoors_added.append(new[k.CONF_NAME])
+        else:
+            match[k.CONF_AREA] = new[k.CONF_AREA]
+            changed = False
+            for key, _ in OUTDOOR_KEYS:
+                current = _list(match.get(key))
+                added = [e for e in new.get(key, []) if e not in current]
+                if added:
+                    match[key] = current + added
+                    changed = True
+            if changed:
+                report.outdoors_updated.append(match[k.CONF_NAME])
+    for key, top in OUTDOOR_KEYS:
+        in_places = {e for p in places for e in _list(p.get(key))}
+        current = _list(out.get(top))
+        if in_places & set(current):
+            if kept := [e for e in current if e not in in_places]:
+                out[top] = kept
+            else:
+                out.pop(top)
+    if not places:
+        out.pop(k.CONF_OUTDOORS)
+
+
+def _match(items: list[dict[str, Any]], new: dict[str, Any]) -> dict[str, Any] | None:
+    """The room or place of the same area, or of the same name without an area."""
+    return next((r for r in items if r.get(k.CONF_AREA) == new[k.CONF_AREA]), None) or next(
+        (r for r in items if k.CONF_AREA not in r and slugify(r[k.CONF_NAME]) == slugify(new[k.CONF_NAME])),
+        None,
+    )
+
+
+def _list(value: Any) -> list[Any]:
+    if not value:
+        return []
+    return [value] if isinstance(value, (str, dict)) else list(value)
+
+
+def _add_sensors(options: dict[str, Any], key: str, found: list[str]) -> list[str]:
+    """The outdoor sensors in no area found added to the ones set (kept), the ones added returned.
+
+    A weather entity, found for want of a sensor, only when there is no outdoor temperature at all."""
+    current = _list(options.get(key))
+    if found and all(e.startswith("weather.") for e in found):
+        places = options.get(k.CONF_OUTDOORS) or []
+        if current or any(p.get(k.CONF_TEMPERATURE) for p in places):
+            return []
+    added = [e for e in found if e not in current]
+    if added:
+        options[key] = current + added
+    return added

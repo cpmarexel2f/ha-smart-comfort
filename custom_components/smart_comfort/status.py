@@ -65,6 +65,7 @@ def status(manager: SmartComfort, now: datetime) -> dict[str, Any]:
         "snoozes": {k: v.isoformat() for k, v in engine.snoozes.items() if v > now},
         "outdoor_temperature": manager.outdoor(),
         "outdoor_noise": manager.outdoor_noise(),
+        "outdoor_air": manager.outdoor_air(),
         "night": manager.settings.night(dt_util.as_local(now).time()),
         "rooms": [{"name": r.name, **room_info(manager, r, now)} for r in manager.settings.rooms],
         "notifications_enabled": manager.notifications_enabled,

@@ -136,6 +136,7 @@ def _general_schema(hass: HomeAssistant, o: dict[str, Any], first: bool = False)
     schema[_opt(k.CONF_OUTDOOR_NOISE, list(o.get(k.CONF_OUTDOOR_NOISE, [])))] = _entity(
         "sensor", multiple=True, device_class="sound_pressure"
     )
+    schema[_opt(k.CONF_OUTDOOR_AIR, list(o.get(k.CONF_OUTDOOR_AIR, [])))] = _entity("sensor", multiple=True)
     schema.update(
         {
             vol.Required(
@@ -164,15 +165,27 @@ def _general_schema(hass: HomeAssistant, o: dict[str, Any], first: bool = False)
     return vol.Schema(schema)
 
 
+# Units of the alert values and settings (°C otherwise).
+UNITS = {
+    k.KIND_CO2: "ppm",
+    k.KIND_HUMIDITY: "%",
+    k.KIND_NOISE: "dB",
+    k.KIND_NOISY_OUTSIDE: "dB",
+    k.KIND_BAD_AIR_OUTSIDE: "/6",
+    k.CONF_MAX_NOISE: "dB",
+    k.CONF_MAX_AIR: "/6",
+}
+
+
 def _alert_schema(kind: str, current: dict[str, Any]) -> vol.Schema:
     d = {**k.DEFAULT_ALERTS[kind], **current}
-    unit = {"co2_high": "ppm", "humidity_high": "%"}.get(kind, "°C")
+    unit = UNITS.get(kind, "°C")
     schema: dict[Any, Any] = {vol.Required(k.CONF_ENABLED, default=d[k.CONF_ENABLED]): BooleanSelector()}
     if k.CONF_THRESHOLD in k.DEFAULT_ALERTS[kind]:
         schema[vol.Required(k.CONF_THRESHOLD, default=d[k.CONF_THRESHOLD])] = _number(unit)
-    for key in (k.CONF_MIN_INDOOR, k.CONF_MIN_OUTDOOR, k.CONF_MAX_OUTDOOR, k.CONF_MAX_NOISE):
+    for key in (k.CONF_MIN_INDOOR, k.CONF_MIN_OUTDOOR, k.CONF_MAX_OUTDOOR, k.CONF_MAX_NOISE, k.CONF_MAX_AIR):
         if key in k.DEFAULT_ALERTS[kind]:
-            schema[_opt(key, d[key])] = _number("°C")
+            schema[_opt(key, d[key])] = _number(UNITS.get(key, "°C"))
     schema.update(
         {
             vol.Required(k.CONF_HYSTERESIS, default=d[k.CONF_HYSTERESIS]): _number(unit, minimum=0),

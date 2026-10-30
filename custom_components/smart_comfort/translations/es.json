@@ -45,6 +45,7 @@
           "outdoor_temperature": "Temperatura exterior",
           "outdoor_aggregate": "Combinar sensores exteriores",
           "outdoor_noise": "Ruido exterior",
+          "outdoor_air_quality": "Calidad del aire exterior",
           "digest_window": "Ventana de agrupación",
           "reminder": "Recordatorio",
           "snooze_duration": "Duración de la pausa",
@@ -59,9 +60,10 @@
         },
         "data_description": {
           "notify": "Adónde van las alertas (notify.mobile_app_…, un grupo notify…).",
-          "outdoor_temperature": "Uno o varios sensores exteriores; los no disponibles se ignoran.",
+          "outdoor_temperature": "Sensores exteriores fuera de los exteriores (entidad meteorológica, sensor sin área); los no disponibles se ignoran.",
           "outdoor_aggregate": "El mínimo evita un sensor al sol.",
-          "outdoor_noise": "Sensores de nivel sonoro fuera (dB): no se sugiere ventilar con ruido, y una alerta si hay ventanas abiertas con ruido.",
+          "outdoor_noise": "Sensores de nivel sonoro fuera (dB), además de los de los exteriores: no se sugiere ventilar con ruido, y una alerta si hay ventanas abiertas en el ruido.",
+          "outdoor_air_quality": "Sensores de índice de calidad del aire fuera o de la ciudad (Atmo France, AQI…), además de los de los exteriores: no se sugiere ventilar con mala calidad del aire, y una alerta si hay ventanas abiertas entonces. Cuenta el peor.",
           "digest_window": "Minutos de espera de otras alertas antes de enviar una notificación agrupada. Las críticas no esperan.",
           "reminder": "Minutos tras los que un problema que continúa se notifica de nuevo. 0: nunca (solo si empeora).",
           "snooze_duration": "Minutos del botón «Posponer» de la notificación y, por defecto, de la acción snooze.",
@@ -90,6 +92,7 @@
           "min_outdoor": "Temperatura exterior mínima",
           "max_outdoor": "Temperatura exterior máxima",
           "max_outdoor_noise": "Ruido exterior máximo",
+          "max_outdoor_air": "Nivel máximo de calidad del aire exterior",
           "hysteresis": "Histéresis",
           "delay": "Retardo",
           "severity": "Gravedad",
@@ -101,6 +104,7 @@
           "min_outdoor": "Solo si fuera hace al menos esta temperatura.",
           "max_outdoor": "Solo si fuera hace como máximo esta temperatura.",
           "max_outdoor_noise": "No se sugiere mientras el ruido exterior supere este valor (con sensor de ruido exterior).",
+          "max_outdoor_air": "No se sugiere mientras la calidad del aire fuera sea peor que este nivel, de 1 (buena) a 6 (extremadamente mala).",
           "hysteresis": "El problema termina solo cuando el valor vuelve a pasar el umbral en al menos esta cantidad: sin oscilaciones.",
           "delay": "Minutos que la condición debe mantenerse antes de ser un problema.",
           "escalation": "Notifica de nuevo si el valor empeora tanto desde la última notificación. 0: nunca."
@@ -236,6 +240,15 @@
           }
         }
       },
+      "outdoor": {
+        "title": "Exterior",
+        "data": {
+          "name": "Nombre",
+          "temperature": "Temperatura",
+          "air_quality": "Calidad del aire",
+          "noise": "Ruido"
+        }
+      },
       "edit_room": {
         "title": "Editar una estancia",
         "data": {
@@ -266,7 +279,8 @@
         "co2_high": "CO₂ alto",
         "humidity_high": "Humedad alta",
         "noise_high": "Estancia ruidosa",
-        "noisy_outside": "Cerrar las ventanas (ruido fuera)"
+        "noisy_outside": "Cerrar las ventanas (ruido fuera)",
+        "bad_air_outside": "Cerrar las ventanas (aire contaminado fuera)"
       }
     },
     "severity": {
@@ -297,6 +311,12 @@
           },
           "outdoor_temperature": {
             "name": "Temperatura exterior"
+          },
+          "outdoor_noise": {
+            "name": "Ruido exterior"
+          },
+          "outdoor_air_quality": {
+            "name": "Calidad del aire exterior"
           }
         }
       },
@@ -312,7 +332,8 @@
           "co2_high": "CO₂ alto",
           "humidity_high": "Humedad alta",
           "noise_high": "Estancia ruidosa",
-          "noisy_outside": "Cerrar las ventanas (ruido fuera)"
+          "noisy_outside": "Cerrar las ventanas (ruido fuera)",
+          "bad_air_outside": "Cerrar las ventanas (aire contaminado fuera)"
         }
       },
       "last_notification": {
@@ -402,6 +423,7 @@
     "line_humidity_high": "humedad {value} % — ventile",
     "line_noise_high": "ruido {value} dB, por encima de {threshold} dB",
     "line_noisy_outside": "{value} dB fuera — cierre {openings}",
+    "line_bad_air_outside": "calidad del aire fuera {value}/6 — cierre {openings}",
     "action_snooze": "Posponer {hours} h",
     "action_snooze_minutes": "Posponer {minutes} min",
     "action_ack": "Entendido"

@@ -14,7 +14,8 @@
           "co2_high": "mdi:molecule-co2",
           "humidity_high": "mdi:water-percent-alert",
           "noise_high": "mdi:volume-high",
-          "noisy_outside": "mdi:volume-off"
+          "noisy_outside": "mdi:volume-off",
+          "bad_air_outside": "mdi:weather-hazy"
         }
       },
       "last_notification": { "default": "mdi:bell-ring-outline" }

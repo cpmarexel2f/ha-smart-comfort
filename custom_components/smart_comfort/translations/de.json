@@ -45,6 +45,7 @@
           "outdoor_temperature": "Außentemperatur",
           "outdoor_aggregate": "Außensensoren kombinieren",
           "outdoor_noise": "Außenlärm",
+          "outdoor_air_quality": "Außenluftqualität",
           "digest_window": "Sammelfenster",
           "reminder": "Erinnerung",
           "snooze_duration": "Stummschaltdauer",
@@ -59,9 +60,10 @@
         },
         "data_description": {
           "notify": "Wohin die Meldungen gehen (notify.mobile_app_…, eine notify-Gruppe…).",
-          "outdoor_temperature": "Ein oder mehrere Außensensoren; nicht verfügbare werden ignoriert.",
+          "outdoor_temperature": "Außensensoren außerhalb der Außenbereiche (Wetter-Entität, Sensor ohne Bereich); nicht verfügbare werden ignoriert.",
           "outdoor_aggregate": "Das Minimum vermeidet einen Sensor in der Sonne.",
-          "outdoor_noise": "Schallpegelsensoren draußen (dB): kein Lüftungsvorschlag bei Lärm und eine Meldung, wenn Fenster im Lärm offen sind.",
+          "outdoor_noise": "Schallpegelsensoren draußen (dB), zusätzlich zu denen der Außenbereiche: kein Lüftungsvorschlag bei Lärm und eine Warnung, wenn Fenster im Lärm offen sind.",
+          "outdoor_air_quality": "Luftqualitätsindex-Sensoren draußen oder der Stadt (Atmo France, AQI…), zusätzlich zu denen der Außenbereiche: kein Lüftungsvorschlag bei schlechter Luft und eine Warnung, wenn dann Fenster offen sind. Der schlechteste zählt.",
           "digest_window": "Minuten, die auf weitere Meldungen gewartet wird, bevor eine gesammelte Benachrichtigung gesendet wird. Kritische warten nicht.",
           "reminder": "Minuten, nach denen ein weiterhin bestehendes Problem erneut gemeldet wird. 0: nie (nur bei Verschlechterung).",
           "snooze_duration": "Minuten der Schaltfläche „Stumm“ der Benachrichtigung und standardmäßig der Aktion snooze.",
@@ -90,6 +92,7 @@
           "min_outdoor": "Mindest-Außentemperatur",
           "max_outdoor": "Höchst-Außentemperatur",
           "max_outdoor_noise": "Maximaler Außenlärm",
+          "max_outdoor_air": "Maximale Außenluftqualitätsstufe",
           "hysteresis": "Hysterese",
           "delay": "Verzögerung",
           "severity": "Schweregrad",
@@ -101,6 +104,7 @@
           "min_outdoor": "Nur wenn es draußen mindestens so warm ist.",
           "max_outdoor": "Nur wenn es draußen höchstens so warm ist.",
           "max_outdoor_noise": "Kein Vorschlag, solange der Außenlärm darüber liegt (mit Außenlärmsensor).",
+          "max_outdoor_air": "Kein Vorschlag, solange die Außenluft schlechter als diese Stufe ist, von 1 (gut) bis 6 (extrem schlecht).",
           "hysteresis": "Das Problem endet erst, wenn der Wert um diesen Betrag über den Schwellenwert zurückgekehrt ist: kein Flattern.",
           "delay": "Minuten, die die Bedingung anhalten muss, bevor sie ein Problem ist.",
           "escalation": "Erneut melden, wenn sich der Wert seit der letzten Meldung um so viel verschlechtert. 0: nie."
@@ -236,6 +240,15 @@
           }
         }
       },
+      "outdoor": {
+        "title": "Außenbereich",
+        "data": {
+          "name": "Name",
+          "temperature": "Temperatur",
+          "air_quality": "Luftqualität",
+          "noise": "Lärm"
+        }
+      },
       "edit_room": {
         "title": "Raum bearbeiten",
         "data": {
@@ -266,7 +279,8 @@
         "co2_high": "Hoher CO₂-Wert",
         "humidity_high": "Hohe Luftfeuchtigkeit",
         "noise_high": "Lauter Raum",
-        "noisy_outside": "Fenster schließen (draußen laut)"
+        "noisy_outside": "Fenster schließen (draußen laut)",
+        "bad_air_outside": "Fenster schließen (schlechte Luft draußen)"
       }
     },
     "severity": {
@@ -297,6 +311,12 @@
           },
           "outdoor_temperature": {
             "name": "Außentemperatur"
+          },
+          "outdoor_noise": {
+            "name": "Außenlärm"
+          },
+          "outdoor_air_quality": {
+            "name": "Außenluftqualität"
           }
         }
       },
@@ -312,7 +332,8 @@
           "co2_high": "Hoher CO₂-Wert",
           "humidity_high": "Hohe Luftfeuchtigkeit",
           "noise_high": "Lauter Raum",
-          "noisy_outside": "Fenster schließen (draußen laut)"
+          "noisy_outside": "Fenster schließen (draußen laut)",
+          "bad_air_outside": "Fenster schließen (schlechte Luft draußen)"
         }
       },
       "last_notification": {
@@ -402,6 +423,7 @@
     "line_humidity_high": "Luftfeuchtigkeit {value} % — lüften",
     "line_noise_high": "Lärm {value} dB, über {threshold} dB",
     "line_noisy_outside": "{value} dB draußen — schließen: {openings}",
+    "line_bad_air_outside": "Außenluftqualität {value}/6 — {openings} schließen",
     "action_snooze": "{hours} Std. stumm",
     "action_snooze_minutes": "{minutes} Min. stumm",
     "action_ack": "Verstanden"

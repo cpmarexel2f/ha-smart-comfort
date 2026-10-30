@@ -599,3 +599,47 @@ async def test_noise(hass: HomeAssistant, notify) -> None:
     assert "72 dB" in notify[0].data["message"]
     attrs = hass.states.get("sensor.smart_comfort_bureau_comfort").attributes
     assert attrs["noise"] == 72.0
+
+
+async def test_outdoor_air(hass: HomeAssistant, notify) -> None:
+    hass.states.async_set("sensor.t", "21")
+    hass.states.async_set("sensor.atmo", "4")
+    hass.states.async_set("sensor.aqi", "120", {"device_class": "aqi"})
+    hass.states.async_set("binary_sensor.w", "on")
+    options = {
+        "notify": ["notify.phone"],
+        "digest_window": 0,
+        "startup_grace": 0,
+        "outdoor_air_quality": ["sensor.atmo"],
+        "outdoors": [{"name": "Terrasse", "air_quality": ["sensor.aqi"]}],
+        "alerts": {"bad_air_outside": {"delay": 0}},
+        "rooms": [{"name": "Bureau", "temperature": "sensor.t", "openings": ["binary_sensor.w"]}],
+    }
+    entry = await _setup(hass, options)
+    await _evaluate(hass, entry)
+    manager = entry.runtime_data
+    # The worst: Atmo 4 (poor) against a US AQI of 120 (level 3).
+    assert manager.outdoor_air() == 4.0
+    assert sorted(manager.engine.episodes) == ["bureau|bad_air_outside"]
+    assert "4/6" in notify[0].data["message"]
+    attrs = hass.states.get("sensor.smart_comfort_active_alerts").attributes
+    assert attrs["outdoor_air_quality"] == 4.0
+
+
+def test_air_level() -> None:
+    from homeassistant.core import State
+
+    from custom_components.smart_comfort.manager import air_level
+
+    def level(state: str, **attrs):
+        return air_level(State("sensor.x", state, attrs))
+
+    assert level("2") == 2.0  # European index.
+    assert level("0") is None  # Atmo: no data.
+    assert level("35", device_class="aqi") == 1.0
+    assert level("160") == 4.0  # Above 6: a US AQI.
+    assert level("400", device_class="aqi") == 6.0
+    assert level("poor") == 4.0
+    assert level("Très mauvais") == 5.0
+    assert level("unavailable") is None
+    assert level("whatever") is None

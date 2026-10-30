@@ -14,6 +14,7 @@ from typing import Any
 
 from .config import AlertSettings, Room, Settings
 from .const import (
+    KIND_BAD_AIR_OUTSIDE,
     KIND_CLOSE_WINDOWS,
     KIND_CO2,
     KIND_HUMIDITY,
@@ -39,8 +40,12 @@ HANDLED_KINDS = frozenset({KIND_TOO_HOT})
 OUTDOOR_KINDS = frozenset({KIND_VENTILATE, KIND_CLOSE_WINDOWS, KIND_WINDOW_OPEN_COLD})
 # Kinds that need the outdoor noise.
 NOISE_OUTDOOR_KINDS = frozenset({KIND_NOISY_OUTSIDE})
+# Kinds that need the outdoor air quality.
+AIR_OUTDOOR_KINDS = frozenset({KIND_BAD_AIR_OUTSIDE})
+# Kinds about an open opening.
+OPENING_KINDS = frozenset({KIND_CLOSE_WINDOWS, KIND_WINDOW_OPEN_COLD, KIND_NOISY_OUTSIDE, KIND_BAD_AIR_OUTSIDE})
 # Readings each kind is computed from (RoomReading field names, "outdoor" for the outdoor temperature,
-# "outdoor_noise" for the outdoor noise).
+# "outdoor_noise" and "outdoor_air" for the outdoor noise and air quality).
 SOURCES: dict[str, tuple[str, ...]] = {
     KIND_TOO_HOT: ("temperature",),
     KIND_TOO_COLD: ("temperature",),
@@ -51,8 +56,9 @@ SOURCES: dict[str, tuple[str, ...]] = {
     KIND_HUMIDITY: ("humidity",),
     KIND_NOISE: ("noise",),
     KIND_NOISY_OUTSIDE: ("outdoor_noise",),
+    KIND_BAD_AIR_OUTSIDE: ("outdoor_air",),
 }
-GLOBAL_SOURCES = frozenset({"outdoor", "outdoor_noise"})
+GLOBAL_SOURCES = frozenset({"outdoor", "outdoor_noise", "outdoor_air"})
 # Kinds whose value gets worse when it goes down.
 DOWNWARD_KINDS = frozenset({KIND_TOO_COLD, KIND_WINDOW_OPEN_COLD})
 
@@ -67,6 +73,8 @@ class RoomReading:
     noise: float | None = None
     # Outdoor noise level (same for every room), None when unknown or without a sensor.
     outdoor_noise: float | None = None
+    # Outdoor air quality level, 1 (good) to 6 (extremely poor), None when unknown or without a sensor.
+    outdoor_air: float | None = None
     # Names of the openings that are open; None when one of them is unknown.
     open: list[str] | None = field(default_factory=list)
     has_openings: bool = False
@@ -121,6 +129,13 @@ def check(kind: str, s: AlertSettings, r: RoomReading, outdoor: float | None, ac
             return Check(None)
         details = {"outdoor_noise": r.outdoor_noise, "openings": list(r.open or [])}
         return Check(bool(r.any_open) and r.outdoor_noise > s.threshold - h, r.outdoor_noise, details)
+    if kind == KIND_BAD_AIR_OUTSIDE:
+        if not r.has_openings:
+            return Check(False)
+        if r.outdoor_air is None or r.any_open is None or s.threshold is None:
+            return Check(None)
+        details = {"outdoor_air": r.outdoor_air, "openings": list(r.open or [])}
+        return Check(bool(r.any_open) and r.outdoor_air > s.threshold - h, r.outdoor_air, details)
     if kind == KIND_VENTILATE:
         if r.temperature is None or outdoor is None or s.threshold is None:
             return Check(None)
@@ -134,7 +149,9 @@ def check(kind: str, s: AlertSettings, r: RoomReading, outdoor: float | None, ac
         warm = s.min_indoor is None or r.temperature >= s.min_indoor - h
         # Not when it is too noisy outside to open (unknown noise: no objection).
         noisy = s.max_noise is not None and r.outdoor_noise is not None and r.outdoor_noise > s.max_noise
-        return Check(warm and not noisy and diff >= s.threshold - h, diff, details)
+        # Nor when the outdoor air is poor.
+        polluted = s.max_air is not None and r.outdoor_air is not None and r.outdoor_air > s.max_air
+        return Check(warm and not noisy and not polluted and diff >= s.threshold - h, diff, details)
     if kind == KIND_CLOSE_WINDOWS:
         if not r.has_openings:
             return Check(False)
@@ -287,7 +304,9 @@ class Engine:
             return False
         if kind in NOISE_OUTDOOR_KINDS and not self.settings.outdoor_noise:
             return False
-        if kind in (KIND_CLOSE_WINDOWS, KIND_WINDOW_OPEN_COLD, KIND_NOISY_OUTSIDE) and not room.openings:
+        if kind in AIR_OUTDOOR_KINDS and not self.settings.outdoor_air:
+            return False
+        if kind in OPENING_KINDS and not room.openings:
             return False
         return all(getattr(room, field) for field in SOURCES[kind] if field not in GLOBAL_SOURCES)
 
