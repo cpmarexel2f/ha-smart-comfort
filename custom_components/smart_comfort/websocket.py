@@ -36,10 +36,12 @@ def _entry(hass: HomeAssistant) -> ConfigEntry | None:
 
 
 def _manager(hass: HomeAssistant) -> Any:
+    # The update sent at the end of async_setup_entry arrives while the entry is still SETUP_IN_PROGRESS:
+    # accept that state too, else the panel shows "not loaded" until the next evaluation.
     entry = _entry(hass)
-    if entry is None or entry.state is not ConfigEntryState.LOADED:
+    if entry is None or entry.state not in (ConfigEntryState.LOADED, ConfigEntryState.SETUP_IN_PROGRESS):
         return None
-    return entry.runtime_data
+    return getattr(entry, "runtime_data", None)
 
 
 @callback

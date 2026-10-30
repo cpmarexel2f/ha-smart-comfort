@@ -385,7 +385,7 @@ class SmartComfortPanel extends HTMLElement {
     this._tab = "overview";
     this._config = null; // smart_comfort/config result
     this._draft = null; // options being edited
-    this._status = null;
+    this._status = undefined; // undefined: not received yet, null: not loaded
     this._labels = {};
     this._selector = {};
     this._forms = [];
@@ -700,7 +700,11 @@ class SmartComfortPanel extends HTMLElement {
 
   _renderOverview(content) {
     const s = this._status;
-    if (!this._config.loaded || !s) {
+    if (s === undefined) {
+      content.append(this._el("div", "banner", "…"));
+      return;
+    }
+    if (!s) {
       content.append(this._el("div", "banner error", this._t("not_loaded")));
       return;
     }
