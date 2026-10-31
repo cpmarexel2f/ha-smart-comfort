@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1
+
+### What's new
+- Panel: a **YAML** tab with the configuration of Smart Comfort only, as it goes under `smart_comfort:` in `configuration.yaml`, and a **Copy** button.
+- **`smart_comfort.get_config`** action: returns the options in use (rooms, alerts, control, lighting), to copy into the YAML or check what is set.
+
 ## 1.5.0
 
 ### What's new

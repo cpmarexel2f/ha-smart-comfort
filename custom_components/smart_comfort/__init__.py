@@ -24,6 +24,7 @@ from .const import (
     KINDS,
     MAX_MINUTES,
     SERVICE_ACKNOWLEDGE,
+    SERVICE_GET_CONFIG,
     SERVICE_NOTIFY_NOW,
     SERVICE_SNOOZE,
     SERVICE_UNSNOOZE,
@@ -136,6 +137,16 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     )
     hass.services.async_register(
         DOMAIN, SERVICE_NOTIFY_NOW, notify_now, vol.Schema({}), supports_response=SupportsResponse.OPTIONAL
+    )
+
+    async def get_config(call: ServiceCall) -> dict[str, Any]:
+        """The options in use, to copy into the YAML (`smart_comfort:`) or to check what is set."""
+        for entry in hass.config_entries.async_entries(DOMAIN):
+            return {"options": dict(entry.options)}
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="not_loaded")
+
+    hass.services.async_register(
+        DOMAIN, SERVICE_GET_CONFIG, get_config, vol.Schema({}), supports_response=SupportsResponse.ONLY
     )
     return True
 

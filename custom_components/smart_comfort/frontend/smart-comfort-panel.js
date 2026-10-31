@@ -135,6 +135,11 @@ const STRINGS = {
     alerts_help: "Defaults for every room; each room can customize its own.",
     schedule: "Schedule",
     settings: "Settings",
+    yaml_tab: "YAML",
+    yaml_help: "Only the configuration of Smart Comfort, as it goes under smart_comfort: in configuration.yaml (the defaults are not repeated).",
+    yaml_help_unsaved: "Only the configuration of Smart Comfort, as it goes under smart_comfort: in configuration.yaml (the defaults are not repeated). Includes the changes not saved yet.",
+    yaml_copy: "Copy",
+    yaml_copied: "Copied",
     sched_title: "Your day",
     sched_help: "When each time window applies, with the time now.",
     sched_edit: "Times",
@@ -288,6 +293,11 @@ const STRINGS = {
     alerts_help: "Réglages par défaut de toutes les pièces ; chaque pièce peut personnaliser les siens.",
     schedule: "Horaires",
     settings: "Réglages",
+    yaml_tab: "YAML",
+    yaml_help: "Uniquement la configuration de Smart Comfort, telle qu'elle se met sous smart_comfort: dans configuration.yaml (les valeurs par défaut ne sont pas répétées).",
+    yaml_help_unsaved: "Uniquement la configuration de Smart Comfort, telle qu'elle se met sous smart_comfort: dans configuration.yaml (les valeurs par défaut ne sont pas répétées). Inclut les modifications pas encore enregistrées.",
+    yaml_copy: "Copier",
+    yaml_copied: "Copié",
     sched_title: "Votre journée",
     sched_help: "Quand chaque plage s'applique, avec l'heure actuelle.",
     sched_edit: "Horaires",
@@ -441,6 +451,11 @@ const STRINGS = {
     alerts_help: "Standard für alle Räume; jeder Raum kann eigene Werte setzen.",
     schedule: "Zeitplan",
     settings: "Einstellungen",
+    yaml_tab: "YAML",
+    yaml_help: "Nur die Konfiguration von Smart Comfort, wie sie unter smart_comfort: in configuration.yaml gehört (Standardwerte werden nicht wiederholt).",
+    yaml_help_unsaved: "Nur die Konfiguration von Smart Comfort, wie sie unter smart_comfort: in configuration.yaml gehört (Standardwerte werden nicht wiederholt). Enthält noch nicht gespeicherte Änderungen.",
+    yaml_copy: "Kopieren",
+    yaml_copied: "Kopiert",
     sched_title: "Ihr Tag",
     sched_help: "Wann jedes Zeitfenster gilt, mit der aktuellen Uhrzeit.",
     sched_edit: "Zeiten",
@@ -594,6 +609,11 @@ const STRINGS = {
     alerts_help: "Ajustes por defecto de todas las estancias; cada estancia puede personalizar los suyos.",
     schedule: "Horarios",
     settings: "Ajustes",
+    yaml_tab: "YAML",
+    yaml_help: "Solo la configuración de Smart Comfort, tal como va bajo smart_comfort: en configuration.yaml (los valores por defecto no se repiten).",
+    yaml_help_unsaved: "Solo la configuración de Smart Comfort, tal como va bajo smart_comfort: en configuration.yaml (los valores por defecto no se repiten). Incluye los cambios aún no guardados.",
+    yaml_copy: "Copiar",
+    yaml_copied: "Copiado",
     sched_title: "Su día",
     sched_help: "Cuándo se aplica cada franja, con la hora actual.",
     sched_edit: "Horarios",
@@ -657,11 +677,40 @@ const STRINGS = {
   },
 };
 
-const TABS = ["overview", "rooms", "outdoors", "alerts", "schedule", "settings"];
+const TABS = ["overview", "rooms", "outdoors", "alerts", "schedule", "settings", "yaml_tab"];
 // Addresses of the tabs of earlier versions.
 const OLD_TABS = { notifications: "settings", control: "settings" };
 
 const clone = (value) => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)));
+/** YAML of the options (what goes under `smart_comfort:`), keys in their order. */
+const YAML_PLAIN = /^[A-Za-z_][\w.\-/ ]*$/;
+const YAML_WORDS = new Set(["true", "false", "yes", "no", "on", "off", "null", "y", "n", "~"]);
+function yamlScalar(v) {
+  if (v === null || v === undefined) return "null";
+  if (typeof v === "boolean" || typeof v === "number") return String(v);
+  const text = String(v);
+  return YAML_PLAIN.test(text) && !YAML_WORDS.has(text.toLowerCase()) && !text.endsWith(" ") ? text : JSON.stringify(text);
+}
+function toYaml(value, indent = "") {
+  const lines = [];
+  const block = (v) => v !== null && typeof v === "object" && Object.keys(v).length > 0;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (!block(item)) {
+        lines.push(`${indent}- ${Array.isArray(item) ? "[]" : item !== null && typeof item === "object" ? "{}" : yamlScalar(item)}`);
+        continue;
+      }
+      const inner = toYaml(item, `${indent}  `).split("\n");
+      lines.push(`${indent}- ${inner[0].trimStart()}`, ...inner.slice(1));
+    }
+  } else {
+    for (const [key, v] of Object.entries(value)) {
+      if (block(v)) lines.push(`${indent}${yamlScalar(key)}:`, toYaml(v, `${indent}  `));
+      else lines.push(`${indent}${yamlScalar(key)}: ${Array.isArray(v) ? "[]" : v !== null && typeof v === "object" ? "{}" : yamlScalar(v)}`);
+    }
+  }
+  return lines.join("\n");
+}
 const isEmpty = (v) => v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
 
 /** Drop empty values, recursively; empty objects go too. */
@@ -1071,8 +1120,32 @@ class SmartComfortPanel extends HTMLElement {
       alerts: () => this._renderAlerts(content),
       schedule: () => this._renderSchedule(content),
       settings: () => this._renderSettings(content),
+      yaml_tab: () => this._renderYaml(content),
     }[this._tab];
     render();
+  }
+
+  // YAML: the configuration of the integration, as it goes under `smart_comfort:` in configuration.yaml.
+
+  _renderYaml(content) {
+    const card = this._card(this._t("yaml_tab"), "mdi:code-braces");
+    const text = `smart_comfort:\n${toYaml(this._draft || {}, "  ")}\n`;
+    card.append(this._el("div", "help", this._t(this._dirty ? "yaml_help_unsaved" : "yaml_help")));
+    const pre = this._el("pre", "yaml", text);
+    const copy = this._button(this._t("yaml_copy"), async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        copy.textContent = this._t("yaml_copied");
+      } catch (_err) {
+        const range = document.createRange();
+        range.selectNodeContents(pre);
+        const selection = this.shadowRoot.getSelection?.() || window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
+    card.append(copy, pre);
+    content.append(card);
   }
 
   // Overview.
@@ -2744,6 +2817,7 @@ const STYLE = `
   .room-toggle ha-icon { color: var(--secondary-text-color); }
   .room-toggle .room-icon { color: var(--primary-color); margin: 0 2px 0 -2px; }
   .subheader { font-size: 14px; font-weight: 500; color: var(--secondary-text-color); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+  pre.yaml { margin: 12px 0 0; padding: 12px; overflow-x: auto; border-radius: 8px; font: 13px/1.5 var(--code-font-family, monospace); background: rgba(var(--rgb-primary-text-color, 0, 0, 0), 0.05); white-space: pre; user-select: text; }
   .help { font-size: 13px; color: var(--secondary-text-color); margin: -4px 0 8px; }
   .section-title { display: flex; align-items: center; gap: 8px; font-size: 20px; margin: 28px 0 8px; }
   .section-title ha-icon { color: var(--secondary-text-color); }

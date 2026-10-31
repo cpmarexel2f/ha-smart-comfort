@@ -453,6 +453,10 @@
     "notify_now": {
       "name": "Notify now",
       "description": "Sends every current problem in one notification, ignoring quiet hours and the digest window."
+    },
+    "get_config": {
+      "name": "Get the configuration",
+      "description": "Returns the options in use (rooms, alerts, control, lighting), to copy into the YAML or to check what is set."
     }
   },
   "common": {

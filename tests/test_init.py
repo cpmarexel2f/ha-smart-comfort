@@ -121,6 +121,8 @@ async def test_services(hass: HomeAssistant, notify, fan_calls) -> None:
     result = await hass.services.async_call(DOMAIN, "notify_now", {}, blocking=True, return_response=True)
     assert result == {"sent": True}
     assert len(notify) == 2
+    config = await hass.services.async_call(DOMAIN, "get_config", {}, blocking=True, return_response=True)
+    assert config == {"options": dict(entry.options)}
 
 
 async def test_notifications_switch(hass: HomeAssistant, notify, fan_calls) -> None:

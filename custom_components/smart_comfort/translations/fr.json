@@ -453,6 +453,10 @@
     "notify_now": {
       "name": "Notifier maintenant",
       "description": "Envoie tous les problèmes en cours dans une notification, sans tenir compte des heures calmes ni du regroupement."
+    },
+    "get_config": {
+      "name": "Lire la configuration",
+      "description": "Renvoie les options en vigueur (pièces, alertes, pilotage, éclairage), à copier dans le YAML ou pour vérifier ce qui est réglé."
     }
   },
   "common": {

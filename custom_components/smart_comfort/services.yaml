@@ -54,3 +54,4 @@ acknowledge:
             - noise_high
             - noisy_outside
 notify_now:
+get_config:

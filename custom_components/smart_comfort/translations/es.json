@@ -453,6 +453,10 @@
     "notify_now": {
       "name": "Notificar ahora",
       "description": "Envía todos los problemas actuales en una notificación, ignorando las horas de silencio y la agrupación."
+    },
+    "get_config": {
+      "name": "Obtener la configuración",
+      "description": "Devuelve las opciones en uso (habitaciones, alertas, control, iluminación), para copiarlas al YAML o comprobar lo configurado."
     }
   },
   "common": {

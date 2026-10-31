@@ -453,6 +453,10 @@
     "notify_now": {
       "name": "Jetzt benachrichtigen",
       "description": "Sendet alle aktuellen Probleme in einer Benachrichtigung, ohne Ruhezeit und Sammelfenster."
+    },
+    "get_config": {
+      "name": "Konfiguration abrufen",
+      "description": "Gibt die aktuellen Optionen zurück (Räume, Warnungen, Steuerung, Beleuchtung), zum Kopieren ins YAML oder zur Kontrolle."
     }
   },
   "common": {

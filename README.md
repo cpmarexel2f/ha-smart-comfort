@@ -87,6 +87,7 @@ Once set up, Smart Comfort adds a **Smart Comfort** page to the sidebar, for adm
 - **Alerts**: one line per alert with its state, threshold and severity; open it to change them (hysteresis, delay and escalation under **Advanced**)
 - **Schedule**: every time window on one 24-hour line with the time now — quiet hours (notifications), quiet night (devices and lights), quiet morning (bedroom lights) and window boost — and their times, all in one place
 - **Settings**: notifications (where, presence, grouping, reminder; the rest under **Advanced**), device control (with the air conditioner, fan and purifier defaults folded) and adaptive lighting (the brightness of each moment on one row, the warmth only when it is on)
+- **YAML**: the configuration of Smart Comfort only, as it goes under `smart_comfort:` in `configuration.yaml` (the defaults are not repeated), with a **Copy** button — to move to YAML or keep a copy. Unsaved changes are included
 
 Changes are checked and saved with **Save** (or dropped with **Discard**); the integration reloads with them, and the page keeps following its status. Only the settings that differ from the defaults are stored. When the configuration comes from YAML, the page says so: what is saved there stays until the YAML changes.
 
@@ -417,6 +418,7 @@ A slot color, like a slot brightness, is kept until the light is turned off (the
 | `smart_comfort.unsnooze` | `rooms` | Cancel the snoozes |
 | `smart_comfort.acknowledge` | `rooms`, `kinds` | No reminder nor escalation for the current problems until they end |
 | `smart_comfort.notify_now` | | Send a summary now; returns `sent` |
+| `smart_comfort.get_config` | | Returns the options in use (response only), to copy into the YAML or check what is set |
 
 Rooms are given by name or id (`Living room` or `living_room`).
 
