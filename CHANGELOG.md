@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+
+### What's new
+- Panel: the rooms and outdoor places show their icon — the icon of their Home Assistant area, or else one from their name (bedroom, living room, kitchen, bathroom, office, hallway, garden, terrace…, in English, French, German and Spanish) — in the Rooms and Outdoors tabs and on their cards in the overview, where it turns orange while the room has an alert.
+
 ## 1.2.0
 
 ### What's new

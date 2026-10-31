@@ -22,6 +22,23 @@ const KIND_ICONS = {
   bad_air_outside: "mdi:weather-hazy",
 };
 
+// Icon of a room by its name when its area has none (several languages, accents removed).
+const ROOM_ICONS = [
+  [["salle de bain", "bath", "bad", "bano", "douche", "shower"], "mdi:shower"],
+  [["toilet", "wc"], "mdi:toilet"],
+  [["salle a manger", "dining", "essz", "comedor"], "mdi:table-chair"],
+  [["chambre", "bedroom", "schlafzimmer", "kinderzimmer", "dormitorio", "habitacion", "nursery"], "mdi:bed"],
+  [["salon", "sejour", "living", "wohnzimmer", "lounge"], "mdi:sofa"],
+  [["cuisine", "kitchen", "kuche", "cocina"], "mdi:silverware-fork-knife"],
+  [["bureau", "office", "buro", "arbeitszimmer", "despacho", "study"], "mdi:desk"],
+  [["entree", "entrance", "entry", "eingang", "entrada"], "mdi:door"],
+  [["couloir", "hallway", "corridor", "flur", "pasillo", "hall"], "mdi:door-open"],
+  [["garage"], "mdi:garage"],
+  [["buanderie", "cellier", "laundry", "waschkuche", "lavadero"], "mdi:washing-machine"],
+  [["terrasse", "terrace", "balcon", "balcony", "balkon", "patio"], "mdi:table-furniture"],
+  [["jardin", "garden", "garten", "yard"], "mdi:flower"],
+];
+
 const UNITS = { co2_high: "ppm", humidity_high: "%", noise_high: "dB", noisy_outside: "dB", bad_air_outside: "/6" };
 
 // Strings of the panel itself; field labels come from the integration translations.
@@ -1103,7 +1120,8 @@ class SmartComfortPanel extends HTMLElement {
 
     const grid = this._el("div", "grid");
     for (const room of s.rooms) {
-      const card = this._card(room.name, room.alerts.length ? KIND_ICONS[room.alerts[0]] : "mdi:home-heart");
+      const conf = (this._config.options.rooms || []).find((r) => r.name === room.name);
+      const card = this._card(room.name, this._roomIcon(conf || room));
       card.classList.add(room.alerts.length ? "has-alert" : "is-ok");
       card.append(
         this._chips([
@@ -1167,7 +1185,8 @@ class SmartComfortPanel extends HTMLElement {
 
   /** An outdoor place in the overview: its values, and each of its sensors with its state. */
   _outdoorStatus(place) {
-    const card = this._card(place.name, "mdi:tree-outline");
+    const conf = (this._config.options.outdoors || []).find((p) => p.name === place.name);
+    const card = this._card(place.name, this._roomIcon(conf || place, true));
     card.classList.add("outdoor");
     card.append(
       this._chips([
@@ -1731,7 +1750,7 @@ class SmartComfortPanel extends HTMLElement {
     const toggle = this._el("button", "room-toggle");
     const chevron = document.createElement("ha-icon");
     chevron.icon = open ? "mdi:chevron-down" : "mdi:chevron-right";
-    toggle.append(chevron, this._el("span", "", place.name || "—"));
+    toggle.append(chevron, this._iconOf(this._roomIcon(place, true)), this._el("span", "", place.name || "—"));
     toggle.addEventListener("click", () => {
       if (open) this._expandedOutdoors.delete(index);
       else this._expandedOutdoors.add(index);
@@ -1788,7 +1807,7 @@ class SmartComfortPanel extends HTMLElement {
     const toggle = this._el("button", "room-toggle");
     const chevron = document.createElement("ha-icon");
     chevron.icon = open ? "mdi:chevron-down" : "mdi:chevron-right";
-    toggle.append(chevron, this._el("span", "", room.name || "—"));
+    toggle.append(chevron, this._iconOf(this._roomIcon(room)), this._el("span", "", room.name || "—"));
     toggle.addEventListener("click", () => {
       if (open) this._expanded.delete(index);
       else this._expanded.add(index);
@@ -1869,6 +1888,25 @@ class SmartComfortPanel extends HTMLElement {
     section("alerts", "mdi:bell-cog-outline", this._roomAlertsSummary(room), (body) => this._roomAlerts(body, room, index));
     card.append(sections);
     return card;
+  }
+
+  /** The icon of a room or outdoor place: its area's, else one guessed from its name. */
+  _roomIcon(item, outdoor = false) {
+    const area = item?.area ? this._hass.areas?.[item.area] : undefined;
+    if (area?.icon) return area.icon;
+    const name = (item?.name || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+    const found = ROOM_ICONS.find(([words]) => words.some((w) => name.includes(w)));
+    return found ? found[1] : outdoor ? "mdi:tree-outline" : "mdi:home-outline";
+  }
+
+  _iconOf(icon) {
+    const i = document.createElement("ha-icon");
+    i.className = "room-icon";
+    i.icon = icon;
+    return i;
   }
 
   _count(value) {
@@ -2482,6 +2520,7 @@ const STYLE = `
   .badge.new { color: var(--primary-color); border-color: var(--primary-color); }
   .room-toggle { display: flex; align-items: center; gap: 6px; background: none; border: none; color: inherit; font: inherit; font-size: 18px; cursor: pointer; padding: 0; }
   .room-toggle ha-icon { color: var(--secondary-text-color); }
+  .room-toggle .room-icon { color: var(--primary-color); margin: 0 2px 0 -2px; }
   .subheader { font-size: 14px; font-weight: 500; color: var(--secondary-text-color); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.04em; }
   .help { font-size: 13px; color: var(--secondary-text-color); margin: -4px 0 8px; }
   .section-title { display: flex; align-items: center; gap: 8px; font-size: 20px; margin: 28px 0 8px; }
