@@ -1,4 +1,4 @@
-"""Switches: notifications and automatic control, restored after a restart."""
+"""Switches: notifications, automatic control and adaptive lighting, restored after a restart."""
 
 from __future__ import annotations
 
@@ -20,7 +20,11 @@ async def async_setup_entry(
 ) -> None:
     m = entry.runtime_data
     async_add_entities(
-        [NotificationsSwitch(m, entry.entry_id, "notifications"), ControlSwitch(m, entry.entry_id, "control")]
+        [
+            NotificationsSwitch(m, entry.entry_id, "notifications"),
+            ControlSwitch(m, entry.entry_id, "control"),
+            LightingSwitch(m, entry.entry_id, "lighting"),
+        ]
     )
 
 
@@ -60,3 +64,14 @@ class ControlSwitch(_RestoredSwitch):
 
     def _set(self, enabled: bool) -> None:
         self.manager.set_control(enabled)
+
+
+class LightingSwitch(_RestoredSwitch):
+    """Adapt the brightness of the lights."""
+
+    @property
+    def is_on(self) -> bool:
+        return self.manager.lighting_enabled
+
+    def _set(self, enabled: bool) -> None:
+        self.manager.set_lighting(enabled)

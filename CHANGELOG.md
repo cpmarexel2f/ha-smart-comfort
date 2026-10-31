@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0
+
+### What's new
+- **Adaptive lighting**: the dimmable lights of a room (`rooms[].lights`) that are on get the brightness of the moment — day with the sun up (100 %), evening once it is down (60 %, a blend in between), night in the quiet night hours (15 %) — at once when turned on, then gradually (`transition`, 120 s). The warmth follows too (4000 / 2700 / 2200 K) for the lights that support it, and can be turned off (`warmth: false`). Smart Comfort never turns a light on or off; night lights (`night_only`) are only set at night; a light changed by hand is left alone until it is turned off (or for `manual_override`). Settings under `lighting:`, per room and per light; **Adaptive lighting** switch.
+- **Quiet morning** for the bedrooms: their lights stay dimmer (40 %) from the end of the night until `morning_end` (09:30), set by Discover on the bedrooms (`lighting.quiet_morning`), and per room in the panel.
+- **Naps** per room (`rooms[].naps`: start, end, optional days): the lights are dimmed (15 %) in these slots, night lights included. Never added by Discover; set in the panel (room → Lighting of this room) or in YAML.
+- Discover adds the dimmable lights of each room (not the indicators of devices nor the floodlights of cameras; a light group stands for its members) and flags the night lights; a room with lights only is now worth following.
+- Panel: lights in the rooms (with their own settings), an **Adaptive lighting** card in the Device control tab, the target of each light and an Adaptive lighting switch in the overview. Options flow: lights in the room form.
+
 ## 1.0.1
 
 ### Fixes

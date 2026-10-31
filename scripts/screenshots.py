@@ -82,6 +82,14 @@ COMMON = {
 
 # Material Design Icons paths used by the panel, the form fields and the sidebar (from @mdi/js 7.4.47).
 ICONS = {
+    "lamp": "M8,2H16L20,14H4L8,2M11,15H13V20H18V22H6V20H11V15Z",
+    "lightbulb-auto": "M9 2C5.13 2 2 5.13 2 9C2 11.38 3.19 13.47 5 14.74V17C5 17.55 5.45 18 6 18H12C12.55 18 13 17.55 13 17V14.74C14.81 13.47 16 11.38 16 9C16 5.13 12.87 2 9 2M6 21C6 21.55 6.45 22 7 22H11C11.55 22 12 21.55 12 21V20H6V21M19 13H17L13.8 22H15.7L16.4 20H19.6L20.3 22H22.2L19 13M16.85 18.65L18 15L19.15 18.65H16.85Z",
+    "lightbulb-auto-outline": "M9 2C12.87 2 16 5.13 16 9C16 11.38 14.81 13.47 13 14.74V17C13 17.55 12.55 18 12 18H6C5.45 18 5 17.55 5 17V14.74C3.19 13.47 2 11.38 2 9C2 5.13 5.13 2 9 2M6 21V20H12V21C12 21.55 11.55 22 11 22H7C6.45 22 6 21.55 6 21M9 4C6.24 4 4 6.24 4 9C4 11.05 5.23 12.81 7 13.58V16H11V13.58C12.77 12.81 14 11.05 14 9C14 6.24 11.76 4 9 4M19 13H17L13.8 22H15.7L16.4 20H19.6L20.3 22H22.2L19 13M16.85 18.65L18 15L19.15 18.65H16.85Z",
+    "lightbulb-off-outline": "M12,2C9.76,2 7.78,3.05 6.5,4.68L7.93,6.11C8.84,4.84 10.32,4 12,4A5,5 0 0,1 17,9C17,10.68 16.16,12.16 14.89,13.06L16.31,14.5C17.94,13.21 19,11.24 19,9A7,7 0 0,0 12,2M3.28,4L2,5.27L5.04,8.3C5,8.53 5,8.76 5,9C5,11.38 6.19,13.47 8,14.74V17A1,1 0 0,0 9,18H14.73L18.73,22L20,20.72L3.28,4M7.23,10.5L12.73,16H10V13.58C8.68,13 7.66,11.88 7.23,10.5M9,20V21A1,1 0 0,0 10,22H14A1,1 0 0,0 15,21V20H9Z",
+    "lightbulb-outline": "M12,2A7,7 0 0,1 19,9C19,11.38 17.81,13.47 16,14.74V17A1,1 0 0,1 15,18H9A1,1 0 0,1 8,17V14.74C6.19,13.47 5,11.38 5,9A7,7 0 0,1 12,2M9,21V20H15V21A1,1 0 0,1 14,22H10A1,1 0 0,1 9,21M12,4A5,5 0 0,0 7,9C7,11.05 8.23,12.81 10,13.58V16H14V13.58C15.77,12.81 17,11.05 17,9A5,5 0 0,0 12,4Z",
+    "ceiling-light": "M8,9H11V4H13V9H16L20,17H4L8,9M14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18H14Z",
+    "floor-lamp": "M15,2L17,9H7L9,2M11,10H13V20H16V22H8V20H11V10Z",
+    "lightbulb-night": "M6 21C6 21.55 6.45 22 7 22H11C11.55 22 12 21.55 12 21V20H6V21M13 16.32V17C13 17.55 12.55 18 12 18H6C5.45 18 5 17.55 5 17V14.74C3.19 13.47 2 11.38 2 9C2 5.13 5.13 2 9 2C10.65 2 12.16 2.57 13.35 3.5C10.8 4.57 9 7.07 9 10C9 12.79 10.64 15.19 13 16.32M20.92 9.94L19.5 9.03L18.1 10L18.5 8.35L17.17 7.32L18.85 7.21L19.41 5.6L20.04 7.18L21.72 7.22L20.42 8.3L20.92 9.94M19.39 13C17.5 15.27 14.03 15.19 12.22 12.95C10 10.13 11.56 6 15 5.34C15.34 5.29 15.64 5.63 15.5 5.97C15.05 7.25 15.12 8.71 15.85 9.97C16.58 11.24 17.79 12.03 19.12 12.25C19.47 12.3 19.62 12.74 19.39 13Z",
     "thermometer-high": "M15 13V5A3 3 0 0 0 9 5V13A5 5 0 1 0 15 13M12 4A1 1 0 0 1 13 5H11A1 1 0 0 1 12 4Z",
     "window-closed-variant": "M21 20V2H3V20H1V23H23V20M19 4V11H13V4M5 4H11V11H5M5 20V13H11V20M13 20V13H19V20Z",
     "window-open-variant": "M21 20V2H3V20H1V23H23V20M19 4V11H17V4M5 4H7V11H5M5 20V13H7V20M9 20V4H15V20M17 20V13H19V20Z",
@@ -324,10 +332,14 @@ ENTITIES = {
     "binary_sensor.living_room_window": ("Living room window", "mdi:window-closed", "living_room", "off"),
     "climate.living_room_ac": ("Living room AC", "mdi:air-conditioner", "living_room", "cool"),
     "fan.living_room_fan": ("Living room fan", "mdi:fan", "living_room", "on"),
+    "light.living_room": ("Living room ceiling", "mdi:ceiling-light", "living_room", "on"),
+    "light.sofa": ("Sofa lamp", "mdi:floor-lamp", "living_room", "on"),
     "sensor.bedroom_temperature": ("Bedroom temperature", "mdi:thermometer", "bedroom", "21.3"),
     "sensor.bedroom_noise": ("Bedroom noise", "mdi:volume-medium", "bedroom", "64"),
     "binary_sensor.bedroom_window": ("Bedroom window", "mdi:window-closed", "bedroom", "on"),
     "fan.bedroom_purifier": ("Bedroom purifier", "mdi:air-purifier", "bedroom", "on"),
+    "light.bedroom": ("Bedroom lamp", "mdi:lamp", "bedroom", "on"),
+    "light.bedroom_night_light": ("Bedroom night light", "mdi:lightbulb-night", "bedroom", "off"),
     "sensor.bathroom_humidity": ("Bathroom humidity", "mdi:water-percent", "bathroom", "64"),
     "sensor.office_temperature": ("Office temperature", "mdi:thermometer", "office", "16.2"),
     "sensor.garden_temperature": ("Outdoor temperature", "mdi:thermometer", "garden", "22.4"),
@@ -349,12 +361,16 @@ ROOMS = {
         "openings": ["binary_sensor.living_room_window"],
         "climate": "climate.living_room_ac",
         "fans": ["fan.living_room_fan"],
+        "lights": ["light.living_room", "light.sofa"],
     },
     "Bedroom": {
         "temperature": "sensor.bedroom_temperature",
         "noise": "sensor.bedroom_noise",
         "openings": ["binary_sensor.bedroom_window"],
         "purifiers": ["fan.bedroom_purifier"],
+        "lights": ["light.bedroom", {"entity_id": "light.bedroom_night_light", "night_only": True}],
+        "lighting": {"quiet_morning": True},
+        "naps": [{"start": "13:30:00", "end": "15:30:00", "days": ["sat", "sun"]}],
     },
     "Bathroom": {"humidity": "sensor.bathroom_humidity"},
     "Office": {"temperature": "sensor.office_temperature"},
@@ -401,9 +417,17 @@ def alert(room, name, kind, value, *, temperature=None, handled=False):
     }
 
 
-def room_status(name, alerts, devices=None, **values):
+def room_status(name, alerts, devices=None, lights=None, **values):
     reading = {"temperature": None, "co2": None, "humidity": None, "noise": None, "open": []}
-    return {"name": name, **reading, **values, "alerts": alerts, "handled": False, "devices": devices or {}}
+    return {
+        "name": name,
+        **reading,
+        **values,
+        "alerts": alerts,
+        "handled": False,
+        "devices": devices or {},
+        "lights": lights or {},
+    }
 
 
 STATUS = {
@@ -423,6 +447,7 @@ STATUS = {
             "Living Room",
             ["too_hot", "co2_high"],
             {"climate.living_room_ac": {"target": "cool"}, "fan.living_room_fan": {"target": "on"}},
+            {"light.living_room": {"target": "100 % · 4000 K"}, "light.sofa": {"target": "100 %"}},
             temperature=27.8,
             co2=1380,
         ),
@@ -430,6 +455,7 @@ STATUS = {
             "Bedroom",
             ["bad_air_outside"],
             {"fan.bedroom_purifier": {"target": "boost"}},
+            {"light.bedroom": {"target": "40 % · 3000 K"}, "light.bedroom_night_light": {"target": None}},
             temperature=21.3,
             noise=64,
             open=["binary_sensor.bedroom_window"],
@@ -448,6 +474,8 @@ STATUS = {
     ],
     "notifications_enabled": True,
     "control_enabled": True,
+    "lighting_enabled": True,
+    "lighting_phase": "day",
     "last_notification": None,
 }
 
@@ -498,6 +526,7 @@ def config(options):
             },
             "alerts": const.DEFAULT_ALERTS,
             "control": const.DEFAULT_CONTROL,
+            "lighting": const.DEFAULT_LIGHTING,
         },
         "kinds": list(const.KINDS),
         "severities": list(const.SEVERITIES),
@@ -516,8 +545,10 @@ def mock(options, status):
     }
     states["climate.living_room_ac"]["attributes"]["fan_modes"] = ["auto", "low", "medium", "high"]
     states["fan.bedroom_purifier"]["attributes"]["preset_modes"] = ["auto", "sleep", "boost"]
+    for light in ("light.living_room", "light.sofa", "light.bedroom", "light.bedroom_night_light"):
+        states[light]["attributes"]["supported_color_modes"] = ["color_temp"]
     entities = {entity_id: {"entity_id": entity_id, "area_id": area} for entity_id, (_, _, area, _) in ENTITIES.items()}
-    for key in ("notifications", "device_control"):
+    for key in ("notifications", "device_control", "adaptive_lighting"):
         entity_id = f"switch.smart_comfort_{key}"
         entities[entity_id] = {"entity_id": entity_id, "platform": DOMAIN, "translation_key": key}
     return {
@@ -618,6 +649,23 @@ SHOTS = [
         "height": 900,
     },
     {"file": "panel-alerts", "options": SAVED, "status": STATUS, "tab": "alerts", "height": 1000},
+    {
+        "file": "panel-lighting",
+        "options": SAVED,
+        "status": STATUS,
+        "tab": "control",
+        "scroll": (".card-header", "Adaptive lighting"),
+        "height": 900,
+    },
+    {
+        "file": "panel-naps",
+        "options": SAVED,
+        "status": STATUS,
+        "tab": "rooms",
+        "clicks": [(".room-toggle", "Bedroom")],
+        "scroll": (".subheader", "Lighting of this room"),
+        "height": 900,
+    },
 ]
 
 

@@ -1,8 +1,9 @@
 """Discovery: rooms from the Home Assistant areas, with their sensors and devices.
 
-Every area that is not outdoors and has something to follow (a comfort sensor, an air conditioner, a fan or a
-purifier) becomes a room, with what it has: sensors, openings, devices. The others (a hallway with only its door,
-a room with nothing) are left out, and so are the outdoor areas without a sensor.
+Every area that is not outdoors and has something to follow (a comfort sensor, an air conditioner, a fan, a
+purifier or a dimmable light) becomes a room, with what it has: sensors, openings, devices, lights (not the
+indicators of devices nor the floodlights of cameras; night lights set at night only). The others (a hallway
+with only its door, a room with nothing) are left out, and so are the outdoor areas without a sensor.
 Sensors and openings that belong to an air conditioner, fan or purifier are left out (internal
 temperatures, filter states…), and so are the heating thermostats (a climate without cooling).
 The outdoor areas become outdoor places, with their temperature, air quality and noise sensors. Outdoor
@@ -81,7 +82,14 @@ TRACKED = (
     k.CONF_CLIMATE,
     k.CONF_FANS,
     k.CONF_PURIFIERS,
+    k.CONF_LIGHTS,
 )
+# Bedrooms: a quiet morning for their lights.
+BEDROOM_WORDS = ("chambre", "bedroom", "schlafzimmer", "kinderzimmer", "dormitorio", "habitacion", "nursery")
+# Night lights: only set in the night hours.
+NIGHT_LIGHT_WORDS = ("veilleuse", "night_light", "nightlight", "nachtlicht", "luz_nocturna", "luz_de_noche")
+# Lights that are not lamps: the indicator of a device, the floodlight of a camera.
+NOT_LAMP_WORDS = ("indicator", "voyant", "floodlight", "projecteur", "status_light", "led_indicator")
 # Integrations of machines whose temperatures are not the room's (NAS, boxes, servers, UPS, printers…).
 EQUIPMENT_PLATFORMS = frozenset(
     {
@@ -338,6 +346,22 @@ def _is_purifier(entity: _Entity, by_device: dict[str, list[_Entity]]) -> bool:
     return any(s.device_class in ("pm25", "aqi", "pm10") for s in siblings)
 
 
+def _is_lamp(e: _Entity, device_domains: dict[str, set[str]]) -> bool:
+    """A dimmable lamp: not on/off only, not a device's indicator or a camera's floodlight."""
+    if "camera" in device_domains.get(e.device_id or "", set()) or e.platform in EQUIPMENT_PLATFORMS:
+        return False
+    if _has(e.entity_id, NOT_LAMP_WORDS) or _has(e.name, NOT_LAMP_WORDS):
+        return False
+    modes = set(e.attributes.get("supported_color_modes") or [])
+    return bool(modes - {"onoff"})
+
+
+def _light(e: _Entity) -> str | dict[str, Any]:
+    if _has(e.entity_id, NIGHT_LIGHT_WORDS) or _has(e.name, NIGHT_LIGHT_WORDS):
+        return {k.CONF_ENTITY_ID: e.entity_id, k.CONF_NIGHT_ONLY: True}
+    return e.entity_id
+
+
 def _is_air(e: _Entity, outdoor: bool = False) -> bool:
     """An air quality index sensor (in no area: a city one, like Atmo France, not a forecast nor pollen)."""
     if e.device_class == "aqi" and (not outdoor or e.platform in AIR_PLATFORMS):
@@ -420,6 +444,14 @@ def discover_rooms(hass: HomeAssistant) -> Found:
             room[k.CONF_FANS] = fans
         if purifiers:
             room[k.CONF_PURIFIERS] = purifiers
+        lights = [e for e in area.entities if e.domain == "light" and not busy(e) and _is_lamp(e, device_domains)]
+        # A light group in the room stands for its members.
+        members = {m for e in lights for m in (e.attributes.get("entity_id") or [])}
+        if found_lights := [_light(e) for e in sorted(lights, key=lambda e: e.entity_id) if e.entity_id not in members]:
+            room[k.CONF_LIGHTS] = found_lights
+            if _has(area.name, BEDROOM_WORDS) or _has(area.area_id, BEDROOM_WORDS):
+                # Bedrooms: dimmer lights in the morning (their naps are set by hand).
+                room[k.CONF_LIGHTING] = {k.CONF_QUIET_MORNING: True}
         if any(key in room for key in TRACKED):
             rooms.append(room)
     if not found.outdoor and not any(p.get(k.CONF_TEMPERATURE) for p in found.outdoors):
@@ -461,10 +493,16 @@ def merge(options: dict[str, Any], found: Found) -> tuple[dict[str, Any], Report
             if key in new and not match.get(key):
                 match[key] = new[key]
                 changed = True
+        if lighting := new.get(k.CONF_LIGHTING):
+            own = match.setdefault(k.CONF_LIGHTING, {})
+            for key, value in lighting.items():
+                if key not in own:
+                    own[key] = value
+                    changed = True
         if match.get(k.CONF_CLIMATE) and _item_id(match[k.CONF_CLIMATE]) == _item_id(new.get(k.CONF_CLIMATE, "")):
             match[k.CONF_CLIMATE], completed = _complete(match[k.CONF_CLIMATE], new[k.CONF_CLIMATE])
             changed = changed or completed
-        for key in (k.CONF_OPENINGS, k.CONF_FANS, k.CONF_PURIFIERS):
+        for key in (k.CONF_OPENINGS, k.CONF_FANS, k.CONF_PURIFIERS, k.CONF_LIGHTS):
             current = _list(match.get(key))
             found_items = {_item_id(i): i for i in new.get(key, [])}
             completed_items = []

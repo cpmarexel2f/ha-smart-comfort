@@ -183,7 +183,8 @@
           "openings": "Windows and doors",
           "climate": "Air conditioner",
           "fans": "Fans",
-          "purifiers": "Air purifiers"
+          "purifiers": "Air purifiers",
+          "lights": "Lights"
         },
         "description": "Sensors and devices of the room. Leave empty what it doesn't have.",
         "sections": {
@@ -204,6 +205,9 @@
               "purifier_keep_on": "Keep the purifiers on"
             }
           }
+        },
+        "data_description": {
+          "lights": "Dimmable lights: their brightness follows the time of day while they are on (adaptive lighting)."
         }
       },
       "room": {
@@ -217,7 +221,8 @@
           "openings": "Windows and doors",
           "climate": "Air conditioner",
           "fans": "Fans",
-          "purifiers": "Air purifiers"
+          "purifiers": "Air purifiers",
+          "lights": "Lights"
         },
         "description": "Sensors and devices of the room. Leave empty what it doesn't have.",
         "sections": {
@@ -238,6 +243,9 @@
               "purifier_keep_on": "Keep the purifiers on"
             }
           }
+        },
+        "data_description": {
+          "lights": "Dimmable lights: their brightness follows the time of day while they are on (adaptive lighting)."
         }
       },
       "outdoor": {
@@ -259,6 +267,39 @@
         "title": "Remove rooms",
         "data": {
           "rooms": "Rooms"
+        }
+      },
+      "lighting": {
+        "title": "Adaptive lighting",
+        "data": {
+          "enabled": "Adaptive lighting",
+          "day": "Day brightness",
+          "evening": "Evening brightness",
+          "night": "Night brightness",
+          "warmth": "Adapt the warmth",
+          "day_kelvin": "Day warmth",
+          "evening_kelvin": "Evening warmth",
+          "night_kelvin": "Night warmth",
+          "transition": "Transition",
+          "night_only": "Night light",
+          "morning": "Morning brightness",
+          "morning_kelvin": "Morning warmth",
+          "morning_end": "End of the morning",
+          "quiet_morning": "Quiet morning",
+          "nap": "Nap brightness",
+          "nap_kelvin": "Nap warmth"
+        },
+        "data_description": {
+          "day": "With the sun up (elevation above 6°).",
+          "evening": "Once the sun is down (below −6°); in between, a blend.",
+          "night": "In the quiet night hours of the Device control tab.",
+          "warmth": "Also the color temperature, for the lights that support it. Off: brightness only.",
+          "transition": "Seconds of the gradual changes; a light just turned on gets its brightness at once.",
+          "night_only": "Set only in the night hours (left alone by day).",
+          "morning": "In the rooms with a quiet morning (bedrooms), from the end of the night until the end of the morning.",
+          "morning_end": "Until when the bedrooms keep their morning brightness.",
+          "quiet_morning": "Dimmer lights in the morning, until the end of the morning (Device control tab).",
+          "nap": "During the nap slots of a room."
         }
       }
     },
@@ -346,6 +387,9 @@
       },
       "control": {
         "name": "Device control"
+      },
+      "lighting": {
+        "name": "Adaptive lighting"
       }
     },
     "button": {

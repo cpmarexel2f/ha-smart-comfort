@@ -281,6 +281,7 @@ def _room_schema(room: dict[str, Any]) -> vol.Schema:
             _opt(k.CONF_CLIMATE, climate[0] if climate else None): _entity("climate"),
             _opt(k.CONF_FANS, ids(k.CONF_FANS)): _entity("fan", multiple=True),
             _opt(k.CONF_PURIFIERS, ids(k.CONF_PURIFIERS)): _entity("fan", multiple=True),
+            _opt(k.CONF_LIGHTS, ids(k.CONF_LIGHTS)): _entity("light", multiple=True),
             vol.Required(ROOM_OVERRIDES): section(
                 vol.Schema(
                     {
@@ -336,6 +337,7 @@ def _room_from_form(user_input: dict[str, Any], old: dict[str, Any]) -> dict[str
         room.pop(k.CONF_CLIMATE, None)
     room[k.CONF_FANS] = _keep_items(old.get(k.CONF_FANS), list(user_input.get(k.CONF_FANS) or []))
     room[k.CONF_PURIFIERS] = _keep_items(old.get(k.CONF_PURIFIERS), list(user_input.get(k.CONF_PURIFIERS) or []))
+    room[k.CONF_LIGHTS] = _keep_items(old.get(k.CONF_LIGHTS), list(user_input.get(k.CONF_LIGHTS) or []))
 
     ov = user_input.get(ROOM_OVERRIDES) or {}
     alerts = room.setdefault(k.CONF_ALERTS, {})

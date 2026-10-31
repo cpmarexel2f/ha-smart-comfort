@@ -39,6 +39,7 @@ from .const import (
 )
 from .control import Command, Controller, DeviceState, RoomContext
 from .engine import Clear, Digest, Engine, Gates, RoomReading
+from .lighting import LightController, LightState
 from .message import format_text, render
 
 _LOGGER = logging.getLogger(__name__)
@@ -145,9 +146,11 @@ class SmartComfort:
         self.settings = settings
         self.engine = Engine(settings)
         self.controller = Controller(settings)
+        self.lights = LightController(settings)
         self.store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self.notifications_enabled = True
         self.control_enabled = True
+        self.lighting_enabled = True
         self.started_at: datetime | None = None
         self.last_notification: dict[str, Any] | None = None
         self.handled: set[str] = set()
@@ -167,11 +170,13 @@ class SmartComfort:
         data = self.hass.data.get(DOMAIN, {}).pop("state", None) or await self.store.async_load() or {}
         self.engine.restore(data.get("engine") or {})
         self.controller.restore(data.get("control") or {})
+        self.lights.restore(data.get("lighting") or {})
         if (last := data.get("last_notification")) is not None:
             self.last_notification = last
         # Switches: known before the first evaluation, not only once the switch entities are restored.
         self.notifications_enabled = bool(data.get("notifications_enabled", True))
         self.control_enabled = bool(data.get("control_enabled", True))
+        self.lighting_enabled = bool(data.get("lighting_enabled", True))
         await self._load_texts()
         # The startup grace period counts from now when Home Assistant is starting, not on a reload.
         self.started_at = dt_util.utcnow() if starting else None
@@ -200,7 +205,7 @@ class SmartComfort:
         sensors = {e for r in s.rooms for e in r.sensors} | set(s.outdoor) | set(s.outdoor_noise) | set(s.outdoor_air)
         if s.presence:
             sensors.add(s.presence)
-        devices = {e for r in s.rooms for e in r.devices}
+        devices = {e for r in s.rooms for e in r.devices} | {light.entity_id for r in s.rooms for light in r.lights}
         selects = {p.mode_select for r in s.rooms for p in r.purifiers if p.mode_select}
         if entities := sorted(sensors | devices | selects):
             self._unsubs.append(async_track_state_change_event(self.hass, entities, self._state_changed))
@@ -240,9 +245,11 @@ class SmartComfort:
         return {
             "engine": self.engine.as_dict(),
             "control": self.controller.as_dict(),
+            "lighting": self.lights.as_dict(),
             "last_notification": self.last_notification,
             "notifications_enabled": self.notifications_enabled,
             "control_enabled": self.control_enabled,
+            "lighting_enabled": self.lighting_enabled,
         }
 
     # Triggers.
@@ -252,6 +259,12 @@ class SmartComfort:
         entity_id: str = event.data["entity_id"]
         if any(entity_id in r.devices for r in self.settings.rooms):
             self._device_changed(entity_id, event.data.get("old_state"), event.data.get("new_state"))
+        if entity_id.startswith("light.") and self._light_changed(
+            entity_id, event.data.get("old_state"), event.data.get("new_state")
+        ):
+            # Just turned on: its brightness at once, not after the debounce.
+            self.hass.async_create_task(self.async_evaluate())
+            return
         if self._debounce is None and not self._stopped:
             self._debounce = async_call_later(self.hass, DEBOUNCE, self._debounced)
 
@@ -280,6 +293,53 @@ class SmartComfort:
         if changed and entity_id in self.controller.targets:
             _LOGGER.debug("Manual change of %s, control paused", entity_id)
             self.controller.manual_change(entity_id, now)
+
+    @callback
+    def _light_changed(self, entity_id: str, old: State | None, new: State | None) -> bool:
+        """A light turned off ends its pause; one changed by hand is paused. True when it was just turned on."""
+        if new is None or new.state in BAD_STATES:
+            return False
+        if new.state == "off":
+            self.lights.turned_off(entity_id)
+            return False
+        if old is None or old.state != "on":
+            return new.context.id not in self._contexts
+        if new.context.id in self._contexts or entity_id not in self.lights.targets:
+            return False
+        now = dt_util.utcnow()
+        # Our transition answers for a while (polled lights report the steps in contexts of their own).
+        grace = max(COMMAND_GRACE, timedelta(seconds=self.settings.transition + 30))
+        if (sent := self._commanded.get(entity_id)) is not None and now - sent < grace:
+            return False
+        keys = ("brightness", "color_temp_kelvin")
+        if any(old.attributes.get(k) != new.attributes.get(k) for k in keys):
+            _LOGGER.debug("Manual change of %s, lighting paused", entity_id)
+            self.lights.manual_change(entity_id, now)
+        return False
+
+    def light_states(self, room: Room) -> dict[str, LightState]:
+        out: dict[str, LightState] = {}
+        for light in room.lights:
+            state = self.hass.states.get(light.entity_id)
+            if state is None or state.state in BAD_STATES:
+                continue
+            modes = set(state.attributes.get("supported_color_modes") or [])
+            raw = state.attributes.get("brightness")
+            warm = "color_temp" in modes
+            out[light.entity_id] = LightState(
+                on=state.state == "on",
+                brightness=round(raw * 100 / 255) if isinstance(raw, (int, float)) else None,
+                kelvin=state.attributes.get("color_temp_kelvin"),
+                dimmable=bool(modes - {"onoff"}) if modes else raw is not None,
+                min_kelvin=state.attributes.get("min_color_temp_kelvin") if warm else None,
+                max_kelvin=state.attributes.get("max_color_temp_kelvin") if warm else None,
+            )
+        return out
+
+    def sun_elevation(self) -> float | None:
+        state = self.hass.states.get("sun.sun")
+        value = state.attributes.get("elevation") if state else None
+        return float(value) if isinstance(value, (int, float)) else None
 
     # Readings.
 
@@ -430,7 +490,13 @@ class SmartComfort:
             readings: dict[str, RoomReading] = {}
             commands: list[Command] = []
             handled: set[str] = set()
+            lighting = self.lighting_enabled and self.settings.lighting_enabled
+            elevation = self.sun_elevation()
             for room in self.settings.rooms:
+                if lighting and room.lights:
+                    commands += self.lights.evaluate(
+                        now, dt_util.as_local(now), elevation, room, self.light_states(room)
+                    )
                 reading, ctx = self.reading(room, now)
                 states = self.device_states(room)
                 if self.control_enabled:
@@ -467,6 +533,8 @@ class SmartComfort:
         except Exception as err:  # noqa: BLE001 - one failing device doesn't stop the others
             _LOGGER.warning("%s.%s on %s failed: %s", cmd.domain, cmd.service, cmd.entity_id, err)
             self.controller.command_failed(cmd, now)
+            if cmd.domain == "light":
+                self.lights.targets.pop(cmd.entity_id, None)  # Sent again at the next evaluation.
             return False
         self.hass.bus.async_fire(
             EVENT_CONTROL,
@@ -615,5 +683,13 @@ class SmartComfort:
     @callback
     def set_control(self, enabled: bool) -> None:
         self.control_enabled = enabled
+        self.save()
+        self._update_listeners()
+
+    @callback
+    def set_lighting(self, enabled: bool) -> None:
+        self.lighting_enabled = enabled
+        if not enabled:
+            self.lights.targets.clear()  # Applied again from scratch when turned back on.
         self.save()
         self._update_listeners()

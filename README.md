@@ -31,6 +31,7 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
   - commands are sent only when the target changes and the device isn't already in that state; a device changed **by hand** is left alone for an hour (configurable)
   - a room whose air conditioner or fan Smart Comfort has turned on gets no "too hot" alert (a device turned on by hand doesn't count)
   - **quiet night**: in the night hours (22:00–07:00 by default), devices with night settings run quieter — a fan at a lower speed or a sleep preset, a purifier in its sleep preset or mode, an air conditioner in its silent fan mode — and get no window boost; the day settings (or the state before the night) come back in the morning
+- **Adaptive lighting**: the dimmable lights of each room that are on get the brightness of the moment — day with the sun up, evening once it is down, night in the quiet night hours — at once when turned on, then gradually; optionally the warmth too (color temperature, can be turned off). Smart Comfort never turns a light on or off, night lights are only set at night, and a light changed by hand is left alone until it is turned off
 - **Outdoors**: outdoor places (garden, terrace…) with their temperature, air quality and noise sensors, plus sensors in no area (weather entity, a city air quality index such as Atmo France)
 - **Noise**: a sound level sensor per room (noisy room alert), and outdoor noise sensors: no suggestion to open the windows while it is noisy outside, and an alert to close them when they are open in the noise
 - **Outdoor air quality**: an index from 1 (good) to 6 (extremely poor) — European indexes (Atmo, EAQI) as is, US AQI by its bands, text states (good, poor…) — the worst sensor counts: no suggestion to open the windows while the air is poor, and an alert to close them when they are open then
@@ -78,8 +79,8 @@ Both ways can be used together:
 Once set up, Smart Comfort adds a **Smart Comfort** page to the sidebar, for administrators:
 
 - **Overview**: while nothing is set up (no room nor outdoor place), a **Discover** button that runs the discovery and opens its result in the Rooms tab; the active alerts with their state (notified, snoozed, acknowledged, handled by a running device) and **Snooze** / **Got it** buttons, the readings and devices of each room with their targets and manual overrides, the last notification, and switches for the notifications and the device control
-- **Rooms**: **Discover** adds a room for every Home Assistant area with something to follow (a comfort sensor, an air conditioner, a fan or a purifier — not a hallway with only its door) and sets it up: temperature, CO₂, humidity and noise sensors (a weather station preferred over a device's own sensor; never the temperatures of machines — NAS, internet box, server, UPS, printer, fridge…), windows and doors, air conditioner (only one that can cool), fans with their natural / direct presets, purifiers with their auto / manual mode select or presets, and the night settings from their quiet presets and fan modes. The outdoor areas (garden, terrace, balcony…) with a sensor go to the **Outdoors** category below the rooms, with their temperature, air quality and noise sensors (an outdoor module counts by its device's area); outdoor sensors in no area — a sensor named outdoor, a city air quality index (Atmo France, WAQI…), and the weather entity when there is no outdoor temperature sensor — go to the Notifications tab. What is already set is kept, and running it again only adds what is new. Nothing is saved until **Save**. Then add, remove and reorder rooms; their sensors and openings; their air conditioner, fans and purifiers, each with its own settings (presets offered from the device, mode select and its options); and alert overrides for the room; and add or remove outdoor places
-- **Alerts**, **Notifications**, **Device control**: the global settings, with their defaults
+- **Rooms**: **Discover** adds a room for every Home Assistant area with something to follow (a comfort sensor, an air conditioner, a fan, a purifier or a dimmable light — not a hallway with only its door) and sets it up: temperature, CO₂, humidity and noise sensors (a weather station preferred over a device's own sensor; never the temperatures of machines — NAS, internet box, server, UPS, printer, fridge…), windows and doors, air conditioner (only one that can cool), fans with their natural / direct presets, purifiers with their auto / manual mode select or presets, dimmable lights (not the indicators of devices nor the floodlights of cameras; night lights flagged as such), and the night settings from their quiet presets and fan modes. The outdoor areas (garden, terrace, balcony…) with a sensor go to the **Outdoors** category below the rooms, with their temperature, air quality and noise sensors (an outdoor module counts by its device's area); outdoor sensors in no area — a sensor named outdoor, a city air quality index (Atmo France, WAQI…), and the weather entity when there is no outdoor temperature sensor — go to the Notifications tab. What is already set is kept, and running it again only adds what is new. Nothing is saved until **Save**. Then add, remove and reorder rooms; their sensors and openings; their air conditioner, fans and purifiers, each with its own settings (presets offered from the device, mode select and its options); and alert overrides for the room; and add or remove outdoor places
+- **Alerts**, **Notifications**, **Device control** (with **Adaptive lighting**): the global settings, with their defaults
 
 Changes are checked and saved with **Save** (or dropped with **Discard**); the integration reloads with them, and the page keeps following its status. Only the settings that differ from the defaults are stored. When the configuration comes from YAML, the page says so: what is saved there stays until the YAML changes.
 
@@ -111,6 +112,14 @@ Each tab has its own address, e.g. `/smart-comfort/rooms`.
 | Alert settings in the Smart Comfort panel | Dark mode |
 |---|---|
 | ![Alert settings in the Smart Comfort panel](screenshots/panel-alerts.png) | ![Alert settings in the Smart Comfort panel, dark mode](screenshots/panel-alerts-dark.png) |
+
+| Adaptive lighting settings | Dark mode |
+|---|---|
+| ![Adaptive lighting settings in the Device control tab](screenshots/panel-lighting.png) | ![Adaptive lighting settings in the Device control tab, dark mode](screenshots/panel-lighting-dark.png) |
+
+| Quiet morning and naps of a bedroom | Dark mode |
+|---|---|
+| ![Quiet morning and nap slots of a bedroom](screenshots/panel-naps.png) | ![Quiet morning and nap slots of a bedroom, dark mode](screenshots/panel-naps-dark.png) |
 
 </details>
 
@@ -171,6 +180,10 @@ smart_comfort:
           open_preset: Favorite
           closed_preset: Auto
           night_preset: Sleep        # quieter at night
+      lights:
+        - light.bedroom
+        - entity_id: light.bedroom_night_light
+          night_only: true           # set only at night
 
     - name: Bathroom
       humidity: sensor.bathroom_humidity
@@ -262,6 +275,47 @@ An air conditioner in another mode than `cool` or `off` (heat, dry…) is left a
 
 Thresholds and messages are in °C; sensors in °F or K are converted. An opening unavailable for 10 minutes (dead battery…) is left out of its room instead of blocking its alerts and devices (`ignored_openings` attribute of the room sensor). The problems of a sensor removed from a room end.
 
+### Adaptive lighting
+
+Set under `lighting:` for every light, under `rooms[].lighting:` for the lights of one room, and on the light item itself (`rooms[].lights:`) for one light. `enabled` and `transition` are global.
+
+| Option | Default | Description |
+|---|---|---|
+| `enabled` | `true` | Adapt the lights (also the **Adaptive lighting** switch) |
+| `day` | 100 % | Brightness with the sun up (elevation above 6°) |
+| `evening` | 60 % | Brightness once the sun is down (below −6°); in between, a blend of the two |
+| `night` | 15 % | Brightness in the quiet night hours (`control.night_start` / `night_end`) |
+| `warmth` | `true` | Also set the color temperature, for the lights that support it. `false`: brightness only |
+| `day_kelvin` / `evening_kelvin` / `night_kelvin` | 4000 / 2700 / 2200 K | Color temperature by time of day (within what each light can do) |
+| `transition` | 120 s | Duration of the gradual changes; a light just turned on gets its brightness at once |
+| `morning` | 40 % | Brightness of the quiet morning (rooms with `quiet_morning`), from the end of the night until `morning_end` |
+| `morning_end` | 09:30 | End of the quiet morning (global) |
+| `quiet_morning` | `false` | Dimmer lights in the morning for this room or light (Discover sets it on bedrooms) |
+| `nap` | 15 % | Brightness during the nap slots of the room (`rooms[].naps`) |
+| `morning_kelvin` / `nap_kelvin` | 3000 / 2200 K | Color temperature of the quiet morning and of the naps |
+| `night_only` | `false` | On a light item: a night light, set only in the night hours and the naps, left alone by day |
+
+Naps are set per room under `rooms[].naps:` — `start`, `end` and optionally `days` (`mon` … `sun`, every day when none). Discover never adds any. Order of precedence: night, nap, quiet morning, then day / evening.
+
+Only the lights that are on are set: Smart Comfort never turns a light on or off. A brightness or warmth changed by hand pauses the light until it is turned off, or for `control.manual_override` minutes. On/off-only lights are left alone.
+
+```yaml
+smart_comfort:
+  lighting:
+    evening: 50
+    night: 10
+    warmth: false              # brightness only
+  rooms:
+    - name: Living room
+      lights: [light.living_room, light.sofa]
+      lighting: { evening: 70 }  # this room only
+    - name: Kids' bedroom
+      lights: [light.kids, { entity_id: light.kids_night_light, night_only: true }]
+      lighting: { quiet_morning: true }   # dimmer until morning_end (09:30)
+      naps:
+        - { start: "13:30", end: "15:30", days: [sat, sun] }
+```
+
 ### Entities
 
 | Entity | Description |
@@ -271,6 +325,7 @@ Thresholds and messages are in °C; sensors in °F or K are converted. An openin
 | `sensor.smart_comfort_last_notification` | Time of the last notification. Attributes: `title`, `message`, `severity`, `alerts` |
 | `switch.smart_comfort_notifications` | Send notifications (problems are still tracked when off) |
 | `switch.smart_comfort_device_control` | Control the devices |
+| `switch.smart_comfort_adaptive_lighting` | Adapt the brightness of the lights |
 | `button.smart_comfort_notify_now` | Send every current problem now, ignoring quiet hours and the digest window |
 | `button.smart_comfort_cancel_snoozes` | Cancel every snooze |
 

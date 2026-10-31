@@ -324,3 +324,46 @@ async def test_machines_only(hass: HomeAssistant) -> None:
     h.entity("sensor", "ugreen_nas_pool_1_disk_1_temperature", "51", nas, platform="ugreen", device_class="temperature")
     h.entity("sensor", "freebox_temperature_cpu_0", "58", h.device("Freebox", office), device_class="temperature")
     assert discover_rooms(hass).rooms == []
+
+
+async def test_discover_lights(hass: HomeAssistant) -> None:
+    """Dimmable lamps only: not a device's indicator, a camera's floodlight, an on/off light; night lights flagged."""
+    h = House(hass)
+    living, hallway = h.area("Séjour"), h.area("Couloir")
+    dim = {"supported_color_modes": ["brightness"]}
+    h.entity("light", "salon", "off", area=living, **dim)
+    h.entity("light", "aqara_night_light", "off", area=living, supported_color_modes=["color_temp"])
+    h.entity("light", "spot", "off", area=living, supported_color_modes=["onoff"])
+    purifier = h.device("Purificateur", living)
+    h.entity("fan", "purificateur", "on", purifier)
+    h.entity("light", "purificateur_indicator_light", "on", purifier, **dim)
+    camera = h.device("Caméra Séjour", living)
+    h.entity("camera", "camera_sejour", "idle", camera)
+    h.entity("light", "camera_sejour_floodlight", "off", camera, **dim)
+    # A light group stands for its members.
+    h.entity("light", "couloir_group", "off", area=hallway, entity_id=["light.couloir_1", "light.couloir_2"], **dim)
+    h.entity("light", "couloir_1", "off", area=hallway, **dim)
+    h.entity("light", "couloir_2", "off", area=hallway, **dim)
+    rooms = {r["name"]: r for r in discover_rooms(hass).rooms}
+    # A room with lights only is worth following now.
+    assert rooms["Couloir"] == {"name": "Couloir", "area": "couloir", "lights": ["light.couloir_group"]}
+    assert rooms["Séjour"]["lights"] == [{"entity_id": "light.aqara_night_light", "night_only": True}, "light.salon"]
+    # Discovering again completes the room without doubling its lights.
+    merged, report = merge(
+        {"rooms": [{"name": "Séjour", "area": "sejour", "lights": ["light.salon"]}]}, discover_rooms(hass)
+    )
+    assert merged["rooms"][0]["lights"] == ["light.salon", {"entity_id": "light.aqara_night_light", "night_only": True}]
+    assert report.updated == ["Séjour"]
+
+
+async def test_discover_bedroom_lights(hass: HomeAssistant) -> None:
+    """A bedroom gets a quiet morning for its lights, and no nap (set by hand)."""
+    h = House(hass)
+    h.entity("light", "chambre_lea", "off", area=h.area("Chambre Léa"), supported_color_modes=["brightness"])
+    room = discover_rooms(hass).rooms[0]
+    assert room["lighting"] == {"quiet_morning": True}
+    assert "naps" not in room
+    # Already set to no quiet morning: kept.
+    options = {"rooms": [{"name": "Chambre Léa", "area": "chambre_lea", "lighting": {"quiet_morning": False}}]}
+    merged, _ = merge(options, discover_rooms(hass))
+    assert merged["rooms"][0]["lighting"] == {"quiet_morning": False}

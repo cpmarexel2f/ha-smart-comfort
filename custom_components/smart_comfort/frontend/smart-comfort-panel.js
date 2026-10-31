@@ -32,7 +32,7 @@ const STRINGS = {
     discovered_new: "new",
     discovered_updated: "completed",
     discover: "Discover",
-    discover_help: "Adds a room for each Home Assistant area with something to follow (a comfort sensor, an air conditioner, a fan or a purifier) and sets it up: temperature, CO₂, humidity and noise sensors, windows and doors, air conditioner, fans and purifiers with their presets and modes. The outdoor areas (garden, terrace…) go to the Outdoors, with their temperature, air quality and noise sensors; a city air quality index (Atmo France…) and the weather entity, for want of an outdoor sensor, go to the Notifications tab. Quiet presets and fan modes become the night settings. What is already set is kept. Check the result, then save.",
+    discover_help: "Adds a room for each Home Assistant area with something to follow (a comfort sensor, an air conditioner, a fan, a purifier or a dimmable light) and sets it up: temperature, CO₂, humidity and noise sensors, windows and doors, air conditioner, fans and purifiers with their presets and modes. The outdoor areas (garden, terrace…) go to the Outdoors, with their temperature, air quality and noise sensors; a city air quality index (Atmo France…) and the weather entity, for want of an outdoor sensor, go to the Notifications tab. Quiet presets and fan modes become the night settings. What is already set is kept. Check the result, then save.",
     discover_running: "Discovering…",
     discover_result: "Discovery: {added} room(s) added, {updated} completed, {outdoors} outdoor place(s){outdoor}. Check them, then save.",
     discover_outdoor: ", outdoor sensors set",
@@ -104,6 +104,27 @@ const STRINGS = {
     start_help: "Nothing is set up yet. Discover finds the rooms and outdoor places of your Home Assistant areas with their sensors and devices, and sets them up; you check the result in the Rooms tab before saving.",
     outdoors_also: "Also counted: the sensors of the outdoor places — {places} — set in the Rooms tab, Outdoors.",
     no_sensor: "no sensor",
+    lighting: "Adaptive lighting",
+    lighting_help: "The lights of the rooms that are on get the brightness of the moment: day with the sun up, evening once it is down, night in the quiet night hours (Device control). Smart Comfort never turns a light on or off; a light changed by hand is left alone until it is turned off.",
+    lights: "Lights",
+    light: "Light",
+    add_light: "Add a light",
+    lighting_on: "Adaptive lighting on",
+    lighting_off: "Adaptive lighting off",
+    room_lighting: "Lighting of this room",
+    room_lighting_help: "Quiet morning: dimmer lights from the end of the night until the end of the morning (Device control tab, Adaptive lighting). Naps: the lights are dimmed in these slots, and the night lights are set too.",
+    add_nap: "Add a nap",
+    nap_start: "Nap from",
+    nap_end: "Until",
+    nap_days: "Days",
+    nap_days_help: "None: every day.",
+    day_mon: "Mon",
+    day_tue: "Tue",
+    day_wed: "Wed",
+    day_thu: "Thu",
+    day_fri: "Fri",
+    day_sat: "Sat",
+    day_sun: "Sun",
   },
   fr: {
     outdoor_noise: "Bruit extérieur",
@@ -111,7 +132,7 @@ const STRINGS = {
     discovered_new: "nouvelle",
     discovered_updated: "complétée",
     discover: "Découvrir",
-    discover_help: "Ajoute chaque pièce de Home Assistant où il y a quelque chose à suivre (un capteur de confort, un climatiseur, un ventilateur ou un purificateur) et la règle : capteurs de température, CO₂, humidité et bruit, fenêtres et portes, climatiseur, ventilateurs et purificateurs avec leurs modes. Les pièces extérieures (jardin, terrasse…) vont dans Extérieurs, avec leurs capteurs de température, qualité de l'air et bruit ; un indice de qualité de l'air de la ville (Atmo France…) et l'entité météo, à défaut de capteur extérieur, vont dans l'onglet Notifications. Les modes silencieux deviennent les réglages de nuit. Ce qui est déjà réglé est conservé. Vérifiez le résultat, puis enregistrez.",
+    discover_help: "Ajoute chaque pièce de Home Assistant où il y a quelque chose à suivre (un capteur de confort, un climatiseur, un ventilateur, un purificateur ou une lumière variable) et la règle : capteurs de température, CO₂, humidité et bruit, fenêtres et portes, climatiseur, ventilateurs et purificateurs avec leurs modes. Les pièces extérieures (jardin, terrasse…) vont dans Extérieurs, avec leurs capteurs de température, qualité de l'air et bruit ; un indice de qualité de l'air de la ville (Atmo France…) et l'entité météo, à défaut de capteur extérieur, vont dans l'onglet Notifications. Les modes silencieux deviennent les réglages de nuit. Ce qui est déjà réglé est conservé. Vérifiez le résultat, puis enregistrez.",
     discover_running: "Découverte…",
     discover_result: "Découverte : {added} pièce(s) ajoutée(s), {updated} complétée(s), {outdoors} extérieur(s){outdoor}. Vérifiez-les, puis enregistrez.",
     discover_outdoor: ", capteurs extérieurs renseignés",
@@ -183,6 +204,27 @@ const STRINGS = {
     start_help: "Rien n'est encore configuré. La découverte trouve les pièces et les extérieurs de vos zones Home Assistant avec leurs capteurs et appareils, et les règle ; vous vérifiez le résultat dans l'onglet Pièces avant d'enregistrer.",
     outdoors_also: "Comptent aussi les capteurs des extérieurs — {places} — réglés dans l'onglet Pièces, Extérieurs.",
     no_sensor: "aucun capteur",
+    lighting: "Éclairage adaptatif",
+    lighting_help: "Les lumières allumées des pièces prennent l'intensité du moment : jour avec le soleil levé, soirée une fois couché, nuit aux heures de nuit calme (Pilotage des appareils). Smart Comfort n'allume ni n'éteint jamais une lumière ; une lumière réglée à la main est laissée tranquille jusqu'à ce qu'elle soit éteinte.",
+    lights: "Lumières",
+    light: "Lumière",
+    add_light: "Ajouter une lumière",
+    lighting_on: "Éclairage adaptatif activé",
+    lighting_off: "Éclairage adaptatif désactivé",
+    room_lighting: "Éclairage de cette pièce",
+    room_lighting_help: "Matin doux : lumières moins fortes de la fin de la nuit jusqu'à la fin de la matinée (onglet Pilotage des appareils, Éclairage adaptatif). Siestes : les lumières baissent sur ces créneaux, veilleuses comprises.",
+    add_nap: "Ajouter une sieste",
+    nap_start: "Sieste de",
+    nap_end: "Jusqu'à",
+    nap_days: "Jours",
+    nap_days_help: "Aucun : tous les jours.",
+    day_mon: "Lun",
+    day_tue: "Mar",
+    day_wed: "Mer",
+    day_thu: "Jeu",
+    day_fri: "Ven",
+    day_sat: "Sam",
+    day_sun: "Dim",
   },
   de: {
     outdoor_noise: "Außenlärm",
@@ -190,7 +232,7 @@ const STRINGS = {
     discovered_new: "neu",
     discovered_updated: "ergänzt",
     discover: "Erkennen",
-    discover_help: "Legt für jeden Home-Assistant-Bereich mit etwas zu überwachen (Komfortsensor, Klimaanlage, Lüfter oder Luftreiniger) einen Raum an und richtet ihn ein: Temperatur-, CO₂-, Feuchte- und Lärmsensoren, Fenster und Türen, Klimaanlage, Lüfter und Luftreiniger mit ihren Modi. Die Außenbereiche (Garten, Terrasse…) kommen zu „Außen“, mit ihren Temperatur-, Luftqualitäts- und Lärmsensoren; ein städtischer Luftqualitätsindex (Atmo France…) und die Wetter-Entität, mangels Außensensor, in den Reiter Benachrichtigungen. Leise Voreinstellungen und Lüftermodi werden zu den Nachteinstellungen. Bereits Eingestelltes bleibt erhalten. Ergebnis prüfen, dann speichern.",
+    discover_help: "Legt für jeden Home-Assistant-Bereich mit etwas zu überwachen (Komfortsensor, Klimaanlage, Lüfter, Luftreiniger oder dimmbares Licht) einen Raum an und richtet ihn ein: Temperatur-, CO₂-, Feuchte- und Lärmsensoren, Fenster und Türen, Klimaanlage, Lüfter und Luftreiniger mit ihren Modi. Die Außenbereiche (Garten, Terrasse…) kommen zu „Außen“, mit ihren Temperatur-, Luftqualitäts- und Lärmsensoren; ein städtischer Luftqualitätsindex (Atmo France…) und die Wetter-Entität, mangels Außensensor, in den Reiter Benachrichtigungen. Leise Voreinstellungen und Lüftermodi werden zu den Nachteinstellungen. Bereits Eingestelltes bleibt erhalten. Ergebnis prüfen, dann speichern.",
     discover_running: "Erkennung…",
     discover_result: "Erkennung: {added} Raum/Räume hinzugefügt, {updated} ergänzt, {outdoors} Außenbereich(e){outdoor}. Prüfen, dann speichern.",
     discover_outdoor: ", Außensensoren gesetzt",
@@ -262,6 +304,27 @@ const STRINGS = {
     start_help: "Noch ist nichts eingerichtet. Die Erkennung findet die Räume und Außenbereiche Ihrer Home-Assistant-Bereiche mit ihren Sensoren und Geräten und richtet sie ein; Sie prüfen das Ergebnis im Reiter Räume vor dem Speichern.",
     outdoors_also: "Ebenfalls gezählt: die Sensoren der Außenbereiche — {places} — im Reiter Räume, Außen.",
     no_sensor: "kein Sensor",
+    lighting: "Adaptive Beleuchtung",
+    lighting_help: "Eingeschaltete Lichter der Räume erhalten die Helligkeit des Moments: Tag bei Sonne, Abend nach Sonnenuntergang, Nacht in den Nachtruhestunden (Gerätesteuerung). Smart Comfort schaltet nie ein Licht ein oder aus; ein von Hand verstelltes Licht bleibt unberührt, bis es ausgeschaltet wird.",
+    lights: "Lichter",
+    light: "Licht",
+    add_light: "Licht hinzufügen",
+    lighting_on: "Adaptive Beleuchtung an",
+    lighting_off: "Adaptive Beleuchtung aus",
+    room_lighting: "Beleuchtung dieses Raums",
+    room_lighting_help: "Sanfter Morgen: gedämpftes Licht vom Ende der Nacht bis zum Ende des Vormittags (Reiter Gerätesteuerung, Adaptive Beleuchtung). Mittagsschlaf: in diesen Zeiten wird das Licht gedämpft, Nachtlichter eingeschlossen.",
+    add_nap: "Mittagsschlaf hinzufügen",
+    nap_start: "Mittagsschlaf von",
+    nap_end: "Bis",
+    nap_days: "Tage",
+    nap_days_help: "Keine: jeden Tag.",
+    day_mon: "Mo",
+    day_tue: "Di",
+    day_wed: "Mi",
+    day_thu: "Do",
+    day_fri: "Fr",
+    day_sat: "Sa",
+    day_sun: "So",
   },
   es: {
     outdoor_noise: "Ruido exterior",
@@ -269,7 +332,7 @@ const STRINGS = {
     discovered_new: "nueva",
     discovered_updated: "completada",
     discover: "Descubrir",
-    discover_help: "Añade una estancia por cada área de Home Assistant con algo que vigilar (un sensor de confort, un aire acondicionado, un ventilador o un purificador) y la configura: sensores de temperatura, CO₂, humedad y ruido, ventanas y puertas, aire acondicionado, ventiladores y purificadores con sus modos. Las áreas exteriores (jardín, terraza…) van a Exteriores, con sus sensores de temperatura, calidad del aire y ruido; un índice de calidad del aire de la ciudad (Atmo France…) y la entidad meteorológica, a falta de sensor exterior, van a la pestaña Notificaciones. Los modos silenciosos pasan a ser los ajustes de noche. Lo ya configurado se conserva. Revise el resultado y guarde.",
+    discover_help: "Añade una estancia por cada área de Home Assistant con algo que vigilar (un sensor de confort, un aire acondicionado, un ventilador, un purificador o una luz regulable) y la configura: sensores de temperatura, CO₂, humedad y ruido, ventanas y puertas, aire acondicionado, ventiladores y purificadores con sus modos. Las áreas exteriores (jardín, terraza…) van a Exteriores, con sus sensores de temperatura, calidad del aire y ruido; un índice de calidad del aire de la ciudad (Atmo France…) y la entidad meteorológica, a falta de sensor exterior, van a la pestaña Notificaciones. Los modos silenciosos pasan a ser los ajustes de noche. Lo ya configurado se conserva. Revise el resultado y guarde.",
     discover_running: "Descubriendo…",
     discover_result: "Descubrimiento: {added} estancia(s) añadida(s), {updated} completada(s), {outdoors} exterior(es){outdoor}. Revíselas y guarde.",
     discover_outdoor: ", sensores exteriores configurados",
@@ -341,6 +404,27 @@ const STRINGS = {
     start_help: "Aún no hay nada configurado. El descubrimiento encuentra las estancias y los exteriores de sus áreas de Home Assistant con sus sensores y dispositivos, y los configura; revise el resultado en la pestaña Estancias antes de guardar.",
     outdoors_also: "También cuentan los sensores de los exteriores — {places} — configurados en la pestaña Estancias, Exteriores.",
     no_sensor: "sin sensor",
+    lighting: "Iluminación adaptativa",
+    lighting_help: "Las luces encendidas de las estancias toman el brillo del momento: día con el sol arriba, tarde una vez puesto, noche en las horas de noche tranquila (Control de dispositivos). Smart Comfort nunca enciende ni apaga una luz; una luz ajustada a mano se deja tal cual hasta que se apaga.",
+    lights: "Luces",
+    light: "Luz",
+    add_light: "Añadir una luz",
+    lighting_on: "Iluminación adaptativa activada",
+    lighting_off: "Iluminación adaptativa desactivada",
+    room_lighting: "Iluminación de esta estancia",
+    room_lighting_help: "Mañana suave: luces más tenues desde el final de la noche hasta el final de la mañana (pestaña Control de dispositivos, Iluminación adaptativa). Siestas: las luces bajan en estas franjas, luces nocturnas incluidas.",
+    add_nap: "Añadir una siesta",
+    nap_start: "Siesta de",
+    nap_end: "Hasta",
+    nap_days: "Días",
+    nap_days_help: "Ninguno: todos los días.",
+    day_mon: "Lun",
+    day_tue: "Mar",
+    day_wed: "Mié",
+    day_thu: "Jue",
+    day_fri: "Vie",
+    day_sat: "Sáb",
+    day_sun: "Dom",
   },
 };
 
@@ -416,6 +500,22 @@ const text = { text: {} };
 const bool = { boolean: {} };
 const time = { time: {} };
 const entity = (domain, extra = {}) => ({ entity: { domain, ...extra } });
+const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+const kelvin = { number: { mode: "box", step: 100, min: 1500, max: 10000, unit_of_measurement: "K" } };
+/** Brightness and warmth by time of day: global, and per light. */
+const LIGHTING_LEVELS = [
+  { name: "day", selector: percent },
+  { name: "evening", selector: percent },
+  { name: "night", selector: percent },
+  { name: "warmth", selector: bool },
+  { name: "day_kelvin", selector: kelvin },
+  { name: "evening_kelvin", selector: kelvin },
+  { name: "night_kelvin", selector: kelvin },
+  { name: "morning", selector: percent },
+  { name: "morning_kelvin", selector: kelvin },
+  { name: "nap", selector: percent },
+  { name: "nap_kelvin", selector: kelvin },
+];
 
 let haFormLoading;
 /** ha-form and the entity pickers are lazy-loaded by Home Assistant: load them through a card editor. */
@@ -821,7 +921,21 @@ class SmartComfortPanel extends HTMLElement {
             entity_id: this._switch("control"),
           }),
         s.control_enabled
-      )
+      ),
+      ...(s.rooms.some((r) => Object.keys(r.lights || {}).length)
+        ? [
+            tile(
+              s.lighting_enabled ? "mdi:lightbulb-auto" : "mdi:lightbulb-off-outline",
+              this._t(s.lighting_enabled ? "lighting_on" : "lighting_off"),
+              "",
+              () =>
+                this._hass.callService("switch", s.lighting_enabled ? "turn_off" : "turn_on", {
+                  entity_id: this._switch("lighting"),
+                }),
+              s.lighting_enabled
+            ),
+          ]
+        : [])
     );
     content.append(summary);
 
@@ -888,7 +1002,7 @@ class SmartComfortPanel extends HTMLElement {
           room.alerts.length ? room.alerts.map((k) => this._kindName(k)).join(", ") : this._t("ok")
         )
       );
-      const devices = Object.entries(room.devices || {});
+      const devices = [...Object.entries(room.devices || {}), ...Object.entries(room.lights || {})];
       if (devices.length) {
         const list = this._el("div", "devices");
         for (const [entityId, d] of devices) {
@@ -962,7 +1076,10 @@ class SmartComfortPanel extends HTMLElement {
     );
     const found = entries.find((e) => e.translation_key === key);
     if (found) return found.entity_id;
-    return key === "control" ? "switch.smart_comfort_device_control" : "switch.smart_comfort_notifications";
+    return {
+      control: "switch.smart_comfort_device_control",
+      lighting: "switch.smart_comfort_adaptive_lighting",
+    }[key] || "switch.smart_comfort_notifications";
   }
 
   // Notifications (general options).
@@ -1171,6 +1288,33 @@ class SmartComfortPanel extends HTMLElement {
         },
         (s) => this._controlLabel(s),
         (s) => this._controlHelper(s)
+      )
+    );
+    content.append(card);
+    this._renderLighting(content);
+  }
+
+  /** Adaptive lighting: brightness and warmth by time of day, for the lights of the rooms. */
+  _renderLighting(content) {
+    const defaults = this._config.defaults.lighting;
+    const card = this._card(this._t("lighting"), "mdi:lightbulb-auto-outline");
+    card.append(this._el("div", "help", this._t("lighting_help")));
+    card.append(
+      this._form(
+        [
+          { name: "enabled", selector: bool },
+          ...LIGHTING_LEVELS,
+          { name: "morning_end", selector: time },
+          { name: "transition", selector: { number: { mode: "box", step: 10, min: 0, max: 3600, unit_of_measurement: "s" } } },
+        ],
+        merged(defaults, this._draft.lighting || {}),
+        (value) => {
+          const changed = diff(value, defaults);
+          if (Object.keys(changed).length) this._draft.lighting = changed;
+          else delete this._draft.lighting;
+        },
+        (s) => this._label("lighting", s.name),
+        (s) => this._helper("lighting", s.name)
       )
     );
     content.append(card);
@@ -1437,15 +1581,23 @@ class SmartComfortPanel extends HTMLElement {
     for (const [key, add] of [
       ["fans", "add_fan"],
       ["purifiers", "add_purifier"],
+      ["lights", "add_light"],
     ]) {
       card.append(this._el("div", "subheader", this._t(key)));
       const items = Array.isArray(room[key]) ? room[key] : room[key] ? [room[key]] : [];
-      const defaults = this._effectiveControl(room, key);
+      const defaults =
+        key === "lights"
+          ? { ...this._config.defaults.lighting, ...(this._draft.lighting || {}), ...(room.lighting || {}) }
+          : this._effectiveControl(room, key);
       items.forEach((raw, i) => {
         const item = this._item(raw);
         const line = this._el("div", "device-item");
         const schemaFor = (entityId, itemValue) =>
-          key === "fans" ? this._fanSchema(entityId) : this._purifierSchema(itemValue);
+          key === "fans"
+            ? this._fanSchema(entityId)
+            : key === "lights"
+              ? this._lightSchema(entityId)
+              : this._purifierSchema(itemValue);
         const form = this._form(
           schemaFor(item.entity_id, item),
           item,
@@ -1476,6 +1628,8 @@ class SmartComfortPanel extends HTMLElement {
       addButton.classList.add("small");
       card.append(addButton);
     }
+
+    this._roomLighting(card, room);
 
     // Alerts of the room.
     card.append(this._el("div", "subheader", this._t("room_alerts")));
@@ -1529,6 +1683,7 @@ class SmartComfortPanel extends HTMLElement {
         ["mdi:air-conditioner", room.climate],
         ["mdi:fan", room.fans],
         ["mdi:air-purifier", room.purifiers],
+        ["mdi:lightbulb-outline", room.lights],
       ],
       found?.added.has(room.name),
       found?.updated.has(room.name)
@@ -1569,7 +1724,8 @@ class SmartComfortPanel extends HTMLElement {
   }
 
   _deviceLabel(section, name) {
-    if (name === "entity_id") return this._t(section === "fans" ? "fan" : "purifier");
+    if (name === "entity_id") return this._t({ fans: "fan", lights: "light" }[section] || "purifier");
+    if (section === "lights") return this._label("lighting", name);
     const map = { mode_select: "purifier_mode_select", open_mode: "purifier_open_mode", closed_mode: "purifier_closed_mode" };
     if (map[name]) return this._label("room", map[name], "overrides");
     return this._label("control", name, section);
@@ -1594,6 +1750,84 @@ class SmartComfortPanel extends HTMLElement {
                 { name: "off_on_open", selector: minutes() },
                 { name: "night_fan_mode", selector: this._choice(this._attr(entityId, "fan_modes")) },
               ],
+            },
+          ]
+        : []),
+    ];
+  }
+
+  /** Lighting of a room: its quiet morning (bedrooms) and its nap slots. */
+  _roomLighting(card, room) {
+    card.append(this._el("div", "subheader", this._t("room_lighting")));
+    card.append(this._el("div", "help", this._t("room_lighting_help")));
+    const lighting = room.lighting || {};
+    card.append(
+      this._form(
+        [{ name: "quiet_morning", selector: bool }],
+        { quiet_morning: Boolean(lighting.quiet_morning) },
+        (value) => {
+          const next = { ...(room.lighting || {}) };
+          if (value.quiet_morning) next.quiet_morning = true;
+          else delete next.quiet_morning;
+          if (Object.keys(next).length) room.lighting = next;
+          else delete room.lighting;
+        },
+        (s) => this._label("lighting", s.name),
+        (s) => this._helper("lighting", s.name)
+      )
+    );
+    const naps = Array.isArray(room.naps) ? room.naps : [];
+    const days = { select: { multiple: true, mode: "list", options: WEEKDAYS.map((d) => ({ value: d, label: this._t(`day_${d}`) })) } };
+    naps.forEach((nap, i) => {
+      const line = this._el("div", "device-item");
+      line.append(
+        this._form(
+          [
+            { name: "start", required: true, selector: time },
+            { name: "end", required: true, selector: time },
+            { name: "days", selector: days },
+          ],
+          nap,
+          (value) => {
+            naps[i] = prune(value);
+            room.naps = naps;
+          },
+          (s) => this._t(`nap_${s.name}`),
+          (s) => (s.name === "days" ? this._t("nap_days_help") : undefined)
+        )
+      );
+      line.append(
+        this._iconButton("mdi:delete-outline", this._t("remove"), () => {
+          naps.splice(i, 1);
+          if (naps.length) room.naps = naps;
+          else delete room.naps;
+          this._changed();
+          this._renderTab();
+        })
+      );
+      card.append(line);
+    });
+    const add = this._button(this._t("add_nap"), () => {
+      room.naps = [...naps, { start: "13:30:00", end: "15:30:00" }];
+      this._changed();
+      this._renderTab();
+    });
+    add.classList.add("small");
+    card.append(add);
+  }
+
+  _lightSchema(entityId) {
+    return [
+      { name: "entity_id", selector: entity("light") },
+      ...(entityId
+        ? [
+            { name: "night_only", selector: bool },
+            {
+              type: "expandable",
+              name: "",
+              flatten: true,
+              title: this._t("device_settings"),
+              schema: LIGHTING_LEVELS,
             },
           ]
         : []),

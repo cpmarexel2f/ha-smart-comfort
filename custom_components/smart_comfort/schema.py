@@ -111,6 +111,37 @@ def _devices(domain: str, extra: dict) -> vol.All:
     return vol.All(cv.ensure_list, [item])
 
 
+LIGHTING_LEVELS = {
+    vol.Optional(k.CONF_DAY): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional(k.CONF_EVENING): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional(k.CONF_NIGHT): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional(k.CONF_WARMTH): cv.boolean,
+    vol.Optional(k.CONF_DAY_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
+    vol.Optional(k.CONF_EVENING_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
+    vol.Optional(k.CONF_NIGHT_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
+    vol.Optional(k.CONF_MORNING): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional(k.CONF_MORNING_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
+    vol.Optional(k.CONF_QUIET_MORNING): cv.boolean,
+    vol.Optional(k.CONF_NAP): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional(k.CONF_NAP_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
+}
+NAP = vol.Schema(
+    {
+        vol.Required("start"): time_string,
+        vol.Required("end"): time_string,
+        vol.Optional(k.CONF_DAYS): vol.All(cv.ensure_list, [vol.In(k.WEEKDAYS)]),
+    }
+)
+LIGHTING = vol.Schema(
+    {
+        vol.Optional(k.CONF_ENABLED): cv.boolean,
+        vol.Optional(k.CONF_TRANSITION): vol.All(vol.Coerce(int), vol.Range(min=0, max=3600)),
+        vol.Optional(k.CONF_MORNING_END): time_string,
+        **LIGHTING_LEVELS,
+    }
+)
+LIGHT = {vol.Optional(k.CONF_NIGHT_ONLY): cv.boolean, **LIGHTING_LEVELS}
+
 ROOM = vol.Schema(
     {
         vol.Required(k.CONF_NAME): cv.string,
@@ -129,6 +160,9 @@ ROOM = vol.Schema(
         ),
         vol.Optional(k.CONF_FANS): _devices("fan", FAN),
         vol.Optional(k.CONF_PURIFIERS): _devices("fan", PURIFIER),
+        vol.Optional(k.CONF_LIGHTS): _devices("light", LIGHT),
+        vol.Optional(k.CONF_LIGHTING): vol.Schema(LIGHTING_LEVELS),
+        vol.Optional(k.CONF_NAPS): vol.All(cv.ensure_list, [NAP]),
         vol.Optional(k.CONF_ALERTS): ALERTS,
         vol.Optional(k.CONF_CONTROL): DEVICE_SECTIONS,
     }
@@ -167,6 +201,7 @@ OPTIONS = vol.Schema(
         vol.Optional(k.CONF_CONTROL): CONTROL,
         vol.Optional(k.CONF_ROOMS): vol.All(cv.ensure_list, [ROOM]),
         vol.Optional(k.CONF_OUTDOORS): vol.All(cv.ensure_list, [OUTDOOR]),
+        vol.Optional(k.CONF_LIGHTING): LIGHTING,
     }
 )
 

@@ -183,7 +183,8 @@
           "openings": "Fenêtres et portes",
           "climate": "Climatiseur",
           "fans": "Ventilateurs",
-          "purifiers": "Purificateurs d'air"
+          "purifiers": "Purificateurs d'air",
+          "lights": "Lumières"
         },
         "description": "Capteurs et appareils de la pièce. Laissez vide ce qu'elle n'a pas.",
         "sections": {
@@ -204,6 +205,9 @@
               "purifier_keep_on": "Garder les purificateurs allumés"
             }
           }
+        },
+        "data_description": {
+          "lights": "Lumières variables : leur intensité suit le moment de la journée quand elles sont allumées (éclairage adaptatif)."
         }
       },
       "room": {
@@ -217,7 +221,8 @@
           "openings": "Fenêtres et portes",
           "climate": "Climatiseur",
           "fans": "Ventilateurs",
-          "purifiers": "Purificateurs d'air"
+          "purifiers": "Purificateurs d'air",
+          "lights": "Lumières"
         },
         "description": "Capteurs et appareils de la pièce. Laissez vide ce qu'elle n'a pas.",
         "sections": {
@@ -238,6 +243,9 @@
               "purifier_keep_on": "Garder les purificateurs allumés"
             }
           }
+        },
+        "data_description": {
+          "lights": "Lumières variables : leur intensité suit le moment de la journée quand elles sont allumées (éclairage adaptatif)."
         }
       },
       "outdoor": {
@@ -259,6 +267,39 @@
         "title": "Supprimer des pièces",
         "data": {
           "rooms": "Pièces"
+        }
+      },
+      "lighting": {
+        "title": "Éclairage adaptatif",
+        "data": {
+          "enabled": "Éclairage adaptatif",
+          "day": "Intensité le jour",
+          "evening": "Intensité le soir",
+          "night": "Intensité la nuit",
+          "warmth": "Adapter la chaleur",
+          "day_kelvin": "Chaleur le jour",
+          "evening_kelvin": "Chaleur le soir",
+          "night_kelvin": "Chaleur la nuit",
+          "transition": "Transition",
+          "night_only": "Veilleuse",
+          "morning": "Intensité le matin",
+          "morning_kelvin": "Chaleur le matin",
+          "morning_end": "Fin de la matinée",
+          "quiet_morning": "Matin doux",
+          "nap": "Intensité pendant la sieste",
+          "nap_kelvin": "Chaleur pendant la sieste"
+        },
+        "data_description": {
+          "day": "Avec le soleil levé (au-dessus de 6°).",
+          "evening": "Une fois le soleil couché (sous −6°) ; entre les deux, un mélange.",
+          "night": "Aux heures de nuit calme de l'onglet Pilotage des appareils.",
+          "warmth": "Aussi la température de couleur, pour les lumières qui la gèrent. Désactivé : l'intensité seule.",
+          "transition": "Secondes des changements progressifs ; une lumière qu'on vient d'allumer prend son intensité tout de suite.",
+          "night_only": "Réglée seulement aux heures de nuit (laissée tranquille le jour).",
+          "morning": "Dans les pièces avec un matin doux (chambres), de la fin de la nuit jusqu'à la fin de la matinée.",
+          "morning_end": "Jusqu'à quand les chambres gardent leur intensité du matin.",
+          "quiet_morning": "Lumières moins fortes le matin, jusqu'à la fin de la matinée (onglet Pilotage des appareils).",
+          "nap": "Pendant les créneaux de sieste d'une pièce."
         }
       }
     },
@@ -346,6 +387,9 @@
       },
       "control": {
         "name": "Pilotage des appareils"
+      },
+      "lighting": {
+        "name": "Éclairage adaptatif"
       }
     },
     "button": {
