@@ -292,13 +292,13 @@
         "data_description": {
           "day": "Con el sol arriba (más de 6°).",
           "evening": "Una vez puesto el sol (menos de −6°); entre ambos, una mezcla.",
-          "night": "En las horas de noche tranquila de la pestaña Control de dispositivos.",
+          "night": "En las horas de noche tranquila (pestaña Horarios).",
           "warmth": "También la temperatura de color, para las luces que la admiten. Desactivado: solo el brillo.",
           "transition": "Segundos de los cambios graduales; una luz recién encendida toma su brillo de inmediato.",
           "night_only": "Ajustada solo en las horas de noche (sin tocar de día).",
-          "morning": "En las estancias con mañana suave (dormitorios), desde el final de la noche hasta el final de la mañana.",
+          "morning": "En las estancias con mañana suave (dormitorios), hasta el final de la mañana (pestaña Horarios).",
           "morning_end": "Hasta cuándo los dormitorios mantienen su brillo de la mañana.",
-          "quiet_morning": "Luces más tenues por la mañana, hasta el final de la mañana (pestaña Control de dispositivos).",
+          "quiet_morning": "Luces más tenues por la mañana, hasta el final de la mañana (pestaña Horarios).",
           "nap": "Durante las franjas de siesta de una estancia."
         }
       }

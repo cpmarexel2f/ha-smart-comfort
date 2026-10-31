@@ -79,12 +79,15 @@ Both ways can be used together:
 Once set up, Smart Comfort adds a **Smart Comfort** page to the sidebar, for administrators:
 
 - **Overview**: while nothing is set up (no room nor outdoor place), a **Discover** button that runs the discovery and opens its result in the Rooms tab; the active alerts with their state (notified, snoozed, acknowledged, handled by a running device) and **Snooze** / **Got it** buttons, the readings and devices of each room with their targets and manual overrides, the last notification, and switches for the notifications and the device control
-- **Rooms**: **Discover** adds a room for every Home Assistant area with something to follow (a comfort sensor, an air conditioner, a fan, a purifier or a dimmable light — not a hallway with only its door) and sets it up: temperature, CO₂, humidity and noise sensors (a weather station preferred over a device's own sensor; never the temperatures of machines — NAS, internet box, server, UPS, printer, fridge…), windows and doors, air conditioner (only one that can cool), fans with their natural / direct presets, purifiers with their auto / manual mode select or presets, dimmable lights (not the indicators of devices nor the floodlights of cameras; night lights flagged as such), and the night settings from their quiet presets and fan modes. The outdoor areas (garden, terrace, balcony…) with a sensor go to the **Outdoors** category below the rooms, with their temperature, air quality and noise sensors (an outdoor module counts by its device's area); outdoor sensors in no area — a sensor named outdoor, a city air quality index (Atmo France, WAQI…), and the weather entity when there is no outdoor temperature sensor — go to the Notifications tab. What is already set is kept, and running it again only adds what is new. Nothing is saved until **Save**. Then add, remove and reorder rooms; their sensors and openings; their air conditioner, fans and purifiers, each with its own settings (presets offered from the device, mode select and its options); and alert overrides for the room; and add or remove outdoor places
-- **Alerts**, **Notifications**, **Device control** (with **Adaptive lighting**): the global settings, with their defaults
+- **Rooms**: **Discover** adds a room for every Home Assistant area with something to follow (a comfort sensor, an air conditioner, a fan, a purifier or a dimmable light — not a hallway with only its door) and sets it up: temperature, CO₂, humidity and noise sensors (a weather station preferred over a device's own sensor; never the temperatures of machines — NAS, internet box, server, UPS, printer, fridge…), windows and doors, air conditioner (only one that can cool), fans with their natural / direct presets, purifiers with their auto / manual mode select or presets, dimmable lights (not the indicators of devices nor the floodlights of cameras; night lights flagged as such), the quiet morning of the bedrooms, and the night settings from their quiet presets and fan modes. The outdoor areas (garden, terrace, balcony…) with a sensor become outdoor places (an outdoor module counts by its device's area); outdoor sensors in no area — a sensor named outdoor, a city air quality index (Atmo France, WAQI…), and the weather entity when there is no outdoor temperature sensor — go to the other outdoor sensors. What is already set is kept, and running it again only adds what is new. Nothing is saved until **Save**. Each room folds into sections — **Sensors**, **Windows and doors**, **Devices**, **Lighting** (lights, quiet morning, naps), **Alerts** — each with a one-line summary; only what the room has is shown, and **+** buttons add the rest (a CO₂ sensor, a fan, a light, a nap, a customized alert…). Device settings stay folded under each device
+- **Outdoors**: the outdoor places (garden, terrace…) with their temperature, air quality and noise sensors, and the other outdoor sensors (weather entity, city air quality index) with how the temperatures are combined
+- **Alerts**: one line per alert with its state, threshold and severity; open it to change them (hysteresis, delay and escalation under **Advanced**)
+- **Schedule**: every time window on one 24-hour line with the time now — quiet hours (notifications), quiet night (devices and lights), quiet morning (bedroom lights) and window boost — and their times, all in one place
+- **Settings**: notifications (where, presence, grouping, reminder; the rest under **Advanced**), device control (with the air conditioner, fan and purifier defaults folded) and adaptive lighting (the brightness of each moment on one row, the warmth only when it is on)
 
 Changes are checked and saved with **Save** (or dropped with **Discard**); the integration reloads with them, and the page keeps following its status. Only the settings that differ from the defaults are stored. When the configuration comes from YAML, the page says so: what is saved there stays until the YAML changes.
 
-Each tab has its own address, e.g. `/smart-comfort/rooms`.
+Each tab has its own address, e.g. `/smart-comfort/rooms` (the addresses of earlier versions, `/notifications` and `/control`, open **Settings**).
 
 | Overview of the Smart Comfort panel | Dark mode |
 |---|---|
@@ -105,17 +108,21 @@ Each tab has its own address, e.g. `/smart-comfort/rooms`.
 |---|---|
 | ![A room in the Smart Comfort panel](screenshots/panel-room.png) | ![A room in the Smart Comfort panel, dark mode](screenshots/panel-room-dark.png) |
 
-| The outdoor places, below the rooms | Dark mode |
+| The Outdoors tab | Dark mode |
 |---|---|
-| ![The outdoor places, below the rooms](screenshots/panel-outdoors.png) | ![The outdoor places, below the rooms, dark mode](screenshots/panel-outdoors-dark.png) |
+| ![The outdoor places and the other outdoor sensors](screenshots/panel-outdoors.png) | ![The outdoor places and the other outdoor sensors, dark mode](screenshots/panel-outdoors-dark.png) |
 
 | Alert settings in the Smart Comfort panel | Dark mode |
 |---|---|
 | ![Alert settings in the Smart Comfort panel](screenshots/panel-alerts.png) | ![Alert settings in the Smart Comfort panel, dark mode](screenshots/panel-alerts-dark.png) |
 
+| The day on one line: quiet hours, quiet night, quiet morning, window boost | Dark mode |
+|---|---|
+| ![The Schedule tab](screenshots/panel-schedule.png) | ![The Schedule tab, dark mode](screenshots/panel-schedule-dark.png) |
+
 | Adaptive lighting settings | Dark mode |
 |---|---|
-| ![Adaptive lighting settings in the Device control tab](screenshots/panel-lighting.png) | ![Adaptive lighting settings in the Device control tab, dark mode](screenshots/panel-lighting-dark.png) |
+| ![Adaptive lighting settings in the Settings tab](screenshots/panel-lighting.png) | ![Adaptive lighting settings in the Settings tab, dark mode](screenshots/panel-lighting-dark.png) |
 
 | Quiet morning and naps of a bedroom | Dark mode |
 |---|---|

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0
+
+### What's new
+- **Simpler panel**, organized by subject: **Overview**, **Rooms**, **Outdoors**, **Alerts**, **Schedule**, **Settings**. Nothing is removed and the options are the same (no migration).
+  - **Rooms**: each room folds into sections — Sensors, Windows and doors, Devices, Lighting (lights, quiet morning, naps), Alerts — each with a one-line summary. Only what the room has is shown; **+** buttons add the rest (a CO₂ sensor, a fan, a light, a nap…), and a room's alerts list only those it customizes, with a menu to customize another one. A light's night-light switch is folded with its other settings.
+  - **Outdoors** (new tab): the outdoor places and the other outdoor sensors (moved from Notifications), together.
+  - **Schedule** (new tab): the quiet hours, quiet night, quiet morning and window boost on one 24-hour line with the time now, and their times in one place (they were spread over three tabs).
+  - **Settings**: notifications, device control and adaptive lighting, with the rarely changed settings under **Advanced**; the brightness of each moment on one row, the warmth values only when the warmth is on.
+  - **Alerts**: one line per alert with its state, threshold and severity; hysteresis, delay and escalation under **Advanced**.
+  - Shorter texts; the discovery is explained in one line, with the details on demand.
+
 ## 1.1.0
 
 ### What's new

@@ -82,6 +82,15 @@ COMMON = {
 
 # Material Design Icons paths used by the panel, the form fields and the sidebar (from @mdi/js 7.4.47).
 ICONS = {
+    "chevron-up": "M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z",
+    "plus": "M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z",
+    "tune-variant": "M8 13C6.14 13 4.59 14.28 4.14 16H2V18H4.14C4.59 19.72 6.14 21 8 21S11.41 19.72 11.86 18H22V16H11.86C11.41 14.28 9.86 13 8 13M8 19C6.9 19 6 18.1 6 17C6 15.9 6.9 15 8 15S10 15.9 10 17C10 18.1 9.1 19 8 19M19.86 6C19.41 4.28 17.86 3 16 3S12.59 4.28 12.14 6H2V8H12.14C12.59 9.72 14.14 11 16 11S19.41 9.72 19.86 8H22V6H19.86M16 9C14.9 9 14 8.1 14 7C14 5.9 14.9 5 16 5S18 5.9 18 7C18 8.1 17.1 9 16 9Z",
+    "clock-outline": "M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z",
+    "clock-edit-outline": "M21 13.1C20.9 13.1 20.7 13.2 20.6 13.3L19.6 14.3L21.7 16.4L22.7 15.4C22.9 15.2 22.9 14.8 22.7 14.6L21.4 13.3C21.3 13.2 21.2 13.1 21 13.1M19.1 14.9L13 20.9V23H15.1L21.2 16.9L19.1 14.9M12.5 7V12.2L16.5 14.6L15.5 15.6L11 13V7H12.5M11 21.9C5.9 21.4 2 17.1 2 12C2 6.5 6.5 2 12 2C17.3 2 21.6 6.1 22 11.3C21.7 11.2 21.4 11.1 21 11.1C20.6 11.1 20.3 11.2 20 11.3C19.6 7.2 16.2 4 12 4C7.6 4 4 7.6 4 12C4 16.1 7.1 19.5 11.1 19.9L11 20.1V21.9Z",
+    "bell-sleep-outline": "M10,21H14A2,2 0 0,1 12,23A2,2 0 0,1 10,21M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M17,11A5,5 0 0,0 12,6A5,5 0 0,0 7,11V18H17V11M9,9V11H12.24L9,13.7V16H15V14H11.76L15,11.3V9H9Z",
+    "weather-sunset-up": "M3,12H7A5,5 0 0,1 12,7A5,5 0 0,1 17,12H21A1,1 0 0,1 22,13A1,1 0 0,1 21,14H3A1,1 0 0,1 2,13A1,1 0 0,1 3,12M15,12A3,3 0 0,0 12,9A3,3 0 0,0 9,12H15M12,2L14.39,5.42C13.65,5.15 12.84,5 12,5C11.16,5 10.35,5.15 9.61,5.42L12,2M3.34,7L7.5,6.65C6.9,7.16 6.36,7.78 5.94,8.5C5.5,9.24 5.25,10 5.11,10.79L3.34,7M20.65,7L18.88,10.79C18.74,10 18.47,9.23 18.05,8.5C17.63,7.78 17.1,7.15 16.5,6.64L20.65,7M12.71,16.3L15.82,19.41C16.21,19.8 16.21,20.43 15.82,20.82C15.43,21.21 14.8,21.21 14.41,20.82L12,18.41L9.59,20.82C9.2,21.21 8.57,21.21 8.18,20.82C7.79,20.43 7.79,19.8 8.18,19.41L11.29,16.3C11.5,16.1 11.74,16 12,16C12.26,16 12.5,16.1 12.71,16.3Z",
+    "bell-alert-outline": "M12 2A2 2 0 0 0 10 4A2 2 0 0 0 10 4.29C7.12 5.14 5 7.82 5 11V17L3 19V20H21V19L19 17V11C19 7.82 16.88 5.14 14 4.29A2 2 0 0 0 14 4A2 2 0 0 0 12 2M12 6A5 5 0 0 1 17 11V18H7V11A5 5 0 0 1 12 6M21 7V13H23V7H21M21 15V17H23V15H21M10 21A2 2 0 0 0 12 23A2 2 0 0 0 14 21H10Z",
+    "weather-partly-cloudy": "M12.74,5.47C15.1,6.5 16.35,9.03 15.92,11.46C17.19,12.56 18,14.19 18,16V16.17C18.31,16.06 18.65,16 19,16A3,3 0 0,1 22,19A3,3 0 0,1 19,22H6A4,4 0 0,1 2,18A4,4 0 0,1 6,14H6.27C5,12.45 4.6,10.24 5.5,8.26C6.72,5.5 9.97,4.24 12.74,5.47M11.93,7.3C10.16,6.5 8.09,7.31 7.31,9.07C6.85,10.09 6.93,11.22 7.41,12.13C8.5,10.83 10.16,10 12,10C12.7,10 13.38,10.12 14,10.34C13.94,9.06 13.18,7.86 11.93,7.3M13.55,3.64C13,3.4 12.45,3.23 11.88,3.12L14.37,1.82L15.27,4.71C14.76,4.29 14.19,3.93 13.55,3.64M6.09,4.44C5.6,4.79 5.17,5.19 4.8,5.63L4.91,2.82L7.87,3.5C7.25,3.71 6.65,4.03 6.09,4.44M18,9.71C17.91,9.12 17.78,8.55 17.59,8L19.97,9.5L17.92,11.73C18.03,11.08 18.05,10.4 18,9.71M3.04,11.3C3.11,11.9 3.24,12.47 3.43,13L1.06,11.5L3.1,9.28C3,9.93 2.97,10.61 3.04,11.3M19,18H16V16A4,4 0 0,0 12,12A4,4 0 0,0 8,16H6A2,2 0 0,0 4,18A2,2 0 0,0 6,20H19A1,1 0 0,0 20,19A1,1 0 0,0 19,18Z",
     "lamp": "M8,2H16L20,14H4L8,2M11,15H13V20H18V22H6V20H11V15Z",
     "lightbulb-auto": "M9 2C5.13 2 2 5.13 2 9C2 11.38 3.19 13.47 5 14.74V17C5 17.55 5.45 18 6 18H12C12.55 18 13 17.55 13 17V14.74C14.81 13.47 16 11.38 16 9C16 5.13 12.87 2 9 2M6 21C6 21.55 6.45 22 7 22H11C11.55 22 12 21.55 12 21V20H6V21M19 13H17L13.8 22H15.7L16.4 20H19.6L20.3 22H22.2L19 13M16.85 18.65L18 15L19.15 18.65H16.85Z",
     "lightbulb-auto-outline": "M9 2C12.87 2 16 5.13 16 9C16 11.38 14.81 13.47 13 14.74V17C13 17.55 12.55 18 12 18H6C5.45 18 5 17.55 5 17V14.74C3.19 13.47 2 11.38 2 9C2 5.13 5.13 2 9 2M6 21V20H12V21C12 21.55 11.55 22 11 22H7C6.45 22 6 21.55 6 21M9 4C6.24 4 4 6.24 4 9C4 11.05 5.23 12.81 7 13.58V16H11V13.58C12.77 12.81 14 11.05 14 9C14 6.24 11.76 4 9 4M19 13H17L13.8 22H15.7L16.4 20H19.6L20.3 22H22.2L19 13M16.85 18.65L18 15L19.15 18.65H16.85Z",
@@ -202,6 +211,9 @@ const FORM_STYLE = `
     min-height: 48px; padding: 0 12px; font-weight: 500; }
   .expandable .title { flex: 1; }
   .expandable .icon { display: flex; color: var(--primary-text-color); }
+  .expanded { border: 1px solid var(--divider-color); border-radius: 8px; }
+  .expanded .expandable { border: none; }
+  .fields.inner { padding: 8px 12px 16px; }
 `;
 
 customElements.define("ha-form", class extends HTMLElement {
@@ -226,6 +238,14 @@ customElements.define("ha-form", class extends HTMLElement {
   }
   _labelOf(s) { return this._label ? this._label(s) : s.name; }
   _field(s, data) {
+    if (s.type === "grid") {
+      return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(${s.column_min_width || "200px"},1fr));gap:8px 12px">${s.schema.map((c) => this._field(c, data)).join("")}</div>`;
+    }
+    if (s.type === "expandable" && s.expanded) {
+      const inner = s.flatten ? data : data[s.name] || {};
+      const icon = s.icon ? `<span class="icon">${svg(s.icon)}</span>` : "";
+      return `<div class="expanded"><div class="expandable open">${icon}<span class="title">${esc(this._labelOf(s))}</span>${svg("chevron-up")}</div><div class="fields inner">${s.schema.map((c) => this._field(c, inner)).join("")}</div></div>`;
+    }
     if (s.type === "expandable") {
       const icon = s.icon ? `<span class="icon">${svg(s.icon)}</span>` : "";
       return `<div class="expandable">${icon}<span class="title">${esc(this._labelOf(s))}</span>${svg("chevron-down")}</div>`;
@@ -388,7 +408,12 @@ def rooms(order):
 
 
 # Saved: the rooms in the order the user set. Discovered: the areas in alphabetical order.
-SAVED = {"rooms": rooms(["Living Room", "Bedroom", "Bathroom", "Office"]), "outdoors": [GARDEN]}
+SAVED = {
+    "rooms": rooms(["Living Room", "Bedroom", "Bathroom", "Office"]),
+    "outdoors": [GARDEN],
+    "quiet_start": "22:30:00",
+    "quiet_end": "08:00:00",
+}
 DISCOVERED = {"rooms": rooms(["Bathroom", "Bedroom", "Living Room", "Office"]), "outdoors": [GARDEN]}
 REPORT = {
     "added": ["Bathroom", "Bedroom", "Living Room", "Office"],
@@ -605,7 +630,9 @@ MOUNT = """async ([data, tab]) => {
 # Clicks a button of the panel by its text (and waits for what it starts to render).
 CLICK = """async ([selector, text]) => {
     const root = document.querySelector("smart-comfort-panel").shadowRoot;
-    const target = [...root.querySelectorAll(selector)].find((b) => b.textContent.trim() === text);
+    const all = [...root.querySelectorAll(selector)];
+    // Exactly the text, or starting with it (a section line also shows its summary).
+    const target = all.find((b) => b.textContent.trim() === text) || all.find((b) => b.textContent.trim().startsWith(text));
     if (!target) throw new Error(`no ${selector} "${text}"`);
     target.click();
     await new Promise((r) => setTimeout(r, 200));
@@ -614,7 +641,8 @@ CLICK = """async ([selector, text]) => {
 # Scrolls the page so the element sits just under the sticky toolbar and tabs.
 SCROLL = """([selector, text]) => {
     const root = document.querySelector("smart-comfort-panel").shadowRoot;
-    const target = [...root.querySelectorAll(selector)].find((b) => b.textContent.trim() === text);
+    const all = [...root.querySelectorAll(selector)];
+    const target = all.find((b) => b.textContent.trim() === text) || all.find((b) => b.textContent.trim().startsWith(text));
     const bar = root.querySelector(".toolbar").offsetHeight + root.querySelector(".tabs").offsetHeight;
     window.scrollTo(0, target.getBoundingClientRect().top + window.scrollY - bar - 10);
 }"""
@@ -636,34 +664,41 @@ SHOTS = [
         "options": SAVED,
         "status": STATUS,
         "tab": "rooms",
-        "clicks": [(".room-toggle", "Living Room")],
-        "height": 1700,
-    },
-    {
-        "file": "panel-outdoors",
-        "options": {},
-        "status": START_STATUS,
-        "tab": "overview",
-        "clicks": [(".discover .btn", "Discover"), (".room-toggle", "Garden")],
-        "scroll": (".btn.add", "Add a room"),
-        "height": 900,
-    },
-    {"file": "panel-alerts", "options": SAVED, "status": STATUS, "tab": "alerts", "height": 1000},
-    {
-        "file": "panel-lighting",
-        "options": SAVED,
-        "status": STATUS,
-        "tab": "control",
-        "scroll": (".card-header", "Adaptive lighting"),
-        "height": 900,
+        "clicks": [(".room-toggle", "Living Room"), (".section-head", "Sensors"), (".section-head", "Devices")],
+        "height": 1300,
     },
     {
         "file": "panel-naps",
         "options": SAVED,
         "status": STATUS,
         "tab": "rooms",
-        "clicks": [(".room-toggle", "Bedroom")],
-        "scroll": (".subheader", "Lighting of this room"),
+        "clicks": [(".room-toggle", "Bedroom"), (".section-head", "Lighting")],
+        "scroll": (".section-head", "Lighting"),
+        "height": 900,
+    },
+    {
+        "file": "panel-outdoors",
+        "options": SAVED,
+        "status": STATUS,
+        "tab": "outdoors",
+        "clicks": [(".room-toggle", "Garden")],
+        "height": 1100,
+    },
+    {
+        "file": "panel-alerts",
+        "options": SAVED,
+        "status": STATUS,
+        "tab": "alerts",
+        "clicks": [(".section-head", "Too hot")],
+        "height": 1100,
+    },
+    {"file": "panel-schedule", "options": SAVED, "status": STATUS, "tab": "schedule", "height": 1100},
+    {
+        "file": "panel-lighting",
+        "options": SAVED,
+        "status": STATUS,
+        "tab": "settings",
+        "scroll": (".card-header", "Adaptive lighting"),
         "height": 900,
     },
 ]

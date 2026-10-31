@@ -81,39 +81,28 @@ const STRINGS = {
     move_up: "Move up",
     move_down: "Move down",
     room_alerts: "Alerts of this room",
-    room_alerts_help: "Empty fields use the settings of the Alerts tab.",
     inherit: "Default",
     enabled: "On",
     disabled: "Off",
     climate: "Air conditioner",
     fans: "Fans",
     purifiers: "Air purifiers",
-    add_fan: "Add a fan",
-    add_purifier: "Add a purifier",
     device_settings: "Settings of this device",
     default_value: "Default: {value}",
     no_rooms: "No room yet.",
-    sensors: "Sensors",
     outdoor_air: "Outdoor air",
     outdoors: "Outdoors",
-    outdoors_help: "Their sensors give the outdoor temperature (combined as set in the Notifications tab), air quality (the worst) and noise (the mean), with the other outdoor sensors of the Notifications tab.",
     add_outdoor: "Add an outdoor place",
     new_outdoor: "Outdoor",
     no_outdoors: "No outdoor place yet.",
     start: "Get started",
     start_help: "Nothing is set up yet. Discover finds the rooms and outdoor places of your Home Assistant areas with their sensors and devices, and sets them up; you check the result in the Rooms tab before saving.",
-    outdoors_also: "Also counted: the sensors of the outdoor places — {places} — set in the Rooms tab, Outdoors.",
     no_sensor: "no sensor",
     lighting: "Adaptive lighting",
-    lighting_help: "The lights of the rooms that are on get the brightness of the moment: day with the sun up, evening once it is down, night in the quiet night hours (Device control). Smart Comfort never turns a light on or off; a light changed by hand is left alone until it is turned off.",
     lights: "Lights",
     light: "Light",
-    add_light: "Add a light",
     lighting_on: "Adaptive lighting on",
     lighting_off: "Adaptive lighting off",
-    room_lighting: "Lighting of this room",
-    room_lighting_help: "Quiet morning: dimmer lights from the end of the night until the end of the morning (Device control tab, Adaptive lighting). Naps: the lights are dimmed in these slots, and the night lights are set too.",
-    add_nap: "Add a nap",
     nap_start: "Nap from",
     nap_end: "Until",
     nap_days: "Days",
@@ -125,6 +114,44 @@ const STRINGS = {
     day_fri: "Fri",
     day_sat: "Sat",
     day_sun: "Sun",
+    advanced: "Advanced",
+    alerts_help: "Defaults for every room; each room can customize its own.",
+    schedule: "Schedule",
+    settings: "Settings",
+    sched_title: "Your day",
+    sched_help: "When each time window applies, with the time now.",
+    sched_edit: "Times",
+    sched_quiet: "Quiet hours",
+    sched_quiet_help: "Only critical alerts are sent; the others wait for the end.",
+    sched_night: "Quiet night",
+    sched_night_help: "Devices run quieter, no window boost, lights at their night level.",
+    sched_morning: "Quiet morning",
+    sched_morning_help: "From the end of the night: bedroom lights stay dimmer.",
+    sched_boost: "Window boost",
+    sched_boost_help: "Fans and purifiers at full speed while a window is open. Both empty: all day.",
+    sched_from: "From",
+    sched_to: "Until",
+    sched_morning_end: "Until",
+    discover_short: "Finds the rooms of your Home Assistant areas, with their sensors, devices and lights. Nothing is saved before you check.",
+    how: "How it works",
+    less: "Less",
+    other_outdoor: "Other outdoor sensors",
+    other_outdoor_help: "Sensors in no outdoor place: a weather entity, a city air quality index…",
+    outdoors_help: "Garden, terrace, balcony…: their sensors give the outdoor temperature, air quality and noise.",
+    section_sensors: "Sensors",
+    section_openings: "Windows and doors",
+    section_devices: "Devices",
+    section_lighting: "Lighting",
+    section_alerts: "Alerts",
+    none: "None",
+    openings_help: "Their state holds back or triggers the window alerts and boosts.",
+    naps: "Naps",
+    nap: "Nap",
+    no_naps: "No nap: add one to dim the lights at set times.",
+    alerts_default: "Default settings",
+    customize_alert: "Customize an alert",
+    room_alerts_help: "Only the alerts customized for this room; the others follow the Alerts tab.",
+    lighting_help: "Lights that are on follow the time of day; Smart Comfort never turns them on or off. Times are in the Schedule tab.",
   },
   fr: {
     outdoor_noise: "Bruit extérieur",
@@ -181,39 +208,28 @@ const STRINGS = {
     move_up: "Monter",
     move_down: "Descendre",
     room_alerts: "Alertes de cette pièce",
-    room_alerts_help: "Les champs vides reprennent les réglages de l'onglet Alertes.",
     inherit: "Par défaut",
     enabled: "Activée",
     disabled: "Désactivée",
     climate: "Climatiseur",
     fans: "Ventilateurs",
     purifiers: "Purificateurs d'air",
-    add_fan: "Ajouter un ventilateur",
-    add_purifier: "Ajouter un purificateur",
     device_settings: "Réglages de cet appareil",
     default_value: "Par défaut : {value}",
     no_rooms: "Aucune pièce pour l'instant.",
-    sensors: "Capteurs",
     outdoor_air: "Air extérieur",
     outdoors: "Extérieurs",
-    outdoors_help: "Leurs capteurs donnent la température extérieure (combinée comme réglé dans l'onglet Notifications), la qualité de l'air (la pire) et le bruit (la moyenne), avec les autres capteurs extérieurs de l'onglet Notifications.",
     add_outdoor: "Ajouter un extérieur",
     new_outdoor: "Extérieur",
     no_outdoors: "Aucun extérieur pour l'instant.",
     start: "Pour commencer",
     start_help: "Rien n'est encore configuré. La découverte trouve les pièces et les extérieurs de vos zones Home Assistant avec leurs capteurs et appareils, et les règle ; vous vérifiez le résultat dans l'onglet Pièces avant d'enregistrer.",
-    outdoors_also: "Comptent aussi les capteurs des extérieurs — {places} — réglés dans l'onglet Pièces, Extérieurs.",
     no_sensor: "aucun capteur",
     lighting: "Éclairage adaptatif",
-    lighting_help: "Les lumières allumées des pièces prennent l'intensité du moment : jour avec le soleil levé, soirée une fois couché, nuit aux heures de nuit calme (Pilotage des appareils). Smart Comfort n'allume ni n'éteint jamais une lumière ; une lumière réglée à la main est laissée tranquille jusqu'à ce qu'elle soit éteinte.",
     lights: "Lumières",
     light: "Lumière",
-    add_light: "Ajouter une lumière",
     lighting_on: "Éclairage adaptatif activé",
     lighting_off: "Éclairage adaptatif désactivé",
-    room_lighting: "Éclairage de cette pièce",
-    room_lighting_help: "Matin doux : lumières moins fortes de la fin de la nuit jusqu'à la fin de la matinée (onglet Pilotage des appareils, Éclairage adaptatif). Siestes : les lumières baissent sur ces créneaux, veilleuses comprises.",
-    add_nap: "Ajouter une sieste",
     nap_start: "Sieste de",
     nap_end: "Jusqu'à",
     nap_days: "Jours",
@@ -225,6 +241,44 @@ const STRINGS = {
     day_fri: "Ven",
     day_sat: "Sam",
     day_sun: "Dim",
+    advanced: "Avancé",
+    alerts_help: "Réglages par défaut de toutes les pièces ; chaque pièce peut personnaliser les siens.",
+    schedule: "Horaires",
+    settings: "Réglages",
+    sched_title: "Votre journée",
+    sched_help: "Quand chaque plage s'applique, avec l'heure actuelle.",
+    sched_edit: "Horaires",
+    sched_quiet: "Heures calmes",
+    sched_quiet_help: "Seules les alertes critiques sont envoyées ; les autres attendent la fin.",
+    sched_night: "Nuit calme",
+    sched_night_help: "Appareils plus silencieux, pas de boost fenêtre, lumières à leur niveau de nuit.",
+    sched_morning: "Matin doux",
+    sched_morning_help: "À partir de la fin de la nuit : les lumières des chambres restent moins fortes.",
+    sched_boost: "Boost fenêtre",
+    sched_boost_help: "Ventilateurs et purificateurs à fond quand une fenêtre est ouverte. Les deux vides : toute la journée.",
+    sched_from: "De",
+    sched_to: "Jusqu'à",
+    sched_morning_end: "Jusqu'à",
+    discover_short: "Trouve les pièces de vos zones Home Assistant, avec leurs capteurs, appareils et lumières. Rien n'est enregistré avant votre vérification.",
+    how: "Comment ça marche",
+    less: "Moins",
+    other_outdoor: "Autres capteurs extérieurs",
+    other_outdoor_help: "Capteurs hors des extérieurs : une entité météo, un indice de qualité de l'air de la ville…",
+    outdoors_help: "Jardin, terrasse, balcon… : leurs capteurs donnent la température, la qualité de l'air et le bruit extérieurs.",
+    section_sensors: "Capteurs",
+    section_openings: "Fenêtres et portes",
+    section_devices: "Appareils",
+    section_lighting: "Éclairage",
+    section_alerts: "Alertes",
+    none: "Aucun",
+    openings_help: "Leur état retient ou déclenche les alertes et les boosts liés aux fenêtres.",
+    naps: "Siestes",
+    nap: "Sieste",
+    no_naps: "Aucune sieste : ajoutez-en une pour baisser les lumières à heures fixes.",
+    alerts_default: "Réglages par défaut",
+    customize_alert: "Personnaliser une alerte",
+    room_alerts_help: "Seulement les alertes personnalisées pour cette pièce ; les autres suivent l'onglet Alertes.",
+    lighting_help: "Les lumières allumées suivent le moment de la journée ; Smart Comfort ne les allume ni ne les éteint jamais. Les heures sont dans l'onglet Horaires.",
   },
   de: {
     outdoor_noise: "Außenlärm",
@@ -281,39 +335,28 @@ const STRINGS = {
     move_up: "Nach oben",
     move_down: "Nach unten",
     room_alerts: "Meldungen dieses Raums",
-    room_alerts_help: "Leere Felder übernehmen die Einstellungen des Reiters Meldungen.",
     inherit: "Standard",
     enabled: "An",
     disabled: "Aus",
     climate: "Klimaanlage",
     fans: "Lüfter",
     purifiers: "Luftreiniger",
-    add_fan: "Lüfter hinzufügen",
-    add_purifier: "Luftreiniger hinzufügen",
     device_settings: "Einstellungen dieses Geräts",
     default_value: "Standard: {value}",
     no_rooms: "Noch kein Raum.",
-    sensors: "Sensoren",
     outdoor_air: "Außenluft",
     outdoors: "Außen",
-    outdoors_help: "Ihre Sensoren liefern Außentemperatur (kombiniert wie im Reiter Benachrichtigungen eingestellt), Luftqualität (die schlechteste) und Lärm (der Mittelwert), zusammen mit den übrigen Außensensoren des Reiters Benachrichtigungen.",
     add_outdoor: "Außenbereich hinzufügen",
     new_outdoor: "Außenbereich",
     no_outdoors: "Noch kein Außenbereich.",
     start: "Erste Schritte",
     start_help: "Noch ist nichts eingerichtet. Die Erkennung findet die Räume und Außenbereiche Ihrer Home-Assistant-Bereiche mit ihren Sensoren und Geräten und richtet sie ein; Sie prüfen das Ergebnis im Reiter Räume vor dem Speichern.",
-    outdoors_also: "Ebenfalls gezählt: die Sensoren der Außenbereiche — {places} — im Reiter Räume, Außen.",
     no_sensor: "kein Sensor",
     lighting: "Adaptive Beleuchtung",
-    lighting_help: "Eingeschaltete Lichter der Räume erhalten die Helligkeit des Moments: Tag bei Sonne, Abend nach Sonnenuntergang, Nacht in den Nachtruhestunden (Gerätesteuerung). Smart Comfort schaltet nie ein Licht ein oder aus; ein von Hand verstelltes Licht bleibt unberührt, bis es ausgeschaltet wird.",
     lights: "Lichter",
     light: "Licht",
-    add_light: "Licht hinzufügen",
     lighting_on: "Adaptive Beleuchtung an",
     lighting_off: "Adaptive Beleuchtung aus",
-    room_lighting: "Beleuchtung dieses Raums",
-    room_lighting_help: "Sanfter Morgen: gedämpftes Licht vom Ende der Nacht bis zum Ende des Vormittags (Reiter Gerätesteuerung, Adaptive Beleuchtung). Mittagsschlaf: in diesen Zeiten wird das Licht gedämpft, Nachtlichter eingeschlossen.",
-    add_nap: "Mittagsschlaf hinzufügen",
     nap_start: "Mittagsschlaf von",
     nap_end: "Bis",
     nap_days: "Tage",
@@ -325,6 +368,44 @@ const STRINGS = {
     day_fri: "Fr",
     day_sat: "Sa",
     day_sun: "So",
+    advanced: "Erweitert",
+    alerts_help: "Standard für alle Räume; jeder Raum kann eigene Werte setzen.",
+    schedule: "Zeitplan",
+    settings: "Einstellungen",
+    sched_title: "Ihr Tag",
+    sched_help: "Wann jedes Zeitfenster gilt, mit der aktuellen Uhrzeit.",
+    sched_edit: "Zeiten",
+    sched_quiet: "Ruhezeiten",
+    sched_quiet_help: "Nur kritische Warnungen werden gesendet; die übrigen warten bis zum Ende.",
+    sched_night: "Nachtruhe",
+    sched_night_help: "Geräte leiser, kein Fenster-Boost, Lichter auf Nachtstufe.",
+    sched_morning: "Sanfter Morgen",
+    sched_morning_help: "Ab dem Ende der Nacht: Schlafzimmerlichter bleiben gedämpft.",
+    sched_boost: "Fenster-Boost",
+    sched_boost_help: "Lüfter und Luftreiniger auf voller Stufe bei offenem Fenster. Beide leer: den ganzen Tag.",
+    sched_from: "Von",
+    sched_to: "Bis",
+    sched_morning_end: "Bis",
+    discover_short: "Findet die Räume Ihrer Home-Assistant-Bereiche mit Sensoren, Geräten und Lichtern. Nichts wird vor Ihrer Prüfung gespeichert.",
+    how: "So funktioniert es",
+    less: "Weniger",
+    other_outdoor: "Weitere Außensensoren",
+    other_outdoor_help: "Sensoren außerhalb der Außenbereiche: eine Wetter-Entität, ein städtischer Luftqualitätsindex…",
+    outdoors_help: "Garten, Terrasse, Balkon…: ihre Sensoren liefern Außentemperatur, Luftqualität und Lärm.",
+    section_sensors: "Sensoren",
+    section_openings: "Fenster und Türen",
+    section_devices: "Geräte",
+    section_lighting: "Beleuchtung",
+    section_alerts: "Warnungen",
+    none: "Keine",
+    openings_help: "Ihr Zustand hält Fensterwarnungen und Boosts zurück oder löst sie aus.",
+    naps: "Mittagsschlaf",
+    nap: "Mittagsschlaf",
+    no_naps: "Kein Mittagsschlaf: fügen Sie einen hinzu, um das Licht zu festen Zeiten zu dämpfen.",
+    alerts_default: "Standardeinstellungen",
+    customize_alert: "Warnung anpassen",
+    room_alerts_help: "Nur die für diesen Raum angepassten Warnungen; die übrigen folgen dem Reiter Warnungen.",
+    lighting_help: "Eingeschaltete Lichter folgen der Tageszeit; Smart Comfort schaltet sie nie ein oder aus. Die Zeiten stehen im Reiter Zeitplan.",
   },
   es: {
     outdoor_noise: "Ruido exterior",
@@ -381,39 +462,28 @@ const STRINGS = {
     move_up: "Subir",
     move_down: "Bajar",
     room_alerts: "Alertas de esta estancia",
-    room_alerts_help: "Los campos vacíos usan los ajustes de la pestaña Alertas.",
     inherit: "Por defecto",
     enabled: "Activada",
     disabled: "Desactivada",
     climate: "Aire acondicionado",
     fans: "Ventiladores",
     purifiers: "Purificadores de aire",
-    add_fan: "Añadir un ventilador",
-    add_purifier: "Añadir un purificador",
     device_settings: "Ajustes de este aparato",
     default_value: "Por defecto: {value}",
     no_rooms: "Aún no hay estancias.",
-    sensors: "Sensores",
     outdoor_air: "Aire exterior",
     outdoors: "Exteriores",
-    outdoors_help: "Sus sensores dan la temperatura exterior (combinada como en la pestaña Notificaciones), la calidad del aire (la peor) y el ruido (la media), junto con los demás sensores exteriores de la pestaña Notificaciones.",
     add_outdoor: "Añadir un exterior",
     new_outdoor: "Exterior",
     no_outdoors: "Aún no hay exteriores.",
     start: "Para empezar",
     start_help: "Aún no hay nada configurado. El descubrimiento encuentra las estancias y los exteriores de sus áreas de Home Assistant con sus sensores y dispositivos, y los configura; revise el resultado en la pestaña Estancias antes de guardar.",
-    outdoors_also: "También cuentan los sensores de los exteriores — {places} — configurados en la pestaña Estancias, Exteriores.",
     no_sensor: "sin sensor",
     lighting: "Iluminación adaptativa",
-    lighting_help: "Las luces encendidas de las estancias toman el brillo del momento: día con el sol arriba, tarde una vez puesto, noche en las horas de noche tranquila (Control de dispositivos). Smart Comfort nunca enciende ni apaga una luz; una luz ajustada a mano se deja tal cual hasta que se apaga.",
     lights: "Luces",
     light: "Luz",
-    add_light: "Añadir una luz",
     lighting_on: "Iluminación adaptativa activada",
     lighting_off: "Iluminación adaptativa desactivada",
-    room_lighting: "Iluminación de esta estancia",
-    room_lighting_help: "Mañana suave: luces más tenues desde el final de la noche hasta el final de la mañana (pestaña Control de dispositivos, Iluminación adaptativa). Siestas: las luces bajan en estas franjas, luces nocturnas incluidas.",
-    add_nap: "Añadir una siesta",
     nap_start: "Siesta de",
     nap_end: "Hasta",
     nap_days: "Días",
@@ -425,10 +495,50 @@ const STRINGS = {
     day_fri: "Vie",
     day_sat: "Sáb",
     day_sun: "Dom",
+    advanced: "Avanzado",
+    alerts_help: "Ajustes por defecto de todas las estancias; cada estancia puede personalizar los suyos.",
+    schedule: "Horarios",
+    settings: "Ajustes",
+    sched_title: "Su día",
+    sched_help: "Cuándo se aplica cada franja, con la hora actual.",
+    sched_edit: "Horarios",
+    sched_quiet: "Horas tranquilas",
+    sched_quiet_help: "Solo se envían las alertas críticas; las demás esperan al final.",
+    sched_night: "Noche tranquila",
+    sched_night_help: "Dispositivos más silenciosos, sin refuerzo por ventana, luces a su nivel de noche.",
+    sched_morning: "Mañana suave",
+    sched_morning_help: "Desde el final de la noche: las luces de los dormitorios siguen más tenues.",
+    sched_boost: "Refuerzo por ventana",
+    sched_boost_help: "Ventiladores y purificadores al máximo con una ventana abierta. Ambos vacíos: todo el día.",
+    sched_from: "Desde",
+    sched_to: "Hasta",
+    sched_morning_end: "Hasta",
+    discover_short: "Encuentra las estancias de sus áreas de Home Assistant, con sus sensores, dispositivos y luces. No se guarda nada antes de que lo revise.",
+    how: "Cómo funciona",
+    less: "Menos",
+    other_outdoor: "Otros sensores exteriores",
+    other_outdoor_help: "Sensores fuera de los exteriores: una entidad meteorológica, un índice de calidad del aire de la ciudad…",
+    outdoors_help: "Jardín, terraza, balcón…: sus sensores dan la temperatura, la calidad del aire y el ruido exteriores.",
+    section_sensors: "Sensores",
+    section_openings: "Ventanas y puertas",
+    section_devices: "Dispositivos",
+    section_lighting: "Iluminación",
+    section_alerts: "Alertas",
+    none: "Ninguno",
+    openings_help: "Su estado retiene o activa las alertas y refuerzos de ventanas.",
+    naps: "Siestas",
+    nap: "Siesta",
+    no_naps: "Ninguna siesta: añada una para bajar las luces a horas fijas.",
+    alerts_default: "Ajustes por defecto",
+    customize_alert: "Personalizar una alerta",
+    room_alerts_help: "Solo las alertas personalizadas para esta estancia; las demás siguen la pestaña Alertas.",
+    lighting_help: "Las luces encendidas siguen el momento del día; Smart Comfort nunca las enciende ni apaga. Las horas están en la pestaña Horarios.",
   },
 };
 
-const TABS = ["overview", "rooms", "alerts", "notifications", "control"];
+const TABS = ["overview", "rooms", "outdoors", "alerts", "schedule", "settings"];
+// Addresses of the tabs of earlier versions.
+const OLD_TABS = { notifications: "settings", control: "settings" };
 
 const clone = (value) => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)));
 const isEmpty = (v) => v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
@@ -502,20 +612,24 @@ const time = { time: {} };
 const entity = (domain, extra = {}) => ({ entity: { domain, ...extra } });
 const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const kelvin = { number: { mode: "box", step: 100, min: 1500, max: 10000, unit_of_measurement: "K" } };
-/** Brightness and warmth by time of day: global, and per light. */
-const LIGHTING_LEVELS = [
-  { name: "day", selector: percent },
-  { name: "evening", selector: percent },
-  { name: "night", selector: percent },
+const level = { number: { mode: "box", step: 1, min: 1, max: 100, unit_of_measurement: "%" } };
+const MOMENTS = ["day", "evening", "night", "morning", "nap"];
+const grid = (schema) => ({ type: "grid", name: "", column_min_width: "110px", schema });
+/** Brightness by time of day on one row, then the warmth (its values only when it is on): global, and per light. */
+const lightingLevels = (warm) => [
+  grid(MOMENTS.map((m) => ({ name: m, selector: level }))),
   { name: "warmth", selector: bool },
-  { name: "day_kelvin", selector: kelvin },
-  { name: "evening_kelvin", selector: kelvin },
-  { name: "night_kelvin", selector: kelvin },
-  { name: "morning", selector: percent },
-  { name: "morning_kelvin", selector: kelvin },
-  { name: "nap", selector: percent },
-  { name: "nap_kelvin", selector: kelvin },
+  ...(warm ? [grid(MOMENTS.map((m) => ({ name: `${m}_kelvin`, selector: kelvin })))] : []),
 ];
+const LEVEL_KEYS = MOMENTS.flatMap((m) => [m, `${m}_kelvin`]);
+/** The field names of a schema, through its grids and expandables. */
+const schemaKeys = (schema) => schema.flatMap((f) => (f.schema ? schemaKeys(f.schema) : [f.name]));
+/** Instants of a day as minutes, from "HH:MM[:SS]". */
+const minutesOf = (t) => {
+  if (typeof t !== "string" || !TIME.test(t)) return null;
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+};
 
 let haFormLoading;
 /** ha-form and the entity pickers are lazy-loaded by Home Assistant: load them through a card editor. */
@@ -549,6 +663,9 @@ class SmartComfortPanel extends HTMLElement {
     this._saving = false;
     this._expanded = new Set();
     this._expandedOutdoors = new Set();
+    // Open sections ("room index:section", "alert:kind") and fields shown before they have a value.
+    this._openSections = new Set();
+    this._shown = new Set();
   }
 
   set hass(hass) {
@@ -564,7 +681,8 @@ class SmartComfortPanel extends HTMLElement {
 
   /** /smart-comfort/<tab> opens that tab. */
   set route(route) {
-    const tab = (route?.path || "").split("/").filter(Boolean)[0];
+    const path = (route?.path || "").split("/").filter(Boolean)[0];
+    const tab = OLD_TABS[path] || path;
     if (TABS.includes(tab) && tab !== this._tab) {
       this._tab = tab;
       if (this._config !== null || this._error) this._render();
@@ -823,9 +941,10 @@ class SmartComfortPanel extends HTMLElement {
     const render = {
       overview: () => this._renderOverview(content),
       rooms: () => this._renderRooms(content),
+      outdoors: () => this._renderOutdoors(content),
       alerts: () => this._renderAlerts(content),
-      notifications: () => this._renderGeneral(content),
-      control: () => this._renderControl(content),
+      schedule: () => this._renderSchedule(content),
+      settings: () => this._renderSettings(content),
     }[this._tab];
     render();
   }
@@ -1084,64 +1203,154 @@ class SmartComfortPanel extends HTMLElement {
 
   // Notifications (general options).
 
-  _renderGeneral(content) {
-    const d = this._config.defaults.general;
-    const o = this._draft;
+  // Shared form helpers.
+
+  _advanced(schema) {
+    return { type: "expandable", name: "", flatten: true, title: this._t("advanced"), icon: "mdi:tune-variant", schema };
+  }
+
+  /** A form of top-level options: only what differs from the defaults is stored. */
+  _topForm(schema) {
+    const defaults = this._config.defaults.general;
+    const keys = schemaKeys(schema);
+    const own = Object.fromEntries(keys.filter((k) => k in this._draft).map((k) => [k, this._draft[k]]));
+    return this._form(
+      schema,
+      merged(defaults, own),
+      (value) => {
+        const changed = diff(Object.fromEntries(keys.map((k) => [k, value[k]])), defaults);
+        for (const key of keys) delete this._draft[key];
+        Object.assign(this._draft, changed);
+      },
+      (f) => (f.type === "expandable" ? f.title : this._label("general", f.name)),
+      (f) => this._helper("general", f.name)
+    );
+  }
+
+  /** Writes values into a section of the options (control, lighting), keeping only what differs from its defaults. */
+  _setSection(section, values) {
+    const defaults = this._config.defaults[section];
+    const changed = diff({ ...merged(defaults, this._draft[section] || {}), ...values }, defaults);
+    if (Object.keys(changed).length) this._draft[section] = changed;
+    else delete this._draft[section];
+  }
+
+  _sectionForm(section, schemaFor, label, helper) {
+    const data = merged(this._config.defaults[section], this._draft[section] || {});
+    const form = this._form(
+      schemaFor(data),
+      data,
+      (value) => {
+        this._setSection(section, value);
+        form.schema = schemaFor(value);
+      },
+      label,
+      helper
+    );
+    return form;
+  }
+
+  /** A row that opens and closes its content (sections of a room, alert kinds). */
+  _section(parent, key, icon, title, summary, build) {
+    const open = this._openSections.has(key);
+    const wrap = this._el("div", `section${open ? " open" : ""}`);
+    const head = this._el("button", "section-head");
+    head.setAttribute("aria-expanded", String(open));
+    const i = document.createElement("ha-icon");
+    i.icon = icon;
+    const chevron = document.createElement("ha-icon");
+    chevron.className = "chevron";
+    chevron.icon = open ? "mdi:chevron-up" : "mdi:chevron-down";
+    head.append(i, this._el("span", "section-name", title), this._el("span", "section-summary", summary), chevron);
+    head.addEventListener("click", () => {
+      if (open) this._openSections.delete(key);
+      else this._openSections.add(key);
+      this._renderTab();
+    });
+    wrap.append(head);
+    if (open) {
+      const body = this._el("div", "section-body");
+      build(body);
+      wrap.append(body);
+    }
+    parent.append(wrap);
+  }
+
+  /** "+ Something" buttons, for what isn't set yet. */
+  _addChips(parent, items) {
+    if (!items.length) return;
+    const row = this._el("div", "add-chips");
+    for (const [label, onClick] of items) {
+      const b = this._el("button", "add-chip");
+      const i = document.createElement("ha-icon");
+      i.icon = "mdi:plus";
+      b.append(i, document.createTextNode(label));
+      b.addEventListener("click", onClick);
+      row.append(b);
+    }
+    parent.append(row);
+  }
+
+  // Settings: notifications, device control, adaptive lighting.
+
+  _renderSettings(content) {
     const notify = Object.keys(this._hass.services.notify || {})
       .filter((n) => !["send_message", "persistent_notification"].includes(n))
       .map((n) => `notify.${n}`);
-    const current = o.notify || [];
-    const schema = [
-      {
-        name: "notify",
-        selector: {
-          select: { multiple: true, custom_value: true, mode: "dropdown", options: [...new Set([...notify, ...current])].sort() },
+    const current = this._draft.notify || [];
+    const notifications = this._card(this._t("notifications"), "mdi:bell-cog-outline");
+    notifications.append(
+      this._topForm([
+        {
+          name: "notify",
+          selector: {
+            select: { multiple: true, custom_value: true, mode: "dropdown", options: [...new Set([...notify, ...current])].sort() },
+          },
         },
-      },
-      { name: "outdoor_temperature", selector: entity(["sensor", "weather"], { multiple: true }) },
-      { name: "outdoor_noise", selector: entity("sensor", { device_class: "sound_pressure", multiple: true }) },
-      { name: "outdoor_air_quality", selector: entity("sensor", { multiple: true }) },
-      { name: "outdoor_aggregate", selector: { select: { mode: "dropdown", options: this._options("outdoor_aggregate", this._config.aggregates) } } },
-      { name: "digest_window", selector: minutes() },
-      { name: "reminder", selector: minutes() },
-      { name: "snooze_duration", selector: minutes(1) },
-      { name: "startup_grace", selector: minutes() },
-      { name: "quiet_start", selector: time },
-      { name: "quiet_end", selector: time },
-      { name: "presence", selector: entity(["zone", "person", "group", "binary_sensor", "input_boolean", "device_tracker"]) },
-      { name: "clear_when_resolved", selector: bool },
-      { name: "critical_volume", selector: { number: { mode: "slider", min: 0, max: 1, step: 0.05 } } },
-      { name: "url", selector: text },
-      { name: "tag", selector: text },
-    ];
-    const keys = schema.map((s) => s.name);
-    const data = merged(d, Object.fromEntries(keys.filter((key) => key in o).map((key) => [key, o[key]])));
-    const card = this._card(this._t("notifications"), "mdi:bell-cog-outline");
-    const places = (o.outdoors || []).filter((p) => p.temperature?.length || p.air_quality?.length || p.noise?.length);
-    if (places.length) {
-      const count = (p) => [p.temperature, p.air_quality, p.noise].reduce((n, v) => n + (v?.length || 0), 0);
-      card.append(
-        this._el(
-          "div",
-          "help",
-          this._t("outdoors_also", { places: places.map((p) => `${p.name} (${count(p)})`).join(", ") })
-        )
-      );
-    }
-    card.append(
-      this._form(
-        schema,
-        data,
-        (value) => {
-          const changed = diff(value, d);
-          for (const key of keys) delete this._draft[key];
-          Object.assign(this._draft, changed);
-        },
-        (s) => this._label("general", s.name),
-        (s) => this._helper("general", s.name)
+        { name: "presence", selector: entity(["zone", "person", "group", "binary_sensor", "input_boolean", "device_tracker"]) },
+        { name: "digest_window", selector: minutes() },
+        { name: "reminder", selector: minutes() },
+        this._advanced([
+          { name: "snooze_duration", selector: minutes(1) },
+          { name: "startup_grace", selector: minutes() },
+          { name: "clear_when_resolved", selector: bool },
+          { name: "critical_volume", selector: { number: { mode: "slider", min: 0, max: 1, step: 0.05 } } },
+          { name: "url", selector: text },
+          { name: "tag", selector: text },
+        ]),
+      ])
+    );
+    content.append(notifications);
+
+    const control = this._card(this._t("control"), "mdi:air-conditioner");
+    control.append(
+      this._sectionForm(
+        "control",
+        () => this._controlSchema(),
+        (f) => this._controlLabel(f),
+        (f) => this._controlHelper(f)
       )
     );
-    content.append(card);
+    content.append(control);
+
+    const lighting = this._card(this._t("lighting"), "mdi:lightbulb-auto-outline");
+    lighting.append(this._el("div", "help", this._t("lighting_help")));
+    lighting.append(
+      this._sectionForm(
+        "lighting",
+        (data) => [
+          { name: "enabled", selector: bool },
+          ...lightingLevels(data.warmth),
+          this._advanced([
+            { name: "transition", selector: { number: { mode: "box", step: 10, min: 0, max: 3600, unit_of_measurement: "s" } } },
+          ]),
+        ],
+        (f) => (f.type === "expandable" ? f.title : this._label("lighting", f.name)),
+        // The levels on a row speak for themselves; their help would make the row ragged.
+        (f) => (LEVEL_KEYS.includes(f.name) ? undefined : this._helper("lighting", f.name))
+      )
+    );
+    content.append(lighting);
   }
 
   // Alerts.
@@ -1149,19 +1358,16 @@ class SmartComfortPanel extends HTMLElement {
   _alertSchema(kind, defaults, inherit = false) {
     const unit = UNITS[kind] || "°C";
     const fields = [];
+    const choice = (options) => ({
+      select: { mode: "dropdown", options: [...(inherit ? [{ value: "", label: this._t("inherit") }] : []), ...options] },
+    });
     if (inherit) {
       fields.push({
         name: "enabled",
-        selector: {
-          select: {
-            mode: "dropdown",
-            options: [
-              { value: "", label: this._t("inherit") },
-              { value: "on", label: this._t("enabled") },
-              { value: "off", label: this._t("disabled") },
-            ],
-          },
-        },
+        selector: choice([
+          { value: "on", label: this._t("enabled") },
+          { value: "off", label: this._t("disabled") },
+        ]),
       });
     } else {
       fields.push({ name: "enabled", selector: bool });
@@ -1173,45 +1379,52 @@ class SmartComfortPanel extends HTMLElement {
     if ("max_outdoor_noise" in defaults) fields.push({ name: "max_outdoor_noise", selector: num("dB", { min: 0 }) });
     if ("max_outdoor_air" in defaults) fields.push({ name: "max_outdoor_air", selector: num("/6", { min: 1, max: 6 }) });
     fields.push(
-      { name: "hysteresis", selector: num(unit, { min: 0 }) },
-      { name: "delay", selector: minutes() },
-      {
-        name: "severity",
-        selector: {
-          select: {
-            mode: "dropdown",
-            options: [
-              ...(inherit ? [{ value: "", label: this._t("inherit") }] : []),
-              ...this._options("severity", this._config.severities),
-            ],
-          },
-        },
-      },
-      { name: "escalation", selector: num(unit, { min: 0 }) }
+      { name: "severity", selector: choice(this._options("severity", this._config.severities)) },
+      this._advanced([
+        { name: "hysteresis", selector: num(unit, { min: 0 }) },
+        { name: "delay", selector: minutes() },
+        { name: "escalation", selector: num(unit, { min: 0 }) },
+      ])
     );
     return fields;
   }
 
+  /** One line about an alert's settings: on or off, its threshold, its severity. */
+  _alertSummary(kind, settings) {
+    if (settings.enabled === false) return this._t("disabled");
+    const parts = [this._t("enabled")];
+    const unit = UNITS[kind] || "°C";
+    if (typeof settings.threshold === "number") {
+      parts.push(`${this._format(settings.threshold)}${unit === "/6" ? "/6" : ` ${unit}`}`);
+    }
+    if (settings.severity) parts.push(this._options("severity", [settings.severity])[0].label.split(" (")[0]);
+    return parts.join(" · ");
+  }
+
   _renderAlerts(content) {
     const defaults = this._config.defaults.alerts;
+    const card = this._card(this._t("alerts"), "mdi:bell-alert-outline");
+    card.append(this._el("div", "help", this._t("alerts_help")));
     for (const kind of this._config.kinds) {
-      const card = this._card(this._kindName(kind), KIND_ICONS[kind]);
       const own = this._draft.alerts?.[kind] || {};
-      card.append(
-        this._form(
-          this._alertSchema(kind, defaults[kind]),
-          merged(defaults[kind], own),
-          (value) => {
-            const alerts = (this._draft.alerts = this._draft.alerts || {});
-            alerts[kind] = diff(value, defaults[kind]);
-            if (!Object.keys(alerts[kind]).length) delete alerts[kind];
-          },
-          (s) => this._label("alert", s.name),
-          (s) => this._helper("alert", s.name)
+      const settings = merged(defaults[kind], own);
+      this._section(card, `alert:${kind}`, KIND_ICONS[kind], this._kindName(kind), this._alertSummary(kind, settings), (body) =>
+        body.append(
+          this._form(
+            this._alertSchema(kind, defaults[kind]),
+            settings,
+            (value) => {
+              const alerts = (this._draft.alerts = this._draft.alerts || {});
+              alerts[kind] = diff(value, defaults[kind]);
+              if (!Object.keys(alerts[kind]).length) delete alerts[kind];
+            },
+            (f) => (f.type === "expandable" ? f.title : this._label("alert", f.name)),
+            (f) => this._helper("alert", f.name)
+          )
         )
       );
-      content.append(card);
     }
+    content.append(card);
   }
 
   // Device control.
@@ -1220,12 +1433,8 @@ class SmartComfortPanel extends HTMLElement {
     const sec = (name, schema) => ({ type: "expandable", name, title: this._sectionTitle("control", name), schema });
     return [
       { name: "enabled", selector: bool },
-      { name: "start", selector: time },
-      { name: "end", selector: time },
-      { name: "manual_override", selector: minutes() },
       { name: "suppress_when_handled", selector: bool },
-      { name: "night_start", selector: time },
-      { name: "night_end", selector: time },
+      { name: "manual_override", selector: minutes() },
       sec("climate", [
         { name: "cool_above", selector: num("°C") },
         { name: "off_below", selector: num("°C") },
@@ -1274,50 +1483,118 @@ class SmartComfortPanel extends HTMLElement {
     return undefined;
   }
 
-  _renderControl(content) {
-    const defaults = this._config.defaults.control;
-    const card = this._card(this._t("control"), "mdi:air-conditioner");
-    card.append(
-      this._form(
-        this._controlSchema(),
-        merged(defaults, this._draft.control || {}),
-        (value) => {
-          const changed = diff(value, defaults);
-          if (Object.keys(changed).length) this._draft.control = changed;
-          else delete this._draft.control;
-        },
-        (s) => this._controlLabel(s),
-        (s) => this._controlHelper(s)
-      )
-    );
-    content.append(card);
-    this._renderLighting(content);
+  // Schedule: every time window on one 24-hour line.
+
+  _scheduleRows() {
+    const control = merged(this._config.defaults.control, this._draft.control || {});
+    const lighting = merged(this._config.defaults.lighting, this._draft.lighting || {});
+    const general = merged(this._config.defaults.general, this._draft);
+    return [
+      { key: "quiet", icon: "mdi:bell-sleep-outline", start: general.quiet_start, end: general.quiet_end },
+      { key: "night", icon: "mdi:weather-night", start: control.night_start, end: control.night_end },
+      { key: "morning", icon: "mdi:weather-sunset-up", start: control.night_end || "00:00", end: lighting.morning_end },
+      { key: "boost", icon: "mdi:window-open-variant", start: control.start, end: control.end },
+    ];
   }
 
-  /** Adaptive lighting: brightness and warmth by time of day, for the lights of the rooms. */
-  _renderLighting(content) {
-    const defaults = this._config.defaults.lighting;
-    const card = this._card(this._t("lighting"), "mdi:lightbulb-auto-outline");
-    card.append(this._el("div", "help", this._t("lighting_help")));
-    card.append(
-      this._form(
-        [
-          { name: "enabled", selector: bool },
-          ...LIGHTING_LEVELS,
-          { name: "morning_end", selector: time },
-          { name: "transition", selector: { number: { mode: "box", step: 10, min: 0, max: 3600, unit_of_measurement: "s" } } },
-        ],
-        merged(defaults, this._draft.lighting || {}),
-        (value) => {
-          const changed = diff(value, defaults);
-          if (Object.keys(changed).length) this._draft.lighting = changed;
-          else delete this._draft.lighting;
-        },
-        (s) => this._label("lighting", s.name),
-        (s) => this._helper("lighting", s.name)
-      )
+  _renderSchedule(content) {
+    const rows = this._scheduleRows();
+    const day = this._card(this._t("sched_title"), "mdi:clock-outline");
+    day.append(this._el("div", "help", this._t("sched_help")), this._timeline(rows));
+    content.append(day);
+    this._renderScheduleForms(content, rows);
+  }
+
+  /** The time windows on one 24-hour line, with the time now. */
+  _timeline(rows) {
+    const line = this._el("div", "timeline");
+    const scale = this._el("div", "tl-scale");
+    for (const h of [0, 6, 12, 18, 24]) {
+      const tick = this._el("span", "tl-tick", `${String(h).padStart(2, "0")}:00`);
+      tick.style.left = `${(h / 24) * 100}%`;
+      scale.append(tick);
+    }
+    line.append(this._el("span", ""), scale);
+    const now = new Date();
+    const nowLeft = `${((now.getHours() * 60 + now.getMinutes()) / 1440) * 100}%`;
+    for (const row of rows) {
+      const label = this._el("span", "tl-label");
+      const i = document.createElement("ha-icon");
+      i.icon = row.icon;
+      label.append(i, this._el("span", "", this._t(`sched_${row.key}`)));
+      const bar = this._el("div", `tl-bar ${row.key}`);
+      const from = minutesOf(row.start);
+      const to = minutesOf(row.end);
+      if (from === null || to === null || from === to) {
+        // Unset (or equal bounds): never, except the window boost which then runs all day.
+        if (row.key === "boost" && (from === null || from === to)) bar.append(this._segment(0, 1440));
+        else bar.classList.add("unset");
+      } else if (from < to) {
+        bar.append(this._segment(from, to));
+      } else {
+        bar.append(this._segment(from, 1440), this._segment(0, to));
+      }
+      const marker = this._el("span", "tl-now");
+      marker.style.left = nowLeft;
+      bar.append(marker);
+      line.append(label, bar);
+    }
+    return line;
+  }
+
+  _renderScheduleForms(content, rows) {
+    const edit = this._card(this._t("sched_edit"), "mdi:clock-edit-outline");
+    const range = [
+      grid([
+        { name: "start", selector: time },
+        { name: "end", selector: time },
+      ]),
+    ];
+    const labels = { start: this._t("sched_from"), end: this._t("sched_to") };
+    const block = (row, schema, data, onChange) => {
+      const box = this._el("div", "sched-row");
+      const head = this._el("div", "sched-head");
+      const i = document.createElement("ha-icon");
+      i.icon = row.icon;
+      head.append(i, this._el("span", "sched-name", this._t(`sched_${row.key}`)));
+      box.append(head, this._el("div", "help", this._t(`sched_${row.key}_help`)));
+      box.append(
+        this._form(schema, data, (value) => {
+          onChange(value);
+          this._renderSchedulePreview();
+        }, (f) => labels[f.name] || this._t(`sched_${f.name}`))
+      );
+      edit.append(box);
+    };
+    const [quiet, night, morning, boost] = rows;
+    block(quiet, range, { start: quiet.start, end: quiet.end }, (v) => {
+      for (const [key, value] of [["quiet_start", v.start], ["quiet_end", v.end]]) {
+        if (isEmpty(value)) delete this._draft[key];
+        else this._draft[key] = value;
+      }
+    });
+    block(night, range, { start: night.start, end: night.end }, (v) =>
+      this._setSection("control", { night_start: v.start || null, night_end: v.end || null })
     );
-    content.append(card);
+    block(morning, [{ name: "morning_end", selector: time }], { morning_end: morning.end }, (v) =>
+      this._setSection("lighting", { morning_end: v.morning_end || null })
+    );
+    block(boost, range, { start: boost.start, end: boost.end }, (v) =>
+      this._setSection("control", { start: v.start || null, end: v.end || null })
+    );
+    content.append(edit);
+  }
+
+  /** The timeline follows the times being edited, without rebuilding the forms. */
+  _renderSchedulePreview() {
+    this.shadowRoot.querySelector(".timeline")?.replaceWith(this._timeline(this._scheduleRows()));
+  }
+
+  _segment(from, to) {
+    const seg = this._el("span", "tl-seg");
+    seg.style.left = `${(from / 1440) * 100}%`;
+    seg.style.width = `${((to - from) / 1440) * 100}%`;
+    return seg;
   }
 
   // Rooms.
@@ -1381,7 +1658,15 @@ class SmartComfortPanel extends HTMLElement {
 
   _renderRooms(content) {
     const intro = this._el("div", "card discover");
-    const text = this._el("div", "discover-text", this._t("discover_help"));
+    const text = this._el("div", "discover-text");
+    text.append(this._el("span", "", this._t("discover_short")));
+    const more = this._el("button", "link", this._t(this._discoverHelp ? "less" : "how"));
+    more.addEventListener("click", () => {
+      this._discoverHelp = !this._discoverHelp;
+      this._renderTab();
+    });
+    text.append(" ", more);
+    if (this._discoverHelp) text.append(this._el("div", "discover-more", this._t("discover_help")));
     const button = this._button(this._discovering ? this._t("discover_running") : this._t("discover"), () =>
       this._discover()
     );
@@ -1399,21 +1684,17 @@ class SmartComfortPanel extends HTMLElement {
       while (rooms.some((r) => r.name === name)) name = `${this._t("new_room")} ${n++}`;
       rooms.push({ name });
       this._expanded.add(rooms.length - 1);
+      this._openSections.add(`${rooms.length - 1}:sensors`);
       this._changed();
       this._renderTab();
     });
     add.classList.add("add");
     content.append(add);
-    this._renderOutdoors(content);
   }
 
-  /** Outdoor places (garden, terrace…): their temperature, air quality and noise sensors. */
+  /** Outdoor places and the outdoor sensors in no place, together. */
   _renderOutdoors(content) {
-    const title = this._el("div", "section-title");
-    const icon = document.createElement("ha-icon");
-    icon.icon = "mdi:tree-outline";
-    title.append(icon, this._el("span", "", this._t("outdoors")));
-    content.append(title, this._el("div", "help section-help", this._t("outdoors_help")));
+    content.append(this._el("div", "help section-help", this._t("outdoors_help")));
     const places = (this._draft.outdoors = this._draft.outdoors || []);
     if (!places.length) content.append(this._el("div", "empty card", this._t("no_outdoors")));
     places.forEach((place, index) => {
@@ -1430,6 +1711,17 @@ class SmartComfortPanel extends HTMLElement {
     });
     add.classList.add("add");
     content.append(add);
+    const other = this._card(this._t("other_outdoor"), "mdi:weather-partly-cloudy");
+    other.append(this._el("div", "help", this._t("other_outdoor_help")));
+    other.append(
+      this._topForm([
+        { name: "outdoor_temperature", selector: entity(["sensor", "weather"], { multiple: true }) },
+        { name: "outdoor_air_quality", selector: entity("sensor", { multiple: true }) },
+        { name: "outdoor_noise", selector: entity("sensor", { device_class: "sound_pressure", multiple: true }) },
+        { name: "outdoor_aggregate", selector: { select: { mode: "dropdown", options: this._options("outdoor_aggregate", this._config.aggregates) } } },
+      ])
+    );
+    content.append(other);
   }
 
   _outdoorCard(place, index, places) {
@@ -1483,7 +1775,7 @@ class SmartComfortPanel extends HTMLElement {
           }
           toggle.lastChild.textContent = place.name || "—";
         },
-        (s) => this._label("outdoor", s.name)
+        (f) => this._label("outdoor", f.name)
       )
     );
     return card;
@@ -1506,12 +1798,16 @@ class SmartComfortPanel extends HTMLElement {
     const tools = this._el("div", "row-actions");
     const move = (to) => {
       [rooms[index], rooms[to]] = [rooms[to], rooms[index]];
-      const wasOpen = this._expanded.has(index);
-      const otherOpen = this._expanded.has(to);
-      this._expanded.delete(index);
-      this._expanded.delete(to);
-      if (wasOpen) this._expanded.add(to);
-      if (otherOpen) this._expanded.add(index);
+      const swap = (set, key) => {
+        const a = set.has(key(index));
+        const b = set.has(key(to));
+        set.delete(key(index));
+        set.delete(key(to));
+        if (a) set.add(key(to));
+        if (b) set.add(key(index));
+      };
+      swap(this._expanded, (i) => i);
+      for (const name of ["sensors", "openings", "devices", "lighting", "alerts"]) swap(this._openSections, (i) => `${i}:${name}`);
       this._changed();
       this._renderTab();
     };
@@ -1523,6 +1819,14 @@ class SmartComfortPanel extends HTMLElement {
       this._iconButton("mdi:delete-outline", this._t("remove"), () => {
         rooms.splice(index, 1);
         this._expanded = shifted(this._expanded, index);
+        this._openSections = new Set(
+          [...this._openSections].flatMap((k) => {
+            const [i, rest] = k.split(":");
+            if (!/^\d+$/.test(i)) return [k];
+            const n = Number(i);
+            return n === index ? [] : [`${n > index ? n - 1 : n}:${rest}`];
+          })
+        );
         this._changed();
         this._renderTab();
       })
@@ -1531,143 +1835,334 @@ class SmartComfortPanel extends HTMLElement {
     card.append(header);
     if (!open) return card;
 
-    const label = (s) => this._label("room", s.name);
-    // Sensors.
-    card.append(this._el("div", "subheader", this._t("sensors")));
-    const base = ["name", "temperature", "co2", "humidity", "noise", "openings"];
     card.append(
       this._form(
-        [
-          { name: "name", required: true, selector: text },
-          { name: "temperature", selector: entity("sensor", { device_class: "temperature" }) },
-          { name: "co2", selector: entity("sensor", { device_class: "carbon_dioxide" }) },
-          { name: "humidity", selector: entity("sensor", { device_class: "humidity" }) },
-          { name: "noise", selector: entity("sensor", { device_class: "sound_pressure" }) },
-          { name: "openings", selector: entity("binary_sensor", { multiple: true }) },
-        ],
-        Object.fromEntries(base.filter((k) => k in room).map((k) => [k, room[k]])),
+        [{ name: "name", required: true, selector: text }],
+        { name: room.name },
         (value) => {
-          for (const key of base) {
-            if (isEmpty(value[key])) delete room[key];
-            else room[key] = value[key];
-          }
+          room.name = value.name;
           toggle.lastChild.textContent = room.name || "—";
         },
-        label
+        (f) => this._label("room", f.name)
       )
     );
-
-    // Air conditioner.
-    card.append(this._el("div", "subheader", this._t("climate")));
-    const climate = room.climate ? this._item(room.climate) : {};
-    const climateDefaults = this._effectiveControl(room, "climate");
-    const climateForm = this._form(
-      this._climateSchema(climate.entity_id),
-      climate,
-      (value) => {
-        if (!value.entity_id) delete room.climate;
-        else room.climate = this._store(value);
-        climateForm.schema = this._climateSchema(value.entity_id);
-      },
-      (s) => {
-        if (s.type === "expandable") return this._t("device_settings");
-        return s.name === "entity_id" ? this._t("climate") : this._label("control", s.name, "climate");
-      },
-      (s) => this._defaultHelp(s, climateDefaults)
-    );
-    card.append(climateForm);
-
-    // Fans and purifiers.
-    for (const [key, add] of [
-      ["fans", "add_fan"],
-      ["purifiers", "add_purifier"],
-      ["lights", "add_light"],
-    ]) {
-      card.append(this._el("div", "subheader", this._t(key)));
-      const items = Array.isArray(room[key]) ? room[key] : room[key] ? [room[key]] : [];
-      const defaults =
-        key === "lights"
-          ? { ...this._config.defaults.lighting, ...(this._draft.lighting || {}), ...(room.lighting || {}) }
-          : this._effectiveControl(room, key);
-      items.forEach((raw, i) => {
-        const item = this._item(raw);
-        const line = this._el("div", "device-item");
-        const schemaFor = (entityId, itemValue) =>
-          key === "fans"
-            ? this._fanSchema(entityId)
-            : key === "lights"
-              ? this._lightSchema(entityId)
-              : this._purifierSchema(itemValue);
-        const form = this._form(
-          schemaFor(item.entity_id, item),
-          item,
+    const sections = this._el("div", "sections");
+    const section = (name, icon, summary, build) =>
+      this._section(sections, `${index}:${name}`, icon, this._t(`section_${name}`), summary, build);
+    section("sensors", "mdi:thermometer", this._sensorsSummary(room), (body) => this._roomSensors(body, room, index));
+    section("openings", "mdi:window-closed-variant", this._count(room.openings), (body) =>
+      body.append(
+        this._form(
+          [{ name: "openings", selector: entity("binary_sensor", { multiple: true }) }],
+          { openings: room.openings || [] },
           (value) => {
-            items[i] = this._store(value);
-            room[key] = items.filter((x) => x && (typeof x === "string" || x.entity_id));
-            form.schema = schemaFor(value.entity_id, value);
+            if (isEmpty(value.openings)) delete room.openings;
+            else room.openings = value.openings;
           },
-          (s) => (s.type === "expandable" ? this._t("device_settings") : this._deviceLabel(key, s.name)),
-          (s) => this._defaultHelp(s, defaults)
-        );
-        line.append(form);
-        line.append(
-          this._iconButton("mdi:delete-outline", this._t("remove"), () => {
-            items.splice(i, 1);
-            if (items.length) room[key] = items;
-            else delete room[key];
-            this._changed();
-            this._renderTab();
-          })
-        );
-        card.append(line);
-      });
-      const addButton = this._button(this._t(add), () => {
-        room[key] = [...items, { entity_id: "" }];
-        this._renderTab();
-      });
-      addButton.classList.add("small");
-      card.append(addButton);
+          (f) => this._label("room", f.name),
+          () => this._t("openings_help")
+        )
+      )
+    );
+    section("devices", "mdi:air-conditioner", this._devicesSummary(room), (body) => this._roomDevices(body, room, index));
+    section("lighting", "mdi:lightbulb-outline", this._lightingSummary(room), (body) => this._roomLighting(body, room));
+    section("alerts", "mdi:bell-cog-outline", this._roomAlertsSummary(room), (body) => this._roomAlerts(body, room, index));
+    card.append(sections);
+    return card;
+  }
+
+  _count(value) {
+    const n = Array.isArray(value) ? value.length : value ? 1 : 0;
+    return n ? String(n) : this._t("none");
+  }
+
+  _sensorsSummary(room) {
+    const names = ["temperature", "co2", "humidity", "noise"].filter((k) => room[k]).map((k) => this._label("room", k));
+    return names.length ? names.join(", ") : this._t("none");
+  }
+
+  _devicesSummary(room) {
+    const list = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+    const parts = [
+      [list(room.climate).length, "climate"],
+      [list(room.fans).length, "fans"],
+      [list(room.purifiers).length, "purifiers"],
+    ]
+      .filter(([n]) => n)
+      .map(([n, key]) => (n > 1 ? `${this._t(key)} (${n})` : this._t(key === "climate" ? key : key.slice(0, -1))));
+    return parts.length ? parts.join(", ") : this._t("none");
+  }
+
+  _lightingSummary(room) {
+    const lights = Array.isArray(room.lights) ? room.lights : [];
+    const naps = Array.isArray(room.naps) ? room.naps : [];
+    const parts = [];
+    if (lights.length) parts.push(`${this._t("lights")} (${lights.length})`);
+    if (room.lighting?.quiet_morning) parts.push(this._label("lighting", "quiet_morning"));
+    if (naps.length) parts.push(`${this._t("naps")} (${naps.length})`);
+    return parts.length ? parts.join(", ") : this._t("none");
+  }
+
+  _roomAlertsSummary(room) {
+    const kinds = Object.keys(room.alerts || {});
+    return kinds.length ? kinds.map((k) => this._kindName(k)).join(", ") : this._t("alerts_default");
+  }
+
+  /** Sensors of a room: only those it has, and buttons to add the others. */
+  _roomSensors(body, room, index) {
+    const all = [
+      ["temperature", "temperature"],
+      ["co2", "carbon_dioxide"],
+      ["humidity", "humidity"],
+      ["noise", "sound_pressure"],
+    ];
+    const shown = all.filter(([key]) => room[key] || this._shown.has(`${index}:${key}`));
+    if (shown.length) {
+      body.append(
+        this._form(
+          shown.map(([key, deviceClass]) => ({ name: key, selector: entity("sensor", { device_class: deviceClass }) })),
+          Object.fromEntries(shown.map(([key]) => [key, room[key]])),
+          (value) => {
+            for (const [key] of shown) {
+              if (isEmpty(value[key])) delete room[key];
+              else room[key] = value[key];
+            }
+          },
+          (f) => this._label("room", f.name)
+        )
+      );
     }
+    this._addChips(
+      body,
+      all
+        .filter(([key]) => !shown.some(([k]) => k === key))
+        .map(([key]) => [
+          this._label("room", key),
+          () => {
+            this._shown.add(`${index}:${key}`);
+            this._renderTab();
+          },
+        ])
+    );
+  }
 
-    this._roomLighting(card, room);
+  /** Air conditioner, fans and purifiers of a room, each with its settings folded. */
+  _roomDevices(body, room, index) {
+    if (room.climate || this._shown.has(`${index}:climate`)) {
+      const climate = room.climate ? this._item(room.climate) : {};
+      const defaults = this._effectiveControl(room, "climate");
+      const line = this._el("div", "device-item");
+      const form = this._form(
+        this._climateSchema(climate.entity_id),
+        climate,
+        (value) => {
+          if (!value.entity_id) delete room.climate;
+          else room.climate = this._store(value);
+          form.schema = this._climateSchema(value.entity_id);
+        },
+        (f) => {
+          if (f.type === "expandable") return this._t("device_settings");
+          return f.name === "entity_id" ? this._t("climate") : this._label("control", f.name, "climate");
+        },
+        (f) => this._defaultHelp(f, defaults)
+      );
+      line.append(
+        form,
+        this._iconButton("mdi:delete-outline", this._t("remove"), () => {
+          delete room.climate;
+          this._shown.delete(`${index}:climate`);
+          this._changed();
+          this._renderTab();
+        })
+      );
+      body.append(line);
+    }
+    this._deviceList(body, room, "fans");
+    this._deviceList(body, room, "purifiers");
+    this._addChips(body, [
+      ...(room.climate || this._shown.has(`${index}:climate`)
+        ? []
+        : [
+            [
+              this._t("climate"),
+              () => {
+                this._shown.add(`${index}:climate`);
+                this._renderTab();
+              },
+            ],
+          ]),
+      [this._t("fan"), () => this._addItem(room, "fans")],
+      [this._t("purifier"), () => this._addItem(room, "purifiers")],
+    ]);
+  }
 
-    // Alerts of the room.
-    card.append(this._el("div", "subheader", this._t("room_alerts")));
-    card.append(this._el("div", "help", this._t("room_alerts_help")));
+  _addItem(room, key) {
+    const items = Array.isArray(room[key]) ? room[key] : room[key] ? [room[key]] : [];
+    room[key] = [...items, { entity_id: "" }];
+    this._renderTab();
+  }
+
+  /** The fans, purifiers or lights of a room: one line each, its own settings folded. */
+  _deviceList(body, room, key) {
+    const items = Array.isArray(room[key]) ? room[key] : room[key] ? [room[key]] : [];
+    const defaults =
+      key === "lights"
+        ? { ...this._config.defaults.lighting, ...(this._draft.lighting || {}), ...(room.lighting || {}) }
+        : this._effectiveControl(room, key);
+    const schemaFor = (item) =>
+      key === "fans"
+        ? this._fanSchema(item.entity_id)
+        : key === "lights"
+          ? this._lightSchema(item, defaults)
+          : this._purifierSchema(item);
+    items.forEach((raw, i) => {
+      const item = this._item(raw);
+      const line = this._el("div", "device-item");
+      const form = this._form(
+        schemaFor(item),
+        item,
+        (value) => {
+          items[i] = this._store(value);
+          room[key] = items.filter((x) => x && (typeof x === "string" || x.entity_id));
+          form.schema = schemaFor(value);
+        },
+        (f) => (f.type === "expandable" ? f.title || this._t("device_settings") : this._deviceLabel(key, f.name)),
+        (f) => this._defaultHelp(f, defaults)
+      );
+      line.append(
+        form,
+        this._iconButton("mdi:delete-outline", this._t("remove"), () => {
+          items.splice(i, 1);
+          if (items.length) room[key] = items;
+          else delete room[key];
+          this._changed();
+          this._renderTab();
+        })
+      );
+      body.append(line);
+    });
+  }
+
+  /** Overrides of the alerts for a room: only those set, and a menu to customize another one. */
+  _roomAlerts(body, room, index) {
     const globals = this._config.defaults.alerts;
     const roomAlerts = room.alerts || {};
-    const schema = this._config.kinds.map((kind) => ({
-      type: "expandable",
-      name: kind,
-      title: this._kindName(kind),
-      icon: KIND_ICONS[kind],
-      schema: this._alertSchema(kind, globals[kind], true),
-    }));
-    const data = {};
-    for (const kind of this._config.kinds) {
-      const own = { ...(roomAlerts[kind] || {}) };
-      if ("enabled" in own) own.enabled = own.enabled ? "on" : "off";
-      data[kind] = own;
+    const kinds = this._config.kinds.filter((k) => roomAlerts[k] || this._shown.has(`${index}:alert:${k}`));
+    body.append(this._el("div", "help", this._t("room_alerts_help")));
+    if (kinds.length) {
+      const data = {};
+      for (const kind of kinds) {
+        const own = { ...(roomAlerts[kind] || {}) };
+        if ("enabled" in own) own.enabled = own.enabled ? "on" : "off";
+        data[kind] = own;
+      }
+      body.append(
+        this._form(
+          kinds.map((kind) => ({
+            type: "expandable",
+            name: kind,
+            title: this._kindName(kind),
+            icon: KIND_ICONS[kind],
+            expanded: this._shown.has(`${index}:alert:${kind}`),
+            schema: this._alertSchema(kind, globals[kind], true),
+          })),
+          data,
+          (value) => {
+            const out = { ...(room.alerts || {}) };
+            for (const kind of kinds) {
+              const own = prune(value[kind] || {});
+              if (own.enabled) own.enabled = own.enabled === "on";
+              else delete own.enabled;
+              if (Object.keys(own).length) out[kind] = own;
+              else delete out[kind];
+            }
+            if (Object.keys(out).length) room.alerts = out;
+            else delete room.alerts;
+          },
+          (f) => (f.type === "expandable" ? f.title || this._t("advanced") : this._label("alert", f.name))
+        )
+      );
     }
-    card.append(
+    const others = this._config.kinds.filter((k) => !kinds.includes(k));
+    if (others.length) {
+      body.append(
+        this._form(
+          [{ name: "customize", selector: { select: { mode: "dropdown", options: others.map((k) => ({ value: k, label: this._kindName(k) })) } } }],
+          {},
+          (value) => {
+            if (!value.customize) return;
+            this._shown.add(`${index}:alert:${value.customize}`);
+            this._renderTab();
+          },
+          () => this._t("customize_alert")
+        )
+      );
+    }
+  }
+
+  /** Lights of a room, its quiet morning (bedrooms) and its nap slots. */
+  _roomLighting(body, room) {
+    this._deviceList(body, room, "lights");
+    this._addChips(body, [[this._t("light"), () => this._addItem(room, "lights")]]);
+    const lighting = room.lighting || {};
+    body.append(
       this._form(
-        schema,
-        data,
+        [{ name: "quiet_morning", selector: bool }],
+        { quiet_morning: Boolean(lighting.quiet_morning) },
         (value) => {
-          const out = {};
-          for (const kind of this._config.kinds) {
-            const own = prune(value[kind] || {});
-            if (own.enabled) own.enabled = own.enabled === "on";
-            else delete own.enabled;
-            if (Object.keys(own).length) out[kind] = own;
-          }
-          if (Object.keys(out).length) room.alerts = out;
-          else delete room.alerts;
+          const next = { ...(room.lighting || {}) };
+          if (value.quiet_morning) next.quiet_morning = true;
+          else delete next.quiet_morning;
+          if (Object.keys(next).length) room.lighting = next;
+          else delete room.lighting;
         },
-        (s) => (s.type === "expandable" ? s.title : this._label("alert", s.name))
+        (f) => this._label("lighting", f.name),
+        (f) => this._helper("lighting", f.name)
       )
     );
-    return card;
+    body.append(this._el("div", "subheader", this._t("naps")));
+    const naps = Array.isArray(room.naps) ? room.naps : [];
+    const days = { select: { multiple: true, mode: "list", options: WEEKDAYS.map((d) => ({ value: d, label: this._t(`day_${d}`) })) } };
+    if (!naps.length) body.append(this._el("div", "help", this._t("no_naps")));
+    naps.forEach((nap, i) => {
+      const line = this._el("div", "device-item");
+      line.append(
+        this._form(
+          [
+            grid([
+              { name: "start", required: true, selector: time },
+              { name: "end", required: true, selector: time },
+            ]),
+            { name: "days", selector: days },
+          ],
+          nap,
+          (value) => {
+            naps[i] = prune(value);
+            room.naps = naps;
+          },
+          (f) => this._t(`nap_${f.name}`),
+          (f) => (f.name === "days" ? this._t("nap_days_help") : undefined)
+        ),
+        this._iconButton("mdi:delete-outline", this._t("remove"), () => {
+          naps.splice(i, 1);
+          if (naps.length) room.naps = naps;
+          else delete room.naps;
+          this._changed();
+          this._renderTab();
+        })
+      );
+      body.append(line);
+    });
+    this._addChips(body, [
+      [
+        this._t("nap"),
+        () => {
+          room.naps = [...naps, { start: "13:30:00", end: "15:30:00" }];
+          this._changed();
+          this._renderTab();
+        },
+      ],
+    ]);
   }
 
   /** Icons of what the room has (sensors, openings, devices), and a badge after a discovery. */
@@ -1717,7 +2212,7 @@ class SmartComfortPanel extends HTMLElement {
   }
 
   _defaultHelp(schema, defaults) {
-    if (schema.type === "expandable" || schema.name === "entity_id" || schema.name === "mode_select") return undefined;
+    if (schema.type || schema.name === "entity_id" || schema.name === "mode_select") return undefined;
     const value = defaults[schema.name];
     if (value === undefined || value === null || value === "") return undefined;
     return this._t("default_value", { value: typeof value === "boolean" ? this._t(value ? "enabled" : "disabled") : value });
@@ -1756,78 +2251,17 @@ class SmartComfortPanel extends HTMLElement {
     ];
   }
 
-  /** Lighting of a room: its quiet morning (bedrooms) and its nap slots. */
-  _roomLighting(card, room) {
-    card.append(this._el("div", "subheader", this._t("room_lighting")));
-    card.append(this._el("div", "help", this._t("room_lighting_help")));
-    const lighting = room.lighting || {};
-    card.append(
-      this._form(
-        [{ name: "quiet_morning", selector: bool }],
-        { quiet_morning: Boolean(lighting.quiet_morning) },
-        (value) => {
-          const next = { ...(room.lighting || {}) };
-          if (value.quiet_morning) next.quiet_morning = true;
-          else delete next.quiet_morning;
-          if (Object.keys(next).length) room.lighting = next;
-          else delete room.lighting;
-        },
-        (s) => this._label("lighting", s.name),
-        (s) => this._helper("lighting", s.name)
-      )
-    );
-    const naps = Array.isArray(room.naps) ? room.naps : [];
-    const days = { select: { multiple: true, mode: "list", options: WEEKDAYS.map((d) => ({ value: d, label: this._t(`day_${d}`) })) } };
-    naps.forEach((nap, i) => {
-      const line = this._el("div", "device-item");
-      line.append(
-        this._form(
-          [
-            { name: "start", required: true, selector: time },
-            { name: "end", required: true, selector: time },
-            { name: "days", selector: days },
-          ],
-          nap,
-          (value) => {
-            naps[i] = prune(value);
-            room.naps = naps;
-          },
-          (s) => this._t(`nap_${s.name}`),
-          (s) => (s.name === "days" ? this._t("nap_days_help") : undefined)
-        )
-      );
-      line.append(
-        this._iconButton("mdi:delete-outline", this._t("remove"), () => {
-          naps.splice(i, 1);
-          if (naps.length) room.naps = naps;
-          else delete room.naps;
-          this._changed();
-          this._renderTab();
-        })
-      );
-      card.append(line);
-    });
-    const add = this._button(this._t("add_nap"), () => {
-      room.naps = [...naps, { start: "13:30:00", end: "15:30:00" }];
-      this._changed();
-      this._renderTab();
-    });
-    add.classList.add("small");
-    card.append(add);
-  }
-
-  _lightSchema(entityId) {
+  _lightSchema(item, defaults) {
     return [
       { name: "entity_id", selector: entity("light") },
-      ...(entityId
+      ...(item.entity_id
         ? [
-            { name: "night_only", selector: bool },
             {
               type: "expandable",
               name: "",
               flatten: true,
-              title: this._t("device_settings"),
-              schema: LIGHTING_LEVELS,
+              title: item.night_only ? `${this._t("device_settings")} · ${this._label("lighting", "night_only")}` : this._t("device_settings"),
+              schema: [{ name: "night_only", selector: bool }, ...lightingLevels(item.warmth ?? defaults.warmth)],
             },
           ]
         : []),
@@ -2058,9 +2492,68 @@ const STYLE = `
   @media (max-width: 600px) { .discover { flex-direction: column; align-items: flex-start; } }
   .device-item { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
   .device-item ha-form { flex: 1; }
+  .link { background: none; border: none; padding: 0; font: inherit; color: var(--primary-color); cursor: pointer; }
+  .discover-more { margin-top: 8px; }
+  /* Sections of a room and alert kinds: a line that opens, with a summary of what it holds */
+  .sections { display: flex; flex-direction: column; margin-top: 12px; border-top: 1px solid var(--divider-color); }
+  .section { border-bottom: 1px solid var(--divider-color); }
+  .card > .section:last-child { border-bottom: none; }
+  .section-head {
+    width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 4px; background: none; border: none;
+    font: inherit; color: inherit; cursor: pointer; text-align: left;
+  }
+  .section-head:hover { background: rgba(var(--rgb-primary-text-color, 0, 0, 0), 0.03); }
+  .section-head > ha-icon { color: var(--secondary-text-color); --mdc-icon-size: 22px; }
+  .section.open .section-head > ha-icon:first-child { color: var(--primary-color); }
+  .section-name { font-size: 15px; font-weight: 500; white-space: nowrap; }
+  .section-summary {
+    flex: 1; min-width: 0; text-align: right; font-size: 13px; color: var(--secondary-text-color);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .section-head .chevron { color: var(--secondary-text-color); }
+  .section-body { padding: 4px 4px 16px 38px; display: flex; flex-direction: column; gap: 12px; }
+  .section-body .help { margin: 0; }
+  .section-body .subheader { margin: 8px 0 0; }
+  .device-item { margin-bottom: 0; }
+  /* "+ Something" for what isn't set yet */
+  .add-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .add-chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px 5px 8px; border-radius: 16px;
+    border: 1px dashed var(--divider-color); background: none; font: inherit; font-size: 13px;
+    color: var(--primary-color); cursor: pointer;
+  }
+  .add-chip ha-icon { --mdc-icon-size: 18px; }
+  .add-chip:hover { background: rgba(var(--rgb-primary-color, 3, 169, 244), 0.08); border-style: solid; }
+  /* Schedule */
+  .timeline { display: grid; grid-template-columns: minmax(120px, max-content) 1fr; gap: 10px 14px; align-items: center; margin-top: 8px; }
+  .tl-scale { position: relative; height: 16px; font-size: 11px; color: var(--secondary-text-color); }
+  .tl-tick { position: absolute; transform: translateX(-50%); }
+  .tl-tick:first-child { transform: none; }
+  .tl-tick:last-child { transform: translateX(-100%); }
+  .tl-label { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .tl-label ha-icon { --mdc-icon-size: 20px; color: var(--secondary-text-color); }
+  .tl-bar { position: relative; height: 22px; border-radius: 11px; background: rgba(var(--rgb-primary-text-color, 0, 0, 0), 0.06); overflow: hidden; }
+  .tl-bar.unset::after { content: "–"; position: absolute; left: 10px; top: 1px; font-size: 13px; color: var(--secondary-text-color); }
+  .tl-seg { position: absolute; top: 0; bottom: 0; background: var(--primary-color); opacity: 0.85; }
+  .tl-bar.quiet .tl-seg { background: var(--info-color, #039be5); }
+  .tl-bar.night .tl-seg { background: #5c6bc0; }
+  .tl-bar.morning .tl-seg { background: var(--warning-color, #ffa600); }
+  .tl-bar.boost .tl-seg { background: var(--success-color, #43a047); }
+  .tl-now { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--error-color, #db4437); }
+  .sched-row { padding: 12px 0; border-top: 1px solid var(--divider-color); }
+  .card-header + .sched-row { border-top: none; padding-top: 0; }
+  .sched-head { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .sched-head ha-icon { color: var(--primary-color); }
+  .sched-row .help { margin: 0 0 8px; }
   @media (max-width: 600px) {
     .content { padding: 12px; }
     .dirty { display: none; }
+    .section-body { padding-left: 4px; }
+    .section-summary { display: none; }
+    .section-name { flex: 1; }
+    .timeline { grid-template-columns: 1fr; gap: 4px; }
+    .tl-scale { display: none; }
+    .tl-bar { margin-bottom: 8px; }
   }
 `;
 

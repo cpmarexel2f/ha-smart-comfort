@@ -292,13 +292,13 @@
         "data_description": {
           "day": "Bei Sonne über 6°.",
           "evening": "Sobald die Sonne unter −6° steht; dazwischen gemischt.",
-          "night": "In den Nachtruhestunden des Reiters Gerätesteuerung.",
+          "night": "In den Nachtruhestunden (Reiter Zeitplan).",
           "warmth": "Auch die Farbtemperatur, für Lichter, die sie unterstützen. Aus: nur Helligkeit.",
           "transition": "Sekunden der schrittweisen Änderungen; ein gerade eingeschaltetes Licht erhält seine Helligkeit sofort.",
           "night_only": "Nur in den Nachtstunden eingestellt (tagsüber unberührt).",
-          "morning": "In Räumen mit sanftem Morgen (Schlafzimmer), vom Ende der Nacht bis zum Ende des Vormittags.",
+          "morning": "In Räumen mit sanftem Morgen (Schlafzimmer), bis zum Ende des Vormittags (Reiter Zeitplan).",
           "morning_end": "Bis wann die Schlafzimmer ihre Morgenhelligkeit behalten.",
-          "quiet_morning": "Gedämpftes Licht am Morgen, bis zum Ende des Vormittags (Reiter Gerätesteuerung).",
+          "quiet_morning": "Gedämpftes Licht am Morgen, bis zum Ende des Vormittags (Reiter Zeitplan).",
           "nap": "In den Mittagsschlafzeiten eines Raums."
         }
       }

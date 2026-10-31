@@ -292,13 +292,13 @@
         "data_description": {
           "day": "With the sun up (elevation above 6°).",
           "evening": "Once the sun is down (below −6°); in between, a blend.",
-          "night": "In the quiet night hours of the Device control tab.",
+          "night": "In the quiet night hours (Schedule tab).",
           "warmth": "Also the color temperature, for the lights that support it. Off: brightness only.",
           "transition": "Seconds of the gradual changes; a light just turned on gets its brightness at once.",
           "night_only": "Set only in the night hours (left alone by day).",
-          "morning": "In the rooms with a quiet morning (bedrooms), from the end of the night until the end of the morning.",
+          "morning": "In the rooms with a quiet morning (bedrooms), until the end of the morning (Schedule tab).",
           "morning_end": "Until when the bedrooms keep their morning brightness.",
-          "quiet_morning": "Dimmer lights in the morning, until the end of the morning (Device control tab).",
+          "quiet_morning": "Dimmer lights in the morning, until the end of the morning (Schedule tab).",
           "nap": "During the nap slots of a room."
         }
       }

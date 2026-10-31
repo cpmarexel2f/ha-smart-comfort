@@ -292,13 +292,13 @@
         "data_description": {
           "day": "Avec le soleil levé (au-dessus de 6°).",
           "evening": "Une fois le soleil couché (sous −6°) ; entre les deux, un mélange.",
-          "night": "Aux heures de nuit calme de l'onglet Pilotage des appareils.",
+          "night": "Aux heures de nuit calme (onglet Horaires).",
           "warmth": "Aussi la température de couleur, pour les lumières qui la gèrent. Désactivé : l'intensité seule.",
           "transition": "Secondes des changements progressifs ; une lumière qu'on vient d'allumer prend son intensité tout de suite.",
           "night_only": "Réglée seulement aux heures de nuit (laissée tranquille le jour).",
-          "morning": "Dans les pièces avec un matin doux (chambres), de la fin de la nuit jusqu'à la fin de la matinée.",
+          "morning": "Dans les pièces avec un matin doux (chambres), jusqu'à la fin de la matinée (onglet Horaires).",
           "morning_end": "Jusqu'à quand les chambres gardent leur intensité du matin.",
-          "quiet_morning": "Lumières moins fortes le matin, jusqu'à la fin de la matinée (onglet Pilotage des appareils).",
+          "quiet_morning": "Lumières moins fortes le matin, jusqu'à la fin de la matinée (onglet Horaires).",
           "nap": "Pendant les créneaux de sieste d'une pièce."
         }
       }
