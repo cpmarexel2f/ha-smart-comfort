@@ -32,6 +32,7 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
   - a room whose air conditioner or fan Smart Comfort has turned on gets no "too hot" alert (a device turned on by hand doesn't count)
   - **quiet night**: in the night hours (22:00–07:00 by default), devices with night settings run quieter — a fan at a lower speed or a sleep preset, a purifier in its sleep preset or mode, an air conditioner in its silent fan mode — and get no window boost; the day settings (or the state before the night) come back in the morning
 - **Adaptive lighting**: the dimmable lights of each room that are on get the brightness of the moment — day with the sun up, evening once it is down, night in the quiet night hours — at once when turned on, then gradually; optionally the warmth too (color temperature, can be turned off). Smart Comfort never turns a light on or off, night lights are only set at night, and a light changed by hand is left alone until it is turned off
+- **Lights on presence**, per room: lights turned on when someone comes in (only when the room is dark enough, with a light level sensor) at the brightness of the moment, and off once nobody is left for a while; slots keep some lights off (weekday mornings…) or set their brightness (a dim entrance at night), lights chosen to stay off during the naps of the house, night lights only at night, and a light turned off by hand stays off until the room is empty
 - **Outdoors**: outdoor places (garden, terrace…) with their temperature, air quality and noise sensors, plus sensors in no area (weather entity, a city air quality index such as Atmo France)
 - **Noise**: a sound level sensor per room (noisy room alert), and outdoor noise sensors: no suggestion to open the windows while it is noisy outside, and an alert to close them when they are open in the noise
 - **Outdoor air quality**: an index from 1 (good) to 6 (extremely poor) — European indexes (Atmo, EAQI) as is, US AQI by its bands, text states (good, poor…) — the worst sensor counts: no suggestion to open the windows while the air is poor, and an alert to close them when they are open then
@@ -127,6 +128,10 @@ Each tab has its own address, e.g. `/smart-comfort/rooms` (the addresses of earl
 | Quiet morning and naps of a bedroom | Dark mode |
 |---|---|
 | ![Quiet morning and nap slots of a bedroom](screenshots/panel-naps.png) | ![Quiet morning and nap slots of a bedroom, dark mode](screenshots/panel-naps-dark.png) |
+
+| Lights on presence of the entrance | Dark mode |
+|---|---|
+| ![Lights on presence: sensors, lights, light level, naps and slots](screenshots/panel-presence.png) | ![Lights on presence, dark mode](screenshots/panel-presence-dark.png) |
 
 </details>
 
@@ -321,6 +326,37 @@ smart_comfort:
       lighting: { quiet_morning: true }   # dimmer until morning_end (09:30)
       naps:
         - { start: "13:30", end: "15:30", days: [sat, sun] }
+```
+
+### Lights on presence
+
+Set per room under `rooms[].presence:` (in the panel: room → Lighting → Lights on presence). Discover never adds it: an existing presence automation would do the same.
+
+| Option | Default | Description |
+|---|---|---|
+| `sensors` | required | Presence, occupancy or motion `binary_sensor`s: someone is there while one of them is on |
+| `lights` | the room's | The lights turned on and off; any light can be added (the hallway's from the entrance) |
+| `lux` / `max_lux` | none | A light level sensor, and the level above which no light is turned on |
+| `off_after` | 2 min | Minutes with nobody before the lights are turned off (decimals allowed) |
+| `not_during_naps` | none | Lights not turned on while a room of the house has its nap (`rooms[].naps`) |
+| `slots` | none | `start`, `end`, optional `days` and `lights` (all when none), then `off: true` (not turned on) or `brightness` (in %). The first slot that applies to a light decides |
+
+A light is turned on only when none of the presence lights is already on, at the brightness of the moment (adaptive lighting) unless a slot sets one; a night light only at night and during the naps. Every presence light that is on is turned off once nobody is left. A presence light turned off by hand while someone is there is not turned back on until the room is empty.
+
+```yaml
+    - name: Entrance
+      lights: [light.entrance]
+      presence:
+        sensors: [binary_sensor.entrance_occupancy]
+        lights: [light.entrance, light.hallway]
+        lux: sensor.entrance_illuminance
+        max_lux: 10
+        off_after: 2
+        not_during_naps: [light.hallway]
+        slots:
+          - { start: "06:30", end: "08:00", days: [mon, tue, wed, thu, fri], off: true }
+          - { start: "20:00", end: "09:00", lights: [light.entrance], brightness: 20 }
+          - { start: "20:00", end: "09:00", lights: [light.hallway], off: true }
 ```
 
 ### Entities

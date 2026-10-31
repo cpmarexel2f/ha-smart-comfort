@@ -39,7 +39,7 @@ from .const import (
 )
 from .control import Command, Controller, DeviceState, RoomContext
 from .engine import Clear, Digest, Engine, Gates, RoomReading
-from .lighting import LightController, LightState
+from .lighting import LightController, LightState, PresenceController
 from .message import format_text, render
 
 _LOGGER = logging.getLogger(__name__)
@@ -147,6 +147,7 @@ class SmartComfort:
         self.engine = Engine(settings)
         self.controller = Controller(settings)
         self.lights = LightController(settings)
+        self.presence = PresenceController(settings)
         self.store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self.notifications_enabled = True
         self.control_enabled = True
@@ -206,6 +207,8 @@ class SmartComfort:
         if s.presence:
             sensors.add(s.presence)
         devices = {e for r in s.rooms for e in r.devices} | {light.entity_id for r in s.rooms for light in r.lights}
+        devices |= {e for r in s.rooms for e in r.presence_lights()}
+        devices |= {e for r in s.rooms if r.presence for e in (*r.presence.sensors, r.presence.lux) if e}
         selects = {p.mode_select for r in s.rooms for p in r.purifiers if p.mode_select}
         if entities := sorted(sensors | devices | selects):
             self._unsubs.append(async_track_state_change_event(self.hass, entities, self._state_changed))
@@ -265,6 +268,8 @@ class SmartComfort:
             # Just turned on: its brightness at once, not after the debounce.
             self.hass.async_create_task(self.async_evaluate())
             return
+        if self._presence_changed(entity_id, event.data.get("new_state")):
+            return
         if self._debounce is None and not self._stopped:
             self._debounce = async_call_later(self.hass, DEBOUNCE, self._debounced)
 
@@ -301,6 +306,10 @@ class SmartComfort:
             return False
         if new.state == "off":
             self.lights.turned_off(entity_id)
+            if old is not None and old.state == "on" and new.context.id not in self._contexts:
+                for room in self.settings.rooms:
+                    if entity_id in room.presence_lights() and self.room_present(room):
+                        self.presence.turned_off_by_hand(room)
             return False
         if old is None or old.state != "on":
             return new.context.id not in self._contexts
@@ -317,16 +326,37 @@ class SmartComfort:
             self.lights.manual_change(entity_id, now)
         return False
 
+    @callback
+    def _presence_changed(self, entity_id: str, new: State | None) -> bool:
+        """Presence: its lights at once; once it ends, a check when the off delay is over. True when handled."""
+        rooms = [r for r in self.settings.rooms if r.presence and entity_id in r.presence.sensors]
+        if not rooms or self._stopped:
+            return False
+        self.hass.async_create_task(self.async_evaluate())
+        if new is not None and new.state == "off":
+            for room in rooms:
+                delay = room.presence.off_after * 60 + 1
+                self._unsubs.append(async_call_later(self.hass, delay, self._debounced))
+        return True
+
+    def room_present(self, room: Room) -> bool | None:
+        """Someone in the room by its presence sensors; None when none of them is known."""
+        if room.presence is None:
+            return None
+        states = [self.hass.states.get(e) for e in room.presence.sensors]
+        known = [s for s in states if s is not None and s.state in ("on", "off")]
+        return any(s.state == "on" for s in known) if known else None
+
     def light_states(self, room: Room) -> dict[str, LightState]:
         out: dict[str, LightState] = {}
-        for light in room.lights:
-            state = self.hass.states.get(light.entity_id)
+        for entity_id in dict.fromkeys([light.entity_id for light in room.lights] + list(room.presence_lights())):
+            state = self.hass.states.get(entity_id)
             if state is None or state.state in BAD_STATES:
                 continue
             modes = set(state.attributes.get("supported_color_modes") or [])
             raw = state.attributes.get("brightness")
             warm = "color_temp" in modes
-            out[light.entity_id] = LightState(
+            out[entity_id] = LightState(
                 on=state.state == "on",
                 brightness=round(raw * 100 / 255) if isinstance(raw, (int, float)) else None,
                 kelvin=state.attributes.get("color_temp_kelvin"),
@@ -496,6 +526,19 @@ class SmartComfort:
                 if lighting and room.lights:
                     commands += self.lights.evaluate(
                         now, dt_util.as_local(now), elevation, room, self.light_states(room)
+                    )
+                if room.presence is not None:
+                    # After the adaptive lighting, which forgets the lights it sees off.
+                    commands += self.presence.evaluate(
+                        now,
+                        dt_util.as_local(now),
+                        elevation,
+                        room,
+                        self.room_present(room),
+                        _float(self.hass.states.get(room.presence.lux)) if room.presence.lux else None,
+                        self.light_states(room),
+                        self.lights,
+                        adaptive=lighting,
                     )
                 reading, ctx = self.reading(room, now)
                 states = self.device_states(room)

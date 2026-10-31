@@ -67,6 +67,19 @@ CONF_NAP_KELVIN: Final = "nap_kelvin"
 CONF_NAPS: Final = "naps"
 CONF_DAYS: Final = "days"
 WEEKDAYS: Final = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+# Lights on presence, per room: its sensors, the lights (all those of the room when none), a light level sensor
+# and the level above which no light is turned on, the minutes without presence before turning them off, the
+# lights left off during the naps of the house, and slots that set the brightness of some lights, or keep them off.
+CONF_PRESENCE_LIGHTS: Final = "presence"
+CONF_SENSORS: Final = "sensors"
+CONF_LUX: Final = "lux"
+CONF_MAX_LUX: Final = "max_lux"
+CONF_OFF_AFTER: Final = "off_after"
+CONF_NOT_DURING_NAPS: Final = "not_during_naps"
+CONF_SLOTS: Final = "slots"
+CONF_BRIGHTNESS: Final = "brightness"
+CONF_OFF: Final = "off"
+DEFAULT_OFF_AFTER: Final = 2
 
 # Alert settings.
 CONF_ENABLED: Final = "enabled"

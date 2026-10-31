@@ -56,6 +56,7 @@ def room_info(manager: SmartComfort, room: Room, now: datetime) -> dict[str, Any
             for d in room.devices
         },
         "lighting_phase": phase(manager.settings, dt_util.as_local(now), manager.sun_elevation(), room),
+        "presence": manager.room_present(room),
         "lights": {
             light.entity_id: {
                 "target": target.label() if (target := manager.lights.targets.get(light.entity_id)) else None,

@@ -16,6 +16,7 @@ from .const import (
     CONF_AIR_QUALITY,
     CONF_ALERTS,
     CONF_AREA,
+    CONF_BRIGHTNESS,
     CONF_CLEAR_WHEN_RESOLVED,
     CONF_CLIMATE,
     CONF_CLOSED_FOR,
@@ -43,8 +44,10 @@ from .const import (
     CONF_KEEP_ON,
     CONF_LIGHTING,
     CONF_LIGHTS,
+    CONF_LUX,
     CONF_MANUAL_OVERRIDE,
     CONF_MAX_AIR,
+    CONF_MAX_LUX,
     CONF_MAX_NOISE,
     CONF_MAX_OUTDOOR,
     CONF_MIN_INDOOR,
@@ -67,7 +70,10 @@ from .const import (
     CONF_NIGHT_PRESET,
     CONF_NIGHT_START,
     CONF_NOISE,
+    CONF_NOT_DURING_NAPS,
     CONF_NOTIFY,
+    CONF_OFF,
+    CONF_OFF_AFTER,
     CONF_OFF_BELOW,
     CONF_OFF_ON_OPEN,
     CONF_OFF_PRESET,
@@ -83,6 +89,7 @@ from .const import (
     CONF_OUTDOORS,
     CONF_PERCENTAGE,
     CONF_PRESENCE,
+    CONF_PRESENCE_LIGHTS,
     CONF_PRESET,
     CONF_PURIFIERS,
     CONF_QUIET_END,
@@ -90,8 +97,10 @@ from .const import (
     CONF_QUIET_START,
     CONF_REMINDER,
     CONF_ROOMS,
+    CONF_SENSORS,
     CONF_SETPOINT,
     CONF_SEVERITY,
+    CONF_SLOTS,
     CONF_SNOOZE_DURATION,
     CONF_START,
     CONF_STARTUP_GRACE,
@@ -107,6 +116,7 @@ from .const import (
     DEFAULT_CRITICAL_VOLUME,
     DEFAULT_DIGEST_WINDOW,
     DEFAULT_LIGHTING,
+    DEFAULT_OFF_AFTER,
     DEFAULT_REMINDER,
     DEFAULT_SNOOZE,
     DEFAULT_STARTUP_GRACE,
@@ -265,8 +275,8 @@ class LightDevice:
 
 
 @dataclass(frozen=True)
-class Nap:
-    """A nap slot of a room: its lights dimmed from start to end, on its days (every day when none)."""
+class TimeSlot:
+    """From start to end (may cross midnight), on its days (every day when none)."""
 
     start: time
     end: time
@@ -276,6 +286,68 @@ class Nap:
         if self.days and local.weekday() not in self.days:
             return False
         return self.start != self.end and in_window(local.time(), self.start, self.end)
+
+
+@dataclass(frozen=True)
+class Nap(TimeSlot):
+    """A nap slot of a room: its lights dimmed."""
+
+
+@dataclass(frozen=True)
+class PresenceSlot(TimeSlot):
+    """A slot for some of the presence lights (all when none): kept off, or turned on at a set brightness."""
+
+    lights: tuple[str, ...] = ()
+    brightness: int | None = None
+    off: bool = False
+
+    def covers(self, entity_id: str) -> bool:
+        return not self.lights or entity_id in self.lights
+
+
+@dataclass(frozen=True)
+class Presence:
+    """Lights of a room turned on with presence and off after a while without it."""
+
+    sensors: tuple[str, ...]
+    lights: tuple[str, ...] = ()  # Empty: the lights of the room.
+    lux: str | None = None
+    max_lux: float | None = None
+    off_after: float = DEFAULT_OFF_AFTER  # Minutes.
+    not_during_naps: tuple[str, ...] = ()
+    slots: tuple[PresenceSlot, ...] = ()
+
+    def slot(self, entity_id: str, local: datetime) -> PresenceSlot | None:
+        """The first slot that applies to the light now."""
+        return next((s for s in self.slots if s.covers(entity_id) and s.active(local)), None)
+
+
+def _slot_days(raw: dict[str, Any]) -> tuple[int, ...]:
+    return tuple(WEEKDAYS.index(d) for d in raw.get(CONF_DAYS) or [])
+
+
+def _presence(raw: dict[str, Any] | None) -> Presence | None:
+    if not raw or not raw.get(CONF_SENSORS):
+        return None
+    return Presence(
+        sensors=_ids(raw.get(CONF_SENSORS)),
+        lights=_ids(raw.get(CONF_LIGHTS)),
+        lux=raw.get(CONF_LUX) or None,
+        max_lux=_float(raw.get(CONF_MAX_LUX)),
+        off_after=float(raw.get(CONF_OFF_AFTER, DEFAULT_OFF_AFTER)),
+        not_during_naps=_ids(raw.get(CONF_NOT_DURING_NAPS)),
+        slots=tuple(
+            PresenceSlot(
+                start=parse_time(s["start"]) or time(0),
+                end=parse_time(s["end"]) or time(0),
+                days=_slot_days(s),
+                lights=_ids(s.get(CONF_LIGHTS)),
+                brightness=_int(s.get(CONF_BRIGHTNESS)),
+                off=bool(s.get(CONF_OFF, False)),
+            )
+            for s in raw.get(CONF_SLOTS) or []
+        ),
+    )
 
 
 def _device_items(raw: Any) -> list[tuple[str, dict[str, Any]]]:
@@ -312,6 +384,13 @@ class Room:
     alerts: dict[str, AlertSettings] = field(default_factory=dict)
     lights: tuple[LightDevice, ...] = ()
     naps: tuple[Nap, ...] = ()
+    presence: Presence | None = None
+
+    def presence_lights(self) -> tuple[str, ...]:
+        """The lights presence turns on and off: those chosen, else all those of the room."""
+        if self.presence is None:
+            return ()
+        return self.presence.lights or tuple(light.entity_id for light in self.lights)
 
     def napping(self, local: datetime) -> bool:
         return any(nap.active(local) for nap in self.naps)
@@ -492,10 +571,11 @@ def _room(
             Nap(
                 start=parse_time(n["start"]) or time(0),
                 end=parse_time(n["end"]) or time(0),
-                days=tuple(WEEKDAYS.index(d) for d in n.get(CONF_DAYS) or []),
+                days=_slot_days(n),
             )
             for n in raw.get(CONF_NAPS) or []
         ),
+        presence=_presence(raw.get(CONF_PRESENCE_LIGHTS)),
         alerts={kind: AlertSettings.from_dict(_merge(alerts[kind], room_alerts.get(kind))) for kind in KINDS},
     )
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0
+
+### What's new
+- **Lights on presence**, per room (`rooms[].presence`): its presence sensors turn its lights on when someone comes in — only when the room is dark enough with a light level sensor (`lux`, `max_lux`), at the brightness of the moment — and off after `off_after` minutes with nobody (2 by default). Any light can be added (the hallway's from the entrance). **Slots** keep some lights off (weekday mornings…) or turn them on at a set brightness (a dim entrance at night); `not_during_naps` lists the lights left off while a room of the house has its nap; night lights only at night and during the naps. A light already on is left as it is, and one turned off by hand while someone is there stays off until the room is empty. Never added by Discover. Panel: room → Lighting → Lights on presence; the presence of each room in the status.
+
 ## 1.2.1
 
 ### What's new

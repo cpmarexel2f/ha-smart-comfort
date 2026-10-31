@@ -82,6 +82,8 @@ COMMON = {
 
 # Material Design Icons paths used by the panel, the form fields and the sidebar (from @mdi/js 7.4.47).
 ICONS = {
+    "motion-sensor": "M10,0.2C9,0.2 8.2,1 8.2,2C8.2,3 9,3.8 10,3.8C11,3.8 11.8,3 11.8,2C11.8,1 11,0.2 10,0.2M15.67,1A7.33,7.33 0 0,0 23,8.33V7A6,6 0 0,1 17,1H15.67M18.33,1C18.33,3.58 20.42,5.67 23,5.67V4.33C21.16,4.33 19.67,2.84 19.67,1H18.33M21,1A2,2 0 0,0 23,3V1H21M7.92,4.03C7.75,4.03 7.58,4.06 7.42,4.11L2,5.8V11H3.8V7.33L5.91,6.67L2,22H3.8L6.67,13.89L9,17V22H10.8V15.59L8.31,11.05L9.04,8.18L10.12,10H15V8.2H11.38L9.38,4.87C9.08,4.37 8.54,4.03 7.92,4.03Z",
+    "brightness-5": "M12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,15.31L23.31,12L20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31Z",
     "sofa": "M12.5 7C12.5 5.89 13.39 5 14.5 5H18C19.1 5 20 5.9 20 7V9.16C18.84 9.57 18 10.67 18 11.97V14H12.5V7M6 11.96V14H11.5V7C11.5 5.89 10.61 5 9.5 5H6C4.9 5 4 5.9 4 7V9.15C5.16 9.56 6 10.67 6 11.96M20.66 10.03C19.68 10.19 19 11.12 19 12.12V15H5V12C5 10.9 4.11 10 3 10S1 10.9 1 12V17C1 18.1 1.9 19 3 19V21H5V19H19V21H21V19C22.1 19 23 18.1 23 17V12C23 10.79 21.91 9.82 20.66 10.03Z",
     "bed": "M19,7H11V14H3V5H1V20H3V17H21V20H23V11A4,4 0 0,0 19,7M7,13A3,3 0 0,0 10,10A3,3 0 0,0 7,7A3,3 0 0,0 4,10A3,3 0 0,0 7,13Z",
     "shower": "M21,14V15C21,16.91 19.93,18.57 18.35,19.41L19,22H17L16.5,20C16.33,20 16.17,20 16,20H8C7.83,20 7.67,20 7.5,20L7,22H5L5.65,19.41C4.07,18.57 3,16.91 3,15V14H2V12H20V5A1,1 0 0,0 19,4C18.5,4 18.12,4.34 18,4.79C18.63,5.33 19,6.13 19,7H13A3,3 0 0,1 16,4C16.06,4 16.11,4 16.17,4C16.58,2.84 17.69,2 19,2A3,3 0 0,1 22,5V14H21V14M19,14H5V15A3,3 0 0,0 8,18H16A3,3 0 0,0 19,15V14Z",
@@ -373,6 +375,10 @@ ENTITIES = {
     "light.bedroom_night_light": ("Bedroom night light", "mdi:lightbulb-night", "bedroom", "off"),
     "sensor.bathroom_humidity": ("Bathroom humidity", "mdi:water-percent", "bathroom", "64"),
     "sensor.office_temperature": ("Office temperature", "mdi:thermometer", "office", "16.2"),
+    "light.entrance": ("Entrance", "mdi:ceiling-light", "entrance", "off"),
+    "light.hallway": ("Hallway", "mdi:ceiling-light", "entrance", "off"),
+    "binary_sensor.entrance_presence": ("Entrance presence", "mdi:motion-sensor", "entrance", "off"),
+    "sensor.entrance_light_level": ("Entrance light level", "mdi:brightness-5", "entrance", "3"),
     "sensor.garden_temperature": ("Outdoor temperature", "mdi:thermometer", "garden", "22.4"),
     "sensor.garden_air_quality": ("Garden air quality", "mdi:air-filter", "garden", "4"),
     "sensor.street_noise": ("Street noise", "mdi:ear-hearing", "garden", "71"),
@@ -382,6 +388,7 @@ AREAS = {
     "bedroom": "Bedroom",
     "bathroom": "Bathroom",
     "office": "Office",
+    "entrance": "Entrance",
     "garden": "Garden",
 }
 
@@ -405,6 +412,20 @@ ROOMS = {
     },
     "Bathroom": {"humidity": "sensor.bathroom_humidity"},
     "Office": {"temperature": "sensor.office_temperature"},
+    "Entrance": {
+        "lights": ["light.entrance"],
+        "presence": {
+            "sensors": ["binary_sensor.entrance_presence"],
+            "lights": ["light.entrance", "light.hallway"],
+            "lux": "sensor.entrance_light_level",
+            "max_lux": 10,
+            "not_during_naps": ["light.hallway"],
+            "slots": [
+                {"start": "06:30:00", "end": "08:00:00", "days": ["mon", "tue", "wed", "thu", "fri"], "off": True},
+                {"start": "20:00:00", "end": "09:00:00", "lights": ["light.entrance"], "brightness": 20},
+            ],
+        },
+    },
 }
 GARDEN = {
     "name": "Garden",
@@ -420,7 +441,7 @@ def rooms(order):
 
 # Saved: the rooms in the order the user set. Discovered: the areas in alphabetical order.
 SAVED = {
-    "rooms": rooms(["Living Room", "Bedroom", "Bathroom", "Office"]),
+    "rooms": rooms(["Living Room", "Bedroom", "Bathroom", "Office", "Entrance"]),
     "outdoors": [GARDEN],
     "quiet_start": "22:30:00",
     "quiet_end": "08:00:00",
@@ -498,6 +519,7 @@ STATUS = {
         ),
         room_status("Bathroom", [], humidity=64),
         room_status("Office", ["too_cold"], temperature=16.2),
+        room_status("Entrance", [], None, {"light.entrance": {"target": None}}),
     ],
     "outdoors": [
         {
@@ -702,6 +724,15 @@ SHOTS = [
         "tab": "alerts",
         "clicks": [(".section-head", "Too hot")],
         "height": 1100,
+    },
+    {
+        "file": "panel-presence",
+        "options": SAVED,
+        "status": STATUS,
+        "tab": "rooms",
+        "clicks": [(".room-toggle", "Entrance"), (".section-head", "Lighting")],
+        "scroll": (".subheader", "Lights on presence"),
+        "height": 1300,
     },
     {"file": "panel-schedule", "options": SAVED, "status": STATUS, "tab": "schedule", "height": 1100},
     {

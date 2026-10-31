@@ -125,13 +125,12 @@ LIGHTING_LEVELS = {
     vol.Optional(k.CONF_NAP): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
     vol.Optional(k.CONF_NAP_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
 }
-NAP = vol.Schema(
-    {
-        vol.Required("start"): time_string,
-        vol.Required("end"): time_string,
-        vol.Optional(k.CONF_DAYS): vol.All(cv.ensure_list, [vol.In(k.WEEKDAYS)]),
-    }
-)
+TIME_SLOT = {
+    vol.Required("start"): time_string,
+    vol.Required("end"): time_string,
+    vol.Optional(k.CONF_DAYS): vol.All(cv.ensure_list, [vol.In(k.WEEKDAYS)]),
+}
+NAP = vol.Schema(TIME_SLOT)
 LIGHTING = vol.Schema(
     {
         vol.Optional(k.CONF_ENABLED): cv.boolean,
@@ -141,6 +140,26 @@ LIGHTING = vol.Schema(
     }
 )
 LIGHT = {vol.Optional(k.CONF_NIGHT_ONLY): cv.boolean, **LIGHTING_LEVELS}
+
+PRESENCE_SLOT = vol.Schema(
+    {
+        **TIME_SLOT,
+        vol.Optional(k.CONF_LIGHTS): cv.entity_ids,
+        vol.Optional(k.CONF_BRIGHTNESS): vol.Any(None, vol.All(vol.Coerce(int), vol.Range(min=1, max=100))),
+        vol.Optional(k.CONF_OFF): cv.boolean,
+    }
+)
+PRESENCE = vol.Schema(
+    {
+        vol.Required(k.CONF_SENSORS): cv.entity_ids,
+        vol.Optional(k.CONF_LIGHTS): cv.entity_ids,
+        vol.Optional(k.CONF_LUX): vol.Any(None, cv.entity_id),
+        vol.Optional(k.CONF_MAX_LUX): vol.Any(None, NUMBER),
+        vol.Optional(k.CONF_OFF_AFTER): vol.All(NUMBER, vol.Range(min=0, max=k.MAX_MINUTES)),
+        vol.Optional(k.CONF_NOT_DURING_NAPS): cv.entity_ids,
+        vol.Optional(k.CONF_SLOTS): vol.All(cv.ensure_list, [PRESENCE_SLOT]),
+    }
+)
 
 ROOM = vol.Schema(
     {
@@ -163,6 +182,7 @@ ROOM = vol.Schema(
         vol.Optional(k.CONF_LIGHTS): _devices("light", LIGHT),
         vol.Optional(k.CONF_LIGHTING): vol.Schema(LIGHTING_LEVELS),
         vol.Optional(k.CONF_NAPS): vol.All(cv.ensure_list, [NAP]),
+        vol.Optional(k.CONF_PRESENCE_LIGHTS): PRESENCE,
         vol.Optional(k.CONF_ALERTS): ALERTS,
         vol.Optional(k.CONF_CONTROL): DEVICE_SECTIONS,
     }

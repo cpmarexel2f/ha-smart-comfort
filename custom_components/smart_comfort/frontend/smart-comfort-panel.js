@@ -169,6 +169,26 @@ const STRINGS = {
     customize_alert: "Customize an alert",
     room_alerts_help: "Only the alerts customized for this room; the others follow the Alerts tab.",
     lighting_help: "Lights that are on follow the time of day; Smart Comfort never turns them on or off. Times are in the Schedule tab.",
+    presence_title: "Lights on presence",
+    presence_help: "Turns the lights on when someone comes in and off once nobody is left, like a presence automation.",
+    presence_add: "Lights on presence",
+    presence_remove: "Stop the lights on presence",
+    presence_short: "Presence",
+    presence_sensors: "Presence sensors",
+    presence_lights: "Lights",
+    presence_lights_help: "Empty: the lights of the room. Any light can be added (the hallway's from the entrance…).",
+    presence_lux: "Light level sensor",
+    presence_max_lux: "Only below",
+    presence_max_lux_help: "No light turned on when the room is brighter than this.",
+    presence_off_after: "Off after nobody for",
+    presence_not_during_naps: "Off during the naps",
+    presence_not_during_naps_help: "These lights are not turned on while a room of the house has its nap.",
+    slots_help: "Slots, in order: the first one that applies to a light decides — kept off, or turned on at its brightness.",
+    slot_add: "Slot",
+    slot_lights: "For the lights",
+    slot_lights_help: "Empty: all the presence lights.",
+    slot_off: "Don't turn on",
+    slot_brightness: "Brightness",
   },
   fr: {
     outdoor_noise: "Bruit extérieur",
@@ -296,6 +316,26 @@ const STRINGS = {
     customize_alert: "Personnaliser une alerte",
     room_alerts_help: "Seulement les alertes personnalisées pour cette pièce ; les autres suivent l'onglet Alertes.",
     lighting_help: "Les lumières allumées suivent le moment de la journée ; Smart Comfort ne les allume ni ne les éteint jamais. Les heures sont dans l'onglet Horaires.",
+    presence_title: "Allumage sur présence",
+    presence_help: "Allume les lumières quand quelqu'un entre et les éteint une fois la pièce vide, comme une automatisation de présence.",
+    presence_add: "Allumage sur présence",
+    presence_remove: "Arrêter l'allumage sur présence",
+    presence_short: "Présence",
+    presence_sensors: "Capteurs de présence",
+    presence_lights: "Lumières",
+    presence_lights_help: "Vide : les lumières de la pièce. On peut ajouter n'importe quelle lumière (celle du couloir depuis l'entrée…).",
+    presence_lux: "Capteur de luminosité",
+    presence_max_lux: "Seulement sous",
+    presence_max_lux_help: "Aucune lumière allumée quand la pièce est plus claire que ça.",
+    presence_off_after: "Extinction après personne pendant",
+    presence_not_during_naps: "Éteintes pendant les siestes",
+    presence_not_during_naps_help: "Ces lumières ne s'allument pas pendant la sieste d'une pièce de la maison.",
+    slots_help: "Créneaux, dans l'ordre : le premier qui s'applique à une lumière décide — laissée éteinte, ou allumée à son intensité.",
+    slot_add: "Créneau",
+    slot_lights: "Pour les lumières",
+    slot_lights_help: "Vide : toutes les lumières de présence.",
+    slot_off: "Ne pas allumer",
+    slot_brightness: "Intensité",
   },
   de: {
     outdoor_noise: "Außenlärm",
@@ -423,6 +463,26 @@ const STRINGS = {
     customize_alert: "Warnung anpassen",
     room_alerts_help: "Nur die für diesen Raum angepassten Warnungen; die übrigen folgen dem Reiter Warnungen.",
     lighting_help: "Eingeschaltete Lichter folgen der Tageszeit; Smart Comfort schaltet sie nie ein oder aus. Die Zeiten stehen im Reiter Zeitplan.",
+    presence_title: "Licht bei Anwesenheit",
+    presence_help: "Schaltet die Lichter ein, wenn jemand hereinkommt, und aus, sobald niemand mehr da ist – wie eine Anwesenheitsautomation.",
+    presence_add: "Licht bei Anwesenheit",
+    presence_remove: "Licht bei Anwesenheit beenden",
+    presence_short: "Anwesenheit",
+    presence_sensors: "Anwesenheitssensoren",
+    presence_lights: "Lichter",
+    presence_lights_help: "Leer: die Lichter des Raums. Jedes Licht kann hinzugefügt werden (das des Flurs vom Eingang aus…).",
+    presence_lux: "Helligkeitssensor",
+    presence_max_lux: "Nur unter",
+    presence_max_lux_help: "Kein Licht wird eingeschaltet, wenn der Raum heller ist.",
+    presence_off_after: "Aus nach niemand seit",
+    presence_not_during_naps: "Aus beim Mittagsschlaf",
+    presence_not_during_naps_help: "Diese Lichter gehen nicht an, solange ein Raum des Hauses Mittagsschlaf hält.",
+    slots_help: "Zeitfenster der Reihe nach: das erste, das für ein Licht gilt, entscheidet – aus lassen oder mit seiner Helligkeit einschalten.",
+    slot_add: "Zeitfenster",
+    slot_lights: "Für die Lichter",
+    slot_lights_help: "Leer: alle Anwesenheitslichter.",
+    slot_off: "Nicht einschalten",
+    slot_brightness: "Helligkeit",
   },
   es: {
     outdoor_noise: "Ruido exterior",
@@ -550,6 +610,26 @@ const STRINGS = {
     customize_alert: "Personalizar una alerta",
     room_alerts_help: "Solo las alertas personalizadas para esta estancia; las demás siguen la pestaña Alertas.",
     lighting_help: "Las luces encendidas siguen el momento del día; Smart Comfort nunca las enciende ni apaga. Las horas están en la pestaña Horarios.",
+    presence_title: "Luces con presencia",
+    presence_help: "Enciende las luces cuando alguien entra y las apaga cuando no queda nadie, como una automatización de presencia.",
+    presence_add: "Luces con presencia",
+    presence_remove: "Quitar las luces con presencia",
+    presence_short: "Presencia",
+    presence_sensors: "Sensores de presencia",
+    presence_lights: "Luces",
+    presence_lights_help: "Vacío: las luces de la estancia. Se puede añadir cualquier luz (la del pasillo desde la entrada…).",
+    presence_lux: "Sensor de luminosidad",
+    presence_max_lux: "Solo por debajo de",
+    presence_max_lux_help: "No se enciende ninguna luz si la estancia está más iluminada.",
+    presence_off_after: "Apagado tras nadie durante",
+    presence_not_during_naps: "Apagadas durante las siestas",
+    presence_not_during_naps_help: "Estas luces no se encienden mientras una estancia de la casa está en siesta.",
+    slots_help: "Franjas, en orden: la primera que se aplica a una luz decide — apagada, o encendida con su brillo.",
+    slot_add: "Franja",
+    slot_lights: "Para las luces",
+    slot_lights_help: "Vacío: todas las luces de presencia.",
+    slot_off: "No encender",
+    slot_brightness: "Brillo",
   },
 };
 
@@ -1884,7 +1964,7 @@ class SmartComfortPanel extends HTMLElement {
       )
     );
     section("devices", "mdi:air-conditioner", this._devicesSummary(room), (body) => this._roomDevices(body, room, index));
-    section("lighting", "mdi:lightbulb-outline", this._lightingSummary(room), (body) => this._roomLighting(body, room));
+    section("lighting", "mdi:lightbulb-outline", this._lightingSummary(room), (body) => this._roomLighting(body, room, index));
     section("alerts", "mdi:bell-cog-outline", this._roomAlertsSummary(room), (body) => this._roomAlerts(body, room, index));
     card.append(sections);
     return card;
@@ -1938,6 +2018,7 @@ class SmartComfortPanel extends HTMLElement {
     if (lights.length) parts.push(`${this._t("lights")} (${lights.length})`);
     if (room.lighting?.quiet_morning) parts.push(this._label("lighting", "quiet_morning"));
     if (naps.length) parts.push(`${this._t("naps")} (${naps.length})`);
+    if (room.presence?.sensors?.length) parts.push(this._t("presence_short"));
     return parts.length ? parts.join(", ") : this._t("none");
   }
 
@@ -2139,7 +2220,7 @@ class SmartComfortPanel extends HTMLElement {
   }
 
   /** Lights of a room, its quiet morning (bedrooms) and its nap slots. */
-  _roomLighting(body, room) {
+  _roomLighting(body, room, index) {
     this._deviceList(body, room, "lights");
     this._addChips(body, [[this._t("light"), () => this._addItem(room, "lights")]]);
     const lighting = room.lighting || {};
@@ -2196,6 +2277,109 @@ class SmartComfortPanel extends HTMLElement {
         this._t("nap"),
         () => {
           room.naps = [...naps, { start: "13:30:00", end: "15:30:00" }];
+          this._changed();
+          this._renderTab();
+        },
+      ],
+    ]);
+    this._roomPresence(body, room, index);
+  }
+
+  /** Lights on presence: sensors, lights, light level, delay, naps, and slots that keep lights off or dim them. */
+  _roomPresence(body, room, index) {
+    body.append(this._el("div", "subheader", this._t("presence_title")));
+    const key = `${index}:presence`;
+    if (!room.presence && !this._shown.has(key)) {
+      body.append(this._el("div", "help", this._t("presence_help")));
+      this._addChips(body, [
+        [
+          this._t("presence_add"),
+          () => {
+            this._shown.add(key);
+            room.presence = { sensors: [] };
+            this._renderTab();
+          },
+        ],
+      ]);
+      return;
+    }
+    const presence = (room.presence = room.presence || { sensors: [] });
+    const fields = ["sensors", "lights", "lux", "max_lux", "off_after", "not_during_naps"];
+    const line = this._el("div", "device-item");
+    line.append(
+      this._form(
+        [
+          { name: "sensors", required: true, selector: entity("binary_sensor", { multiple: true }) },
+          { name: "lights", selector: entity("light", { multiple: true }) },
+          grid([
+            { name: "lux", selector: entity("sensor", { device_class: "illuminance" }) },
+            { name: "max_lux", selector: num("lx", { min: 0, step: 1 }) },
+          ]),
+          { name: "off_after", selector: { number: { mode: "box", step: 0.5, min: 0, max: 1440, unit_of_measurement: "min" } } },
+          { name: "not_during_naps", selector: entity("light", { multiple: true }) },
+        ],
+        { off_after: 2, ...Object.fromEntries(fields.filter((f) => f in presence).map((f) => [f, presence[f]])) },
+        (value) => {
+          for (const f of fields) {
+            if (isEmpty(value[f]) || (f === "off_after" && value[f] === 2)) delete presence[f];
+            else presence[f] = value[f];
+          }
+        },
+        (f) => this._t(`presence_${f.name}`),
+        (f) => (["lights", "not_during_naps", "max_lux"].includes(f.name) ? this._t(`presence_${f.name}_help`) : undefined)
+      ),
+      this._iconButton("mdi:delete-outline", this._t("presence_remove"), () => {
+        delete room.presence;
+        this._shown.delete(key);
+        this._changed();
+        this._renderTab();
+      })
+    );
+    body.append(line);
+    const slots = Array.isArray(presence.slots) ? presence.slots : [];
+    const days = { select: { multiple: true, mode: "list", options: WEEKDAYS.map((d) => ({ value: d, label: this._t(`day_${d}`) })) } };
+    const slotSchema = (slot) => [
+      grid([
+        { name: "start", required: true, selector: time },
+        { name: "end", required: true, selector: time },
+      ]),
+      { name: "days", selector: days },
+      { name: "lights", selector: entity("light", { multiple: true }) },
+      { name: "off", selector: bool },
+      ...(slot.off ? [] : [{ name: "brightness", selector: level }]),
+    ];
+    if (slots.length) body.append(this._el("div", "help", this._t("slots_help")));
+    slots.forEach((slot, i) => {
+      const row = this._el("div", "device-item slot");
+      const form = this._form(
+        slotSchema(slot),
+        slot,
+        (value) => {
+          slots[i] = prune(value);
+          if (!slots[i].off) delete slots[i].off;
+          presence.slots = slots;
+          form.schema = slotSchema(value);
+        },
+        (f) => this._t({ start: "sched_from", end: "sched_to", days: "nap_days" }[f.name] || `slot_${f.name}`),
+        (f) => (f.name === "lights" ? this._t("slot_lights_help") : f.name === "days" ? this._t("nap_days_help") : undefined)
+      );
+      row.append(
+        form,
+        this._iconButton("mdi:delete-outline", this._t("remove"), () => {
+          slots.splice(i, 1);
+          if (slots.length) presence.slots = slots;
+          else delete presence.slots;
+          this._changed();
+          this._renderTab();
+        })
+      );
+      body.append(row);
+    });
+    this._addChips(body, [
+      [
+        this._t("slot_add"),
+        () => {
+          presence.slots = [...slots, { start: "13:30:00", end: "17:00:00", off: true }];
           this._changed();
           this._renderTab();
         },
@@ -2531,6 +2715,7 @@ const STYLE = `
   @media (max-width: 600px) { .discover { flex-direction: column; align-items: flex-start; } }
   .device-item { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 8px; }
   .device-item ha-form { flex: 1; }
+  .device-item.slot { border: 1px solid var(--divider-color); border-radius: 12px; padding: 12px 4px 12px 12px; }
   .link { background: none; border: none; padding: 0; font: inherit; color: var(--primary-color); cursor: pointer; }
   .discover-more { margin-top: 8px; }
   /* Sections of a room and alert kinds: a line that opens, with a summary of what it holds */

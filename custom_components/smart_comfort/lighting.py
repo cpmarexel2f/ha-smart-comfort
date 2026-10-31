@@ -162,3 +162,91 @@ def _differs(wanted: LightTarget, sent: LightTarget) -> bool:
     if (wanted.kelvin is None) != (sent.kelvin is None):
         return True
     return wanted.kelvin is not None and sent.kelvin is not None and abs(sent.kelvin - wanted.kelvin) >= KELVIN_STEP
+
+
+class PresenceController:
+    """Lights turned on with presence and off after a while without it, per room.
+
+    A light is turned on only when none of the room's presence lights is on (one turned on by hand is left as
+    it is), the room is dark enough (light level sensor) and no slot keeps it off; a night light only at night
+    and during the naps. A presence light turned off by hand while someone is there is not turned back on
+    until the presence ends.
+    """
+
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+        self.last_seen: dict[str, datetime] = {}
+        self.suppressed: set[str] = set()
+
+    def update_settings(self, settings: Settings) -> None:
+        self.settings = settings
+        rooms = {r.id for r in settings.rooms if r.presence}
+        self.last_seen = {k: v for k, v in self.last_seen.items() if k in rooms}
+        self.suppressed &= rooms
+
+    def turned_off_by_hand(self, room: Room) -> None:
+        """A presence light turned off by hand while someone is there: not turned back on before they leave."""
+        self.suppressed.add(room.id)
+
+    def evaluate(
+        self,
+        now: datetime,
+        local: datetime,
+        elevation: float | None,
+        room: Room,
+        present: bool | None,
+        lux: float | None,
+        states: dict[str, LightState],
+        lights: LightController,
+        adaptive: bool = True,
+    ) -> list[Command]:
+        """Commands for the presence lights of a room; `adaptive`: give them the brightness of the moment."""
+        p = room.presence
+        if p is None or present is None:
+            return []
+        managed = room.presence_lights()
+        if not present:
+            seen = self.last_seen.setdefault(room.id, now)
+            if now - seen < timedelta(minutes=p.off_after):
+                return []
+            self.suppressed.discard(room.id)
+            return [
+                Command(e, "light", "turn_off", {}, target="off", device=e)
+                for e in managed
+                if (s := states.get(e)) is not None and s.on
+            ]
+        self.last_seen[room.id] = now
+        if room.id in self.suppressed or any((s := states.get(e)) is not None and s.on for e in managed):
+            return []
+        if p.max_lux is not None and lux is not None and lux > p.max_lux:
+            return []
+        moment = phase(self.settings, local, elevation, room)
+        napping = any(r.napping(local) for r in self.settings.rooms)
+        devices = {light.entity_id: light for light in room.lights}
+        commands = []
+        for entity_id in managed:
+            state = states.get(entity_id)
+            if state is None or (napping and entity_id in p.not_during_naps):
+                continue
+            slot = p.slot(entity_id, local)
+            if slot is not None and slot.off:
+                continue
+            device = devices.get(entity_id)
+            dark = moment in (PHASE_NIGHT, PHASE_NAP)
+            if device is not None and device.night_only and not dark:
+                continue
+            data: dict[str, Any] = {"transition": 1}
+            wanted = None
+            if slot is not None and slot.brightness is not None and state.dimmable:
+                data["brightness_pct"] = slot.brightness
+                # A set brightness: the adaptive lighting leaves the light alone until it is turned off.
+                lights.overrides[entity_id] = now + timedelta(days=1)
+            elif device is not None and adaptive:
+                wanted = target(device, moment, day_share(elevation), state)
+                if wanted is not None:
+                    data["brightness_pct"] = wanted.brightness
+                    if wanted.kelvin is not None:
+                        data["color_temp_kelvin"] = wanted.kelvin
+                    lights.targets[entity_id] = wanted
+            commands.append(Command(entity_id, "light", "turn_on", data, target="presence", device=entity_id))
+        return commands
