@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from homeassistant.core import Context, HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed, async_mock_service
 
 from custom_components.smart_comfort.config import build_settings
 from custom_components.smart_comfort.const import DOMAIN
@@ -318,3 +318,65 @@ def test_slot_off_after():
     assert off_at(local(10), 2)
     assert not off_at(local(18), 21)
     assert off_at(local(18), 22)
+
+
+def _timers(manager) -> int:
+    """Handles the manager holds: its listeners and the presence checks still to come."""
+    return len(manager._unsubs) + len(getattr(manager, "_presence_checks", ()))
+
+
+async def test_presence_checks_do_not_pile_up(hass: HomeAssistant, freezer) -> None:
+    """A motion sensor that comes and goes all day: each check is forgotten once done, all of them on unload."""
+    freezer.move_to("2026-10-31 09:00:00+00:00")  # 10:00 in Paris.
+    await hass.config.async_set_time_zone("Europe/Paris")
+    hass.states.async_set("sun.sun", "above_horizon", {"elevation": 20})
+    dim = {"supported_color_modes": ["brightness"]}
+    hass.states.async_set("light.entree", "off", dim)
+    hass.states.async_set("light.couloir", "off", dim)
+    hass.states.async_set("binary_sensor.presence_entree", "off")
+    hass.states.async_set("sensor.lux_entree", "2")
+    on = async_mock_service(hass, "light", "turn_on")
+    off_calls = async_mock_service(hass, "light", "turn_off")
+    options = {"startup_grace": 0, **OPTIONS}
+    options["rooms"] = [{**OPTIONS["rooms"][0], "presence": {**OPTIONS["rooms"][0]["presence"], "on_after": 3}}]
+    entry = MockConfigEntry(domain=DOMAIN, title="Smart Comfort", data={}, options=options)
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    manager = entry.runtime_data
+    baseline = _timers(manager)
+    for _ in range(20):
+        hass.states.async_set("binary_sensor.presence_entree", "on")
+        hass.states.async_set("binary_sensor.presence_entree", "off")
+        await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=5))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert _timers(manager) == baseline
+    # Someone stays: lights on once on_after is over, by the check alone (no evaluation forced here).
+    hass.states.async_set("binary_sensor.presence_entree", "on")
+    await hass.async_block_till_done()
+    assert on == []
+    freezer.tick(timedelta(seconds=4))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert sorted(c.data["entity_id"] for c in on) == ["light.couloir", "light.entree"]
+    hass.states.async_set("light.entree", "on", {**dim, "brightness": 255}, context=on[0].context)
+    hass.states.async_set("light.couloir", "on", {**dim, "brightness": 255}, context=on[1].context)
+    await hass.async_block_till_done()
+    # They leave: off once off_after is over.
+    hass.states.async_set("binary_sensor.presence_entree", "off")
+    await hass.async_block_till_done()
+    count = len(off_calls)
+    freezer.tick(timedelta(minutes=2, seconds=5))
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+    assert sorted({c.data["entity_id"] for c in off_calls[count:]}) == ["light.couloir", "light.entree"]
+    assert _timers(manager) == baseline
+    # Unloaded with a check to come: cancelled, nothing left behind.
+    hass.states.async_set("binary_sensor.presence_entree", "on")
+    hass.states.async_set("binary_sensor.presence_entree", "off")
+    await hass.async_block_till_done()
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert _timers(manager) == 0

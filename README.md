@@ -109,6 +109,10 @@ Each tab has its own address, e.g. `/smart-comfort/rooms` (the addresses of earl
 |---|---|
 | ![Rooms found by Discover, before saving](screenshots/panel-discover.png) | ![Rooms found by Discover, before saving, dark mode](screenshots/panel-discover-dark.png) |
 
+| The Activity tab: what Smart Comfort did and why, by day | Dark mode |
+|---|---|
+| ![The Activity tab: what Smart Comfort did and why, by day](screenshots/panel-activity.png) | ![The Activity tab, dark mode](screenshots/panel-activity-dark.png) |
+
 | A room in the Smart Comfort panel | Dark mode |
 |---|---|
 | ![A room in the Smart Comfort panel](screenshots/panel-room.png) | ![A room in the Smart Comfort panel, dark mode](screenshots/panel-room-dark.png) |
@@ -136,6 +140,10 @@ Each tab has its own address, e.g. `/smart-comfort/rooms` (the addresses of earl
 | Lights on presence of the entrance | Dark mode |
 |---|---|
 | ![Lights on presence: sensors, lights, light level, naps and slots](screenshots/panel-presence.png) | ![Lights on presence, dark mode](screenshots/panel-presence-dark.png) |
+
+| The YAML tab: the configuration as it goes in `configuration.yaml` | Dark mode |
+|---|---|
+| ![The YAML tab](screenshots/panel-yaml.png) | ![The YAML tab, dark mode](screenshots/panel-yaml-dark.png) |
 
 </details>
 

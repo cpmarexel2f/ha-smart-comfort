@@ -44,3 +44,17 @@ def test_translation_parity(language: str):
     for key, text in english.items():
         assert other[key].strip(), key
         assert _placeholders(other[key]) == _placeholders(text), key
+
+
+@pytest.mark.parametrize("service", ["snooze", "acknowledge"])
+def test_service_kinds_selector(service: str):
+    """The kinds of the snooze and acknowledge actions: every kind of alert, each one translated."""
+    import yaml
+
+    from custom_components.smart_comfort.const import KINDS
+
+    services = yaml.safe_load((TRANSLATIONS.parent / "services.yaml").read_text(encoding="utf-8"))
+    options = services[service]["fields"]["kinds"]["selector"]["select"]["options"]
+    assert options == list(KINDS)
+    translated = json.loads((TRANSLATIONS / "en.json").read_text(encoding="utf-8"))["selector"]["kind"]["options"]
+    assert sorted(translated) == sorted(KINDS)

@@ -225,15 +225,16 @@ class SmartComfortActivityCard extends HTMLElement {
     this._render();
   }
 
+  // Subscribed only while attached: Lovelace sets hass before attaching the card, the panel after.
   set hass(hass) {
     const first = !this._hass;
     this._hass = hass;
-    if (first) this._subscribe();
+    if (first && this.isConnected) this._subscribe();
     else if (!this._rendered) this._render();
   }
 
   connectedCallback() {
-    if (this._hass && !this._unsub) this._subscribe();
+    if (this._hass && !this._subscription) this._subscribe();
   }
 
   disconnectedCallback() {
@@ -250,12 +251,17 @@ class SmartComfortActivityCard extends HTMLElement {
     return text.replace(/\{(\w+)\}/g, (_, k) => values[k] ?? "");
   }
 
+  /** One subscription at a time: `_subscription` is set from the request on, not only once it is ready. */
   async _subscribe() {
     this._unsubscribe();
+    const subscription = {};
+    this._subscription = subscription;
+    const current = () => this._subscription === subscription;
     const limit = this._config?.panel ? 300 : Math.max(50, (this._config?.limit || 10) * 5);
     try {
-      this._unsub = await this._hass.connection.subscribeMessage(
+      const unsub = await this._hass.connection.subscribeMessage(
         (msg) => {
+          if (!current()) return;
           if (msg.entries) this._entries = msg.entries;
           if (msg.added) this._entries = [...[...msg.added].reverse(), ...this._entries].slice(0, 300);
           this._loaded = true;
@@ -263,13 +269,19 @@ class SmartComfortActivityCard extends HTMLElement {
         },
         { type: "smart_comfort/activity", limit }
       );
+      // Detached (or subscribed again) while it was on its way: not needed any more.
+      if (current()) this._unsub = unsub;
+      else unsub();
     } catch (_err) {
+      if (!current()) return;
+      this._subscription = undefined;
       this._loaded = false;
       this._render();
     }
   }
 
   _unsubscribe() {
+    this._subscription = undefined;
     if (this._unsub) {
       this._unsub();
       this._unsub = undefined;
@@ -325,12 +337,20 @@ class SmartComfortActivityCard extends HTMLElement {
         text = entry.until ? this._t("manual_until", { time: this._time(entry.until) }) : this._t("manual");
         break;
       case "failed":
-        text = `${this._t("failed")}${entry.target ? ` · ${this._t(`t_${entry.target}`)}` : ""}`;
+        text = this._t("failed") + (entry.target ? ` · ${this._target(entry.target)}` : "");
         break;
       default:
         text = this._t(entry.kind);
     }
     return { icon, text };
+  }
+
+  /** The target of a command: a device's, a presence light's, an indicator's or the brightness of a light. */
+  _target(target) {
+    if (`t_${target}` in STRINGS.en) return this._t(`t_${target}`);
+    if (target === "presence") return this._t("presence_on");
+    if (target === "display_off" || target === "display_on") return this._t(target);
+    return `${this._t("lighting")} · ${target}`;
   }
 
   _visible() {

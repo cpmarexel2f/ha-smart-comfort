@@ -26,6 +26,7 @@ snooze:
             - humidity_high
             - noise_high
             - noisy_outside
+            - bad_air_outside
 unsnooze:
   fields:
     rooms:
@@ -53,5 +54,6 @@ acknowledge:
             - humidity_high
             - noise_high
             - noisy_outside
+            - bad_air_outside
 notify_now:
 get_config:

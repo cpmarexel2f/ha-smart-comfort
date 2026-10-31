@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.1
+
+### Fixes
+- Activity card: on a dashboard, each new entry no longer shows up twice, and leaving the view now closes its live updates (one of them stayed open on the server every time the view was shown).
+- Activity card and tab: a command that could not be sent now says which one in words (a presence light, an indicator, a brightness) instead of a raw key like `t_presence`.
+- Snooze and acknowledge actions: **bad air outside** can now be picked in the kinds of the action editor.
+- Lights on presence: the checks scheduled when a presence sensor changes are forgotten once done, instead of piling up in memory until the next reload.
+
 ## 1.7.0
 
 ### What's new

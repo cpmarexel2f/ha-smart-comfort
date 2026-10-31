@@ -174,6 +174,8 @@ class SmartComfort:
         self._texts: dict[str, str] = {}
         self._listeners: list[Callable[[], None]] = []
         self._unsubs: list[CALLBACK_TYPE] = []
+        # Presence checks to come (on_after, off delay): each one forgets itself once done.
+        self._presence_checks: set[CALLBACK_TYPE] = set()
         self._debounce: CALLBACK_TYPE | None = None
         self._lock = asyncio.Lock()
         self._contexts: deque[str] = deque(maxlen=200)
@@ -211,6 +213,9 @@ class SmartComfort:
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
+        for cancel in self._presence_checks:
+            cancel()
+        self._presence_checks.clear()
         if self._debounce:
             self._debounce()
             self._debounce = None
@@ -358,12 +363,23 @@ class SmartComfort:
         if new is not None and new.state == "on":
             for room in rooms:
                 if room.presence.on_after > 0:
-                    self._unsubs.append(async_call_later(self.hass, room.presence.on_after + 0.5, self._debounced))
+                    self._presence_check(room.presence.on_after + 0.5)
         if new is not None and new.state == "off":
             for room in rooms:
                 delay = room.presence.off_delay(dt_util.as_local(dt_util.utcnow()), room.presence_lights()) * 60 + 1
-                self._unsubs.append(async_call_later(self.hass, delay, self._debounced))
+                self._presence_check(delay)
         return True
+
+    @callback
+    def _presence_check(self, delay: float) -> None:
+        """An evaluation in `delay` seconds, cancelled on stop and forgotten once done."""
+
+        async def check(_now: datetime) -> None:
+            self._presence_checks.discard(cancel)
+            await self.async_evaluate()
+
+        cancel = async_call_later(self.hass, delay, check)
+        self._presence_checks.add(cancel)
 
     def room_present(self, room: Room) -> bool | None:
         """Someone in the room by its presence sensors; None when none of them is known."""
