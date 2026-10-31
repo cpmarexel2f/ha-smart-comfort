@@ -275,3 +275,16 @@ def test_shared_light():
     lit = {"light.entree": LightState(on=False), "light.couloir": LightState(on=True)}
     cmds = PresenceController(s).evaluate(T0, local(10), 30, entree, True, None, lit, lights, False, kept)
     assert [(c.entity_id, c.data) for c in cmds] == [("light.entree", {"transition": 10})]
+
+
+def test_yaml_off_key():
+    """An unquoted `off: true` in YAML (read as a False key) still keeps the lights off."""
+    import yaml
+
+    from custom_components.smart_comfort.schema import OPTIONS as SCHEMA
+
+    raw = yaml.safe_load(
+        "rooms:\n- name: Entrée\n  presence:\n    sensors: [binary_sensor.p]\n"
+        "    slots:\n    - {start: '06:30', end: '08:00', off: true}\n"
+    )
+    assert SCHEMA(raw)["rooms"][0]["presence"]["slots"][0]["off"] is True

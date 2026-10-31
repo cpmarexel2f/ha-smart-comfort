@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.2
+
+### Fixes
+- YAML: an unquoted `off: true` in a presence slot (read as a `false` key by YAML 1.1) no longer makes the configuration invalid.
+
 ## 1.5.1
 
 ### What's new

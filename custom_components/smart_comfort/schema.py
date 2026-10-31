@@ -152,16 +152,27 @@ LIGHTING = vol.Schema(
 )
 LIGHT = {vol.Optional(k.CONF_NIGHT_ONLY): cv.boolean, **LIGHTING_LEVELS}
 
-PRESENCE_SLOT = vol.Schema(
-    {
-        **TIME_SLOT,
-        vol.Optional(k.CONF_LIGHTS): cv.entity_ids,
-        vol.Optional(k.CONF_BRIGHTNESS): vol.Any(None, vol.All(vol.Coerce(int), vol.Range(min=1, max=100))),
-        vol.Optional(k.CONF_OFF): cv.boolean,
-        vol.Optional(k.CONF_COLOR): vol.Any(
-            None, vol.All(cv.ensure_list, vol.Length(min=3, max=3), [vol.All(vol.Coerce(int), vol.Range(0, 255))])
-        ),
-    }
+
+def _off_key(value: Any) -> Any:
+    """YAML 1.1 reads an unquoted `off:` key as False: back to "off"."""
+    if isinstance(value, dict) and False in value:
+        value = {(k.CONF_OFF if key is False else key): v for key, v in value.items()}
+    return value
+
+
+PRESENCE_SLOT = vol.All(
+    _off_key,
+    vol.Schema(
+        {
+            **TIME_SLOT,
+            vol.Optional(k.CONF_LIGHTS): cv.entity_ids,
+            vol.Optional(k.CONF_BRIGHTNESS): vol.Any(None, vol.All(vol.Coerce(int), vol.Range(min=1, max=100))),
+            vol.Optional(k.CONF_OFF): cv.boolean,
+            vol.Optional(k.CONF_COLOR): vol.Any(
+                None, vol.All(cv.ensure_list, vol.Length(min=3, max=3), [vol.All(vol.Coerce(int), vol.Range(0, 255))])
+            ),
+        }
+    ),
 )
 PRESENCE = vol.Schema(
     {
