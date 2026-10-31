@@ -361,7 +361,7 @@ class SmartComfort:
                     self._unsubs.append(async_call_later(self.hass, room.presence.on_after + 0.5, self._debounced))
         if new is not None and new.state == "off":
             for room in rooms:
-                delay = room.presence.off_after * 60 + 1
+                delay = room.presence.off_delay(dt_util.as_local(dt_util.utcnow()), room.presence_lights()) * 60 + 1
                 self._unsubs.append(async_call_later(self.hass, delay, self._debounced))
         return True
 

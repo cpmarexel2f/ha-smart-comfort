@@ -313,6 +313,7 @@ class PresenceSlot(TimeSlot):
     brightness: int | None = None
     off: bool = False
     color: tuple[int, int, int] | None = None  # RGB.
+    off_after: float | None = None  # Minutes with nobody before off, in this slot (else the presence's).
 
     def covers(self, entity_id: str) -> bool:
         return not self.lights or entity_id in self.lights
@@ -331,6 +332,11 @@ class Presence:
     transition: float | None = None  # Seconds of the turn on and off (None: at once).
     not_during_naps: tuple[str, ...] = ()
     slots: tuple[PresenceSlot, ...] = ()
+
+    def off_delay(self, local: datetime, lights: tuple[str, ...]) -> float:
+        """Minutes with nobody before the lights are turned off now: the longest of their slots, else off_after."""
+        delays = [s.off_after for e in lights if (s := self.slot(e, local)) is not None and s.off_after is not None]
+        return max(delays) if delays else self.off_after
 
     def slot(self, entity_id: str, local: datetime) -> PresenceSlot | None:
         """The first slot that applies to the light now."""
@@ -368,6 +374,7 @@ def _presence(raw: dict[str, Any] | None) -> Presence | None:
                 brightness=_int(s.get(CONF_BRIGHTNESS)),
                 off=bool(s.get(CONF_OFF, False)),
                 color=_color(s.get(CONF_COLOR)),
+                off_after=_float(s.get(CONF_OFF_AFTER)),
             )
             for s in raw.get(CONF_SLOTS) or []
         ),

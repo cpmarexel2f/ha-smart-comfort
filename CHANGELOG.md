@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0
+
+### What's new
+- Lights on presence: **`off_after` per slot** — the minutes with nobody before the lights are turned off while the slot applies (a bathroom off after 2 minutes by day, 22 from 17:00). Panel: on each slot.
+
 ## 1.6.0
 
 ### What's new

@@ -201,6 +201,7 @@ const STRINGS = {
     slot_lights_help: "Empty: all the presence lights.",
     slot_off: "Don't turn on",
     slot_brightness: "Brightness",
+    slot_off_after: "Off after nobody for",
     slot_color: "Color",
   },
   fr: {
@@ -361,6 +362,7 @@ const STRINGS = {
     slot_lights_help: "Vide : toutes les lumières de présence.",
     slot_off: "Ne pas allumer",
     slot_brightness: "Intensité",
+    slot_off_after: "Extinction après personne pendant",
     slot_color: "Couleur",
   },
   de: {
@@ -521,6 +523,7 @@ const STRINGS = {
     slot_lights_help: "Leer: alle Anwesenheitslichter.",
     slot_off: "Nicht einschalten",
     slot_brightness: "Helligkeit",
+    slot_off_after: "Aus nach niemand seit",
     slot_color: "Farbe",
   },
   es: {
@@ -681,6 +684,7 @@ const STRINGS = {
     slot_lights_help: "Vacío: todas las luces de presencia.",
     slot_off: "No encender",
     slot_brightness: "Brillo",
+    slot_off_after: "Apagado tras nadie durante",
     slot_color: "Color",
   },
 };
@@ -2482,6 +2486,7 @@ class SmartComfortPanel extends HTMLElement {
       { name: "lights", selector: entity("light", { multiple: true }) },
       { name: "off", selector: bool },
       ...(slot.off ? [] : [{ name: "brightness", selector: level }, { name: "color", selector: { color_rgb: {} } }]),
+      { name: "off_after", selector: { number: { mode: "box", step: 0.5, min: 0, max: 1440, unit_of_measurement: "min" } } },
     ];
     if (slots.length) body.append(this._el("div", "help", this._t("slots_help")));
     slots.forEach((slot, i) => {

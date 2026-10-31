@@ -168,6 +168,7 @@ PRESENCE_SLOT = vol.All(
             vol.Optional(k.CONF_LIGHTS): cv.entity_ids,
             vol.Optional(k.CONF_BRIGHTNESS): vol.Any(None, vol.All(vol.Coerce(int), vol.Range(min=1, max=100))),
             vol.Optional(k.CONF_OFF): cv.boolean,
+            vol.Optional(k.CONF_OFF_AFTER): vol.Any(None, vol.All(NUMBER, vol.Range(min=0, max=k.MAX_MINUTES))),
             vol.Optional(k.CONF_COLOR): vol.Any(
                 None, vol.All(cv.ensure_list, vol.Length(min=3, max=3), [vol.All(vol.Coerce(int), vol.Range(0, 255))])
             ),

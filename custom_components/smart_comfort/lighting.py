@@ -228,7 +228,7 @@ class PresenceController:
         if not present:
             self.present_since.pop(room.id, None)
             seen = self.last_seen.setdefault(room.id, now)
-            if now - seen < timedelta(minutes=p.off_after):
+            if now - seen < timedelta(minutes=p.off_delay(local, managed)):
                 return []
             self.suppressed.discard(room.id)
             off = {"transition": p.transition} if p.transition else {}

@@ -288,3 +288,33 @@ def test_yaml_off_key():
         "    slots:\n    - {start: '06:30', end: '08:00', off: true}\n"
     )
     assert SCHEMA(raw)["rooms"][0]["presence"]["slots"][0]["off"] is True
+
+
+def test_slot_off_after():
+    """The bathroom: off after 2 minutes with nobody, 22 from 17:00 (showers)."""
+    s = build_settings(
+        {
+            "rooms": [
+                {
+                    "name": "Salle de bain",
+                    "presence": {
+                        "sensors": ["binary_sensor.sdb"],
+                        "lights": ["light.sdb"],
+                        "off_after": 2,
+                        "slots": [{"start": "17:00", "end": "00:00", "off_after": 22}],
+                    },
+                }
+            ]
+        }
+    )
+    room = s.rooms[0]
+    on = {"light.sdb": LightState(on=True)}
+
+    def off_at(when, minutes):
+        p = PresenceController(s)
+        p.evaluate(T0, when, 30, room, False, None, on, LightController(s))
+        return p.evaluate(T0 + timedelta(minutes=minutes), when, 30, room, False, None, on, LightController(s))
+
+    assert off_at(local(10), 2)
+    assert not off_at(local(18), 21)
+    assert off_at(local(18), 22)
