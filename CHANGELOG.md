@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0
+
+### What's new
+- Lights on presence: **`transition`**, the seconds of the fade when the lights are turned on and off (10 s, like a presence automation).
+
+### Fixes
+- A light that is a presence light of two rooms (the hallway's, from the entrance and the hallway) is no longer turned off by one room while someone is in the other, and a light on because of the other room no longer stops a room from turning its own lights on.
+
 ## 1.4.0
 
 ### What's new

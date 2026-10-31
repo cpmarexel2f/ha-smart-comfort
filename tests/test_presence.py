@@ -241,3 +241,37 @@ def test_presence_color_and_on_after():
     p = PresenceController(s)
     cmds(p, lights, local(15), T0)
     assert cmds(p, lights, local(15), T0 + timedelta(seconds=6)) == {}
+
+
+def test_shared_light():
+    """The hallway's light, turned on by the entrance and by the hallway: kept on while someone is in either."""
+    s = build_settings(
+        {
+            "rooms": [
+                {
+                    "name": "Entrée",
+                    "presence": {
+                        "sensors": ["binary_sensor.entree"],
+                        "lights": ["light.entree", "light.couloir"],
+                        "off_after": 2,
+                        "transition": 10,
+                    },
+                },
+                {"name": "Couloir", "presence": {"sensors": ["binary_sensor.couloir"], "lights": ["light.couloir"]}},
+            ]
+        }
+    )
+    entree = s.rooms[0]
+    p, lights = PresenceController(s), LightController(s)
+    on = {"light.entree": LightState(on=True), "light.couloir": LightState(on=True)}
+    kept = p.kept(entree, {"couloir"})
+    assert kept == {"light.couloir"}
+    assert p.kept(entree, set()) == frozenset()
+    # Nobody left in the entrance, someone in the hallway: the entrance light only, with its transition.
+    p.evaluate(T0, local(10), 30, entree, False, None, on, lights, kept=kept)
+    cmds = p.evaluate(T0 + timedelta(minutes=2), local(10), 30, entree, False, None, on, lights, kept=kept)
+    assert [(c.entity_id, c.service, c.data) for c in cmds] == [("light.entree", "turn_off", {"transition": 10})]
+    # The hallway light on (someone there): coming into the entrance still turns its light on.
+    lit = {"light.entree": LightState(on=False), "light.couloir": LightState(on=True)}
+    cmds = PresenceController(s).evaluate(T0, local(10), 30, entree, True, None, lit, lights, False, kept)
+    assert [(c.entity_id, c.data) for c in cmds] == [("light.entree", {"transition": 10})]

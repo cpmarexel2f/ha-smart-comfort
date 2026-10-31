@@ -171,6 +171,7 @@ PRESENCE = vol.Schema(
         vol.Optional(k.CONF_MAX_LUX): vol.Any(None, NUMBER),
         vol.Optional(k.CONF_OFF_AFTER): vol.All(NUMBER, vol.Range(min=0, max=k.MAX_MINUTES)),
         vol.Optional(k.CONF_ON_AFTER): vol.All(NUMBER, vol.Range(min=0, max=600)),
+        vol.Optional(k.CONF_TRANSITION): vol.Any(None, vol.All(NUMBER, vol.Range(min=0, max=300))),
         vol.Optional(k.CONF_NOT_DURING_NAPS): cv.entity_ids,
         vol.Optional(k.CONF_SLOTS): vol.All(cv.ensure_list, [PRESENCE_SLOT]),
     }

@@ -328,6 +328,7 @@ class Presence:
     max_lux: float | None = None
     off_after: float = DEFAULT_OFF_AFTER  # Minutes.
     on_after: float = 0  # Seconds a presence must last before the lights turn on.
+    transition: float | None = None  # Seconds of the turn on and off (None: at once).
     not_during_naps: tuple[str, ...] = ()
     slots: tuple[PresenceSlot, ...] = ()
 
@@ -356,6 +357,7 @@ def _presence(raw: dict[str, Any] | None) -> Presence | None:
         max_lux=_float(raw.get(CONF_MAX_LUX)),
         off_after=float(raw.get(CONF_OFF_AFTER, DEFAULT_OFF_AFTER)),
         on_after=float(raw.get(CONF_ON_AFTER) or 0),
+        transition=_float(raw.get(CONF_TRANSITION)),
         not_during_naps=_ids(raw.get(CONF_NOT_DURING_NAPS)),
         slots=tuple(
             PresenceSlot(

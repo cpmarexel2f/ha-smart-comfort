@@ -555,6 +555,7 @@ class SmartComfort:
             elevation = self.sun_elevation()
             if reset := self.controller.reset_due(dt_util.as_local(now)):
                 _LOGGER.debug("Back to the normal state: %s", ", ".join(reset))
+            occupied = {r.id for r in self.settings.rooms if r.presence and self.room_present(r)}
             for room in self.settings.rooms:
                 if lighting and room.lights:
                     commands += self.lights.evaluate(
@@ -572,6 +573,7 @@ class SmartComfort:
                         self.light_states(room),
                         self.lights,
                         adaptive=lighting,
+                        kept=self.presence.kept(room, occupied),
                     )
                 reading, ctx = self.reading(room, now)
                 states = self.device_states(room)

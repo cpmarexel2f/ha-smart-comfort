@@ -184,6 +184,7 @@ const STRINGS = {
     presence_max_lux_help: "No light turned on when the room is brighter than this.",
     presence_off_after: "Off after nobody for",
     presence_on_after: "On after a presence of",
+    presence_transition: "Fade",
     presence_on_after_help: "Someone just passing by the sensor doesn't turn the lights on.",
     presence_not_during_naps: "Off during the naps",
     presence_not_during_naps_help: "These lights are not turned on while a room of the house has its nap.",
@@ -336,6 +337,7 @@ const STRINGS = {
     presence_max_lux_help: "Aucune lumière allumée quand la pièce est plus claire que ça.",
     presence_off_after: "Extinction après personne pendant",
     presence_on_after: "Allumage après une présence de",
+    presence_transition: "Fondu",
     presence_on_after_help: "Quelqu'un qui passe juste devant le capteur n'allume pas les lumières.",
     presence_not_during_naps: "Éteintes pendant les siestes",
     presence_not_during_naps_help: "Ces lumières ne s'allument pas pendant la sieste d'une pièce de la maison.",
@@ -488,6 +490,7 @@ const STRINGS = {
     presence_max_lux_help: "Kein Licht wird eingeschaltet, wenn der Raum heller ist.",
     presence_off_after: "Aus nach niemand seit",
     presence_on_after: "An nach Anwesenheit von",
+    presence_transition: "Überblendung",
     presence_on_after_help: "Wer nur am Sensor vorbeigeht, schaltet die Lichter nicht ein.",
     presence_not_during_naps: "Aus beim Mittagsschlaf",
     presence_not_during_naps_help: "Diese Lichter gehen nicht an, solange ein Raum des Hauses Mittagsschlaf hält.",
@@ -640,6 +643,7 @@ const STRINGS = {
     presence_max_lux_help: "No se enciende ninguna luz si la estancia está más iluminada.",
     presence_off_after: "Apagado tras nadie durante",
     presence_on_after: "Encendido tras una presencia de",
+    presence_transition: "Fundido",
     presence_on_after_help: "Alguien que solo pasa delante del sensor no enciende las luces.",
     presence_not_during_naps: "Apagadas durante las siestas",
     presence_not_during_naps_help: "Estas luces no se encienden mientras una estancia de la casa está en siesta.",
@@ -2331,7 +2335,7 @@ class SmartComfortPanel extends HTMLElement {
       return;
     }
     const presence = (room.presence = room.presence || { sensors: [] });
-    const fields = ["sensors", "lights", "lux", "max_lux", "on_after", "off_after", "not_during_naps"];
+    const fields = ["sensors", "lights", "lux", "max_lux", "on_after", "off_after", "transition", "not_during_naps"];
     const line = this._el("div", "device-item");
     line.append(
       this._form(
@@ -2345,6 +2349,7 @@ class SmartComfortPanel extends HTMLElement {
           grid([
             { name: "on_after", selector: { number: { mode: "box", step: 1, min: 0, max: 600, unit_of_measurement: "s" } } },
             { name: "off_after", selector: { number: { mode: "box", step: 0.5, min: 0, max: 1440, unit_of_measurement: "min" } } },
+            { name: "transition", selector: { number: { mode: "box", step: 1, min: 0, max: 300, unit_of_measurement: "s" } } },
           ]),
           { name: "not_during_naps", selector: entity("light", { multiple: true }) },
         ],

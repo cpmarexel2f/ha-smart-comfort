@@ -188,6 +188,17 @@ class PresenceController:
         self.suppressed &= rooms
         self.present_since = {k: v for k, v in self.present_since.items() if k in rooms}
 
+    def kept(self, room: Room, occupied: set[str]) -> frozenset[str]:
+        """Presence lights of the room that another room with someone in it also has: theirs too."""
+        mine = set(room.presence_lights())
+        return frozenset(
+            e
+            for r in self.settings.rooms
+            if r.id != room.id and r.id in occupied
+            for e in r.presence_lights()
+            if e in mine
+        )
+
     def turned_off_by_hand(self, room: Room) -> None:
         """A presence light turned off by hand while someone is there: not turned back on before they leave."""
         self.suppressed.add(room.id)
@@ -203,8 +214,13 @@ class PresenceController:
         states: dict[str, LightState],
         lights: LightController,
         adaptive: bool = True,
+        kept: frozenset[str] = frozenset(),
     ) -> list[Command]:
-        """Commands for the presence lights of a room; `adaptive`: give them the brightness of the moment."""
+        """Commands for the presence lights of a room; `adaptive`: give them the brightness of the moment.
+
+        `kept`: lights shared with another room where someone is (the hallway's, from the entrance and the
+        hallway): not turned off, and not counted as turned on by hand.
+        """
         p = room.presence
         if p is None or present is None:
             return []
@@ -215,16 +231,18 @@ class PresenceController:
             if now - seen < timedelta(minutes=p.off_after):
                 return []
             self.suppressed.discard(room.id)
+            off = {"transition": p.transition} if p.transition else {}
             return [
-                Command(e, "light", "turn_off", {}, target="off", device=e)
+                Command(e, "light", "turn_off", dict(off), target="off", device=e)
                 for e in managed
-                if (s := states.get(e)) is not None and s.on
+                if e not in kept and (s := states.get(e)) is not None and s.on
             ]
         self.last_seen[room.id] = now
         since = self.present_since.setdefault(room.id, now)
         if now - since < timedelta(seconds=p.on_after):
             return []  # A presence that doesn't last (someone passing by the sensor): nothing yet.
-        if room.id in self.suppressed or any((s := states.get(e)) is not None and s.on for e in managed):
+        own = [e for e in managed if e not in kept]
+        if room.id in self.suppressed or any((s := states.get(e)) is not None and s.on for e in own):
             return []
         if p.max_lux is not None and lux is not None and lux > p.max_lux:
             return []
@@ -234,7 +252,7 @@ class PresenceController:
         commands = []
         for entity_id in managed:
             state = states.get(entity_id)
-            if state is None or (napping and entity_id in p.not_during_naps):
+            if state is None or state.on or (napping and entity_id in p.not_during_naps):
                 continue
             slot = p.slot(entity_id, local)
             if slot is not None and slot.off:
@@ -243,7 +261,7 @@ class PresenceController:
             dark = moment in (PHASE_NIGHT, PHASE_NAP)
             if device is not None and device.night_only and not dark:
                 continue
-            data: dict[str, Any] = {"transition": 1}
+            data: dict[str, Any] = {"transition": p.transition or 1}
             wanted = None
             if slot is not None and slot.brightness is not None and state.dimmable:
                 data["brightness_pct"] = slot.brightness
