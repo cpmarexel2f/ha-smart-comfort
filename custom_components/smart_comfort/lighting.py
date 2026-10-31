@@ -32,6 +32,7 @@ class LightState:
     brightness: int | None = None  # Percent.
     kelvin: int | None = None
     dimmable: bool = True
+    colored: bool = False  # Supports RGB colors.
     # Color temperature range when the light supports it, else None.
     min_kelvin: int | None = None
     max_kelvin: int | None = None
@@ -177,12 +178,15 @@ class PresenceController:
         self.settings = settings
         self.last_seen: dict[str, datetime] = {}
         self.suppressed: set[str] = set()
+        # Since when someone is in the room (for on_after).
+        self.present_since: dict[str, datetime] = {}
 
     def update_settings(self, settings: Settings) -> None:
         self.settings = settings
         rooms = {r.id for r in settings.rooms if r.presence}
         self.last_seen = {k: v for k, v in self.last_seen.items() if k in rooms}
         self.suppressed &= rooms
+        self.present_since = {k: v for k, v in self.present_since.items() if k in rooms}
 
     def turned_off_by_hand(self, room: Room) -> None:
         """A presence light turned off by hand while someone is there: not turned back on before they leave."""
@@ -206,6 +210,7 @@ class PresenceController:
             return []
         managed = room.presence_lights()
         if not present:
+            self.present_since.pop(room.id, None)
             seen = self.last_seen.setdefault(room.id, now)
             if now - seen < timedelta(minutes=p.off_after):
                 return []
@@ -216,6 +221,9 @@ class PresenceController:
                 if (s := states.get(e)) is not None and s.on
             ]
         self.last_seen[room.id] = now
+        since = self.present_since.setdefault(room.id, now)
+        if now - since < timedelta(seconds=p.on_after):
+            return []  # A presence that doesn't last (someone passing by the sensor): nothing yet.
         if room.id in self.suppressed or any((s := states.get(e)) is not None and s.on for e in managed):
             return []
         if p.max_lux is not None and lux is not None and lux > p.max_lux:
@@ -248,5 +256,11 @@ class PresenceController:
                     if wanted.kelvin is not None:
                         data["color_temp_kelvin"] = wanted.kelvin
                     lights.targets[entity_id] = wanted
+            if slot is not None and slot.color is not None and state.colored:
+                data["rgb_color"] = list(slot.color)
+                data.pop("color_temp_kelvin", None)
+                # A set color: the adaptive lighting leaves the light alone until it is turned off.
+                lights.overrides[entity_id] = now + timedelta(days=1)
+                lights.targets.pop(entity_id, None)
             commands.append(Command(entity_id, "light", "turn_on", data, target="presence", device=entity_id))
         return commands

@@ -114,6 +114,8 @@ ICONS = {
     "lightbulb-night": "M6 21C6 21.55 6.45 22 7 22H11C11.55 22 12 21.55 12 21V20H6V21M13 16.32V17C13 17.55 12.55 18 12 18H6C5.45 18 5 17.55 5 17V14.74C3.19 13.47 2 11.38 2 9C2 5.13 5.13 2 9 2C10.65 2 12.16 2.57 13.35 3.5C10.8 4.57 9 7.07 9 10C9 12.79 10.64 15.19 13 16.32M20.92 9.94L19.5 9.03L18.1 10L18.5 8.35L17.17 7.32L18.85 7.21L19.41 5.6L20.04 7.18L21.72 7.22L20.42 8.3L20.92 9.94M19.39 13C17.5 15.27 14.03 15.19 12.22 12.95C10 10.13 11.56 6 15 5.34C15.34 5.29 15.64 5.63 15.5 5.97C15.05 7.25 15.12 8.71 15.85 9.97C16.58 11.24 17.79 12.03 19.12 12.25C19.47 12.3 19.62 12.74 19.39 13Z",
     "thermometer-high": "M15 13V5A3 3 0 0 0 9 5V13A5 5 0 1 0 15 13M12 4A1 1 0 0 1 13 5H11A1 1 0 0 1 12 4Z",
     "window-closed-variant": "M21 20V2H3V20H1V23H23V20M19 4V11H13V4M5 4H11V11H5M5 20V13H11V20M13 20V13H19V20Z",
+    "led-off": "M12,6A4,4 0 0,0 8,10V16H6V18H9V23H11V18H13V23H15V18H18V16H16V10A4,4 0 0,0 12,6Z",
+    "led-on": "M11,0V4H13V0H11M18.3,2.29L15.24,5.29L16.64,6.71L19.7,3.71L18.3,2.29M5.71,2.29L4.29,3.71L7.29,6.71L8.71,5.29L5.71,2.29M12,6A4,4 0 0,0 8,10V16H6V18H9V23H11V18H13V23H15V18H18V16H16V10A4,4 0 0,0 12,6M2,9V11H6V9H2M18,9V11H22V9H18Z",
     "window-open-variant": "M21 20V2H3V20H1V23H23V20M19 4V11H17V4M5 4H7V11H5M5 20V13H7V20M9 20V4H15V20M17 20V13H19V20Z",
     "thermometer-low": "M15 13V5A3 3 0 0 0 9 5V13A5 5 0 1 0 15 13M12 4A1 1 0 0 1 13 5V12H11V5A1 1 0 0 1 12 4Z",
     "snowflake-alert": "M16.46,9.41L13,7.38V5.12L14.71,3.41L13.29,2L12,3.29L10.71,2L9.29,3.41L11,5.12V7.38L8.5,8.82L6.5,7.69L5.92,5.36L4,5.88L4.47,7.65L2.7,8.12L3.22,10.05L5.55,9.43L7.55,10.56V13.45L5.55,14.58L3.22,13.96L2.7,15.89L4.47,16.36L4,18.12L5.93,18.64L6.55,16.31L8.55,15.18L11,16.62V18.88L9.29,20.59L10.71,22L12,20.71L13.29,22L14.7,20.59L13,18.88V16.62L16.46,14.61M9.5,10.56L12,9.11L14.5,10.56V13.44L12,14.89L9.5,13.44M19,13V7H21V13H19M19,17V15H21V17H19Z",
@@ -371,6 +373,7 @@ ENTITIES = {
     "sensor.bedroom_noise": ("Bedroom noise", "mdi:volume-medium", "bedroom", "64"),
     "binary_sensor.bedroom_window": ("Bedroom window", "mdi:window-closed", "bedroom", "on"),
     "fan.bedroom_purifier": ("Bedroom purifier", "mdi:air-purifier", "bedroom", "on"),
+    "light.bedroom_purifier_indicator": ("Bedroom purifier indicator", "mdi:led-on", "bedroom", "on"),
     "light.bedroom": ("Bedroom lamp", "mdi:lamp", "bedroom", "on"),
     "light.bedroom_night_light": ("Bedroom night light", "mdi:lightbulb-night", "bedroom", "off"),
     "sensor.bathroom_humidity": ("Bathroom humidity", "mdi:water-percent", "bathroom", "64"),
@@ -405,7 +408,15 @@ ROOMS = {
         "temperature": "sensor.bedroom_temperature",
         "noise": "sensor.bedroom_noise",
         "openings": ["binary_sensor.bedroom_window"],
-        "purifiers": ["fan.bedroom_purifier"],
+        "purifiers": [
+            {
+                "entity_id": "fan.bedroom_purifier",
+                "closed_preset": "auto",
+                "night_preset": "sleep",
+                "display": "light.bedroom_purifier_indicator",
+                "reset_at": "20:40:00",
+            }
+        ],
         "lights": ["light.bedroom", {"entity_id": "light.bedroom_night_light", "night_only": True}],
         "lighting": {"quiet_morning": True},
         "naps": [{"start": "13:30:00", "end": "15:30:00", "days": ["sat", "sun"]}],
@@ -445,6 +456,7 @@ SAVED = {
     "outdoors": [GARDEN],
     "quiet_start": "22:30:00",
     "quiet_end": "08:00:00",
+    "control": {"display_off": "20:00:00", "display_on": "10:00:00"},
 }
 DISCOVERED = {"rooms": rooms(["Bathroom", "Bedroom", "Living Room", "Office"]), "outdoors": [GARDEN]}
 REPORT = {

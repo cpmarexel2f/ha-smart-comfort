@@ -34,6 +34,12 @@ def notify_service(value: Any) -> str:
     return f"notify.{name}"
 
 
+# Every device: its indicator light or display, and a time to go back to its normal state.
+EQUIPMENT = {
+    vol.Optional(k.CONF_DISPLAY): vol.Any(None, cv.entity_domain(list(k.DISPLAY_DOMAINS))),
+    vol.Optional(k.CONF_RESET_AT): time_string,
+}
+
 ALERT = vol.Schema(
     {
         vol.Optional(k.CONF_ENABLED): cv.boolean,
@@ -59,6 +65,7 @@ CLIMATE = {
     vol.Optional(k.CONF_CLOSED_FOR): MINUTES,
     vol.Optional(k.CONF_OFF_ON_OPEN): MINUTES,
     vol.Optional(k.CONF_NIGHT_FAN_MODE): OPT_STR,
+    **EQUIPMENT,
 }
 FAN = {
     vol.Optional(k.CONF_ON_ABOVE): vol.Any(None, NUMBER),
@@ -70,6 +77,7 @@ FAN = {
     vol.Optional(k.CONF_OFF_PRESET): OPT_STR,
     vol.Optional(k.CONF_NIGHT_PERCENTAGE): vol.Any(None, PERCENT),
     vol.Optional(k.CONF_NIGHT_PRESET): OPT_STR,
+    **EQUIPMENT,
 }
 PURIFIER = {
     vol.Optional(k.CONF_OPEN_PERCENTAGE): vol.Any(None, PERCENT),
@@ -82,6 +90,7 @@ PURIFIER = {
     vol.Optional(k.CONF_NIGHT_PERCENTAGE): vol.Any(None, PERCENT),
     vol.Optional(k.CONF_NIGHT_PRESET): OPT_STR,
     vol.Optional(k.CONF_NIGHT_MODE): OPT_STR,
+    **EQUIPMENT,
 }
 DEVICE_SECTIONS = vol.Schema(
     {
@@ -99,6 +108,8 @@ CONTROL = DEVICE_SECTIONS.extend(
         vol.Optional(k.CONF_SUPPRESS_HANDLED): cv.boolean,
         vol.Optional(k.CONF_NIGHT_START): time_string,
         vol.Optional(k.CONF_NIGHT_END): time_string,
+        vol.Optional(k.CONF_DISPLAY_OFF): time_string,
+        vol.Optional(k.CONF_DISPLAY_ON): time_string,
     }
 )
 
@@ -147,6 +158,9 @@ PRESENCE_SLOT = vol.Schema(
         vol.Optional(k.CONF_LIGHTS): cv.entity_ids,
         vol.Optional(k.CONF_BRIGHTNESS): vol.Any(None, vol.All(vol.Coerce(int), vol.Range(min=1, max=100))),
         vol.Optional(k.CONF_OFF): cv.boolean,
+        vol.Optional(k.CONF_COLOR): vol.Any(
+            None, vol.All(cv.ensure_list, vol.Length(min=3, max=3), [vol.All(vol.Coerce(int), vol.Range(0, 255))])
+        ),
     }
 )
 PRESENCE = vol.Schema(
@@ -156,6 +170,7 @@ PRESENCE = vol.Schema(
         vol.Optional(k.CONF_LUX): vol.Any(None, cv.entity_id),
         vol.Optional(k.CONF_MAX_LUX): vol.Any(None, NUMBER),
         vol.Optional(k.CONF_OFF_AFTER): vol.All(NUMBER, vol.Range(min=0, max=k.MAX_MINUTES)),
+        vol.Optional(k.CONF_ON_AFTER): vol.All(NUMBER, vol.Range(min=0, max=600)),
         vol.Optional(k.CONF_NOT_DURING_NAPS): cv.entity_ids,
         vol.Optional(k.CONF_SLOTS): vol.All(cv.ensure_list, [PRESENCE_SLOT]),
     }

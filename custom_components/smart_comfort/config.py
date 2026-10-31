@@ -23,6 +23,7 @@ from .const import (
     CONF_CLOSED_MODE,
     CONF_CLOSED_PRESET,
     CONF_CO2,
+    CONF_COLOR,
     CONF_CONTROL,
     CONF_COOL_ABOVE,
     CONF_CRITICAL_VOLUME,
@@ -31,6 +32,9 @@ from .const import (
     CONF_DAYS,
     CONF_DELAY,
     CONF_DIGEST_WINDOW,
+    CONF_DISPLAY,
+    CONF_DISPLAY_OFF,
+    CONF_DISPLAY_ON,
     CONF_ENABLED,
     CONF_END,
     CONF_ENTITY_ID,
@@ -78,6 +82,7 @@ from .const import (
     CONF_OFF_ON_OPEN,
     CONF_OFF_PRESET,
     CONF_ON_ABOVE,
+    CONF_ON_AFTER,
     CONF_OPEN_MODE,
     CONF_OPEN_PERCENTAGE,
     CONF_OPEN_PRESET,
@@ -96,6 +101,7 @@ from .const import (
     CONF_QUIET_MORNING,
     CONF_QUIET_START,
     CONF_REMINDER,
+    CONF_RESET_AT,
     CONF_ROOMS,
     CONF_SENSORS,
     CONF_SETPOINT,
@@ -209,6 +215,8 @@ class ClimateDevice:
     closed_for: int
     off_on_open: int
     night_fan_mode: str | None = None
+    display: str | None = None
+    reset_at: time | None = None
 
 
 @dataclass(frozen=True)
@@ -223,6 +231,8 @@ class FanDevice:
     off_preset: str | None
     night_percentage: int | None = None
     night_preset: str | None = None
+    display: str | None = None
+    reset_at: time | None = None
 
     @property
     def quiet(self) -> bool:
@@ -243,6 +253,8 @@ class PurifierDevice:
     night_percentage: int | None = None
     night_preset: str | None = None
     night_mode: str | None = None
+    display: str | None = None
+    reset_at: time | None = None
 
     @property
     def quiet(self) -> bool:
@@ -300,6 +312,7 @@ class PresenceSlot(TimeSlot):
     lights: tuple[str, ...] = ()
     brightness: int | None = None
     off: bool = False
+    color: tuple[int, int, int] | None = None  # RGB.
 
     def covers(self, entity_id: str) -> bool:
         return not self.lights or entity_id in self.lights
@@ -314,6 +327,7 @@ class Presence:
     lux: str | None = None
     max_lux: float | None = None
     off_after: float = DEFAULT_OFF_AFTER  # Minutes.
+    on_after: float = 0  # Seconds a presence must last before the lights turn on.
     not_during_naps: tuple[str, ...] = ()
     slots: tuple[PresenceSlot, ...] = ()
 
@@ -326,6 +340,12 @@ def _slot_days(raw: dict[str, Any]) -> tuple[int, ...]:
     return tuple(WEEKDAYS.index(d) for d in raw.get(CONF_DAYS) or [])
 
 
+def _color(value: Any) -> tuple[int, int, int] | None:
+    if not value or len(value) != 3:
+        return None
+    return (int(value[0]), int(value[1]), int(value[2]))
+
+
 def _presence(raw: dict[str, Any] | None) -> Presence | None:
     if not raw or not raw.get(CONF_SENSORS):
         return None
@@ -335,6 +355,7 @@ def _presence(raw: dict[str, Any] | None) -> Presence | None:
         lux=raw.get(CONF_LUX) or None,
         max_lux=_float(raw.get(CONF_MAX_LUX)),
         off_after=float(raw.get(CONF_OFF_AFTER, DEFAULT_OFF_AFTER)),
+        on_after=float(raw.get(CONF_ON_AFTER) or 0),
         not_during_naps=_ids(raw.get(CONF_NOT_DURING_NAPS)),
         slots=tuple(
             PresenceSlot(
@@ -344,6 +365,7 @@ def _presence(raw: dict[str, Any] | None) -> Presence | None:
                 lights=_ids(s.get(CONF_LIGHTS)),
                 brightness=_int(s.get(CONF_BRIGHTNESS)),
                 off=bool(s.get(CONF_OFF, False)),
+                color=_color(s.get(CONF_COLOR)),
             )
             for s in raw.get(CONF_SLOTS) or []
         ),
@@ -394,6 +416,15 @@ class Room:
 
     def napping(self, local: datetime) -> bool:
         return any(nap.active(local) for nap in self.naps)
+
+    def equipment(self) -> list[ClimateDevice | FanDevice | PurifierDevice]:
+        """The air conditioner, fans and purifiers of the room."""
+        return ([self.climate] if self.climate else []) + list(self.fans) + list(self.purifiers)
+
+    @property
+    def displays(self) -> dict[str, str]:
+        """Indicator light or display of each device that has one: {display: device}."""
+        return {d.display: d.entity_id for d in self.equipment() if d.display}
 
     @property
     def devices(self) -> list[str]:
@@ -449,12 +480,21 @@ class Settings:
     morning_end: time | None = None
     # Seconds of the gradual brightness changes.
     transition: int = 120
+    # Indicator lights and displays off from display_off to display_on (the quiet night when unset).
+    display_off: time | None = None
+    display_on: time | None = None
 
     def night(self, local: time) -> bool:
         """Quiet night hours (none when either bound is unset)."""
         if self.night_start is None or self.night_end is None or self.night_start == self.night_end:
             return False
         return in_window(local, self.night_start, self.night_end)
+
+    def displays_off(self, local: time) -> bool:
+        """Hours of the indicator lights and displays off: their own, else the quiet night."""
+        if self.display_off is not None and self.display_on is not None:
+            return self.display_off != self.display_on and in_window(local, self.display_off, self.display_on)
+        return self.night(local)
 
     def morning(self, local: time) -> bool:
         """Quiet morning hours: from the end of the night (midnight without one) until morning_end."""
@@ -518,6 +558,8 @@ def _room(
             closed_for=int(c[CONF_CLOSED_FOR]),
             off_on_open=int(c[CONF_OFF_ON_OPEN]),
             night_fan_mode=c[CONF_NIGHT_FAN_MODE] or None,
+            display=c[CONF_DISPLAY] or None,
+            reset_at=parse_time(c[CONF_RESET_AT]),
         )
     fans = []
     for entity_id, own in _device_items(raw.get(CONF_FANS)):
@@ -534,6 +576,8 @@ def _room(
                 off_preset=f[CONF_OFF_PRESET],
                 night_percentage=_int(f[CONF_NIGHT_PERCENTAGE]),
                 night_preset=f[CONF_NIGHT_PRESET] or None,
+                display=f[CONF_DISPLAY] or None,
+                reset_at=parse_time(f[CONF_RESET_AT]),
             )
         )
     purifiers = []
@@ -552,6 +596,8 @@ def _room(
                 night_percentage=_int(p[CONF_NIGHT_PERCENTAGE]),
                 night_preset=p[CONF_NIGHT_PRESET] or None,
                 night_mode=p[CONF_NIGHT_MODE] or None,
+                display=p[CONF_DISPLAY] or None,
+                reset_at=parse_time(p[CONF_RESET_AT]),
             )
         )
     openings = raw.get(CONF_OPENINGS) or []
@@ -638,6 +684,8 @@ def build_settings(options: dict[str, Any]) -> Settings:
         suppress_handled=bool(control[CONF_SUPPRESS_HANDLED]),
         night_start=parse_time(control[CONF_NIGHT_START]),
         night_end=parse_time(control[CONF_NIGHT_END]),
+        display_off=parse_time(control[CONF_DISPLAY_OFF]),
+        display_on=parse_time(control[CONF_DISPLAY_ON]),
         rooms=rooms,
         lighting_enabled=bool(lighting[CONF_ENABLED]),
         morning_end=parse_time(lighting[CONF_MORNING_END]),

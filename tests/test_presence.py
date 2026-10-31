@@ -185,3 +185,59 @@ async def test_presence_in_home_assistant(hass: HomeAssistant, freezer) -> None:
     await manager.async_evaluate()
     await hass.async_block_till_done()
     assert len(on) == count
+
+
+# The hallway: a blue night light from 20:00 to 10:00, the main light by day, nothing in the afternoon,
+# only for a presence that lasts 5 seconds.
+HALLWAY = {
+    "rooms": [
+        {
+            "name": "Couloir",
+            "lights": ["light.couloir", "light.veilleuse"],
+            "presence": {
+                "sensors": ["binary_sensor.couloir"],
+                "on_after": 5,
+                "slots": [
+                    {
+                        "start": "20:00",
+                        "end": "10:00",
+                        "lights": ["light.veilleuse"],
+                        "brightness": 30,
+                        "color": [0, 0, 255],
+                    },
+                    {"start": "20:00", "end": "10:00", "lights": ["light.couloir"], "off": True},
+                    {"start": "10:00", "end": "20:00", "lights": ["light.veilleuse"], "off": True},
+                    {"start": "13:30", "end": "17:00", "off": True},
+                ],
+            },
+        }
+    ]
+}
+
+
+def test_presence_color_and_on_after():
+    s = build_settings(HALLWAY)
+    room = s.rooms[0]
+    states = {
+        "light.couloir": LightState(on=False),
+        "light.veilleuse": LightState(on=False, colored=True, min_kelvin=2000, max_kelvin=6500),
+    }
+
+    def cmds(p, lights, when, now):
+        return {c.entity_id: c.data for c in p.evaluate(now, when, -20, room, True, None, states, lights)}
+
+    p, lights = PresenceController(s), LightController(s)
+    # Someone passing by: nothing; still there 5 seconds later: the night light, blue at 30 %.
+    assert cmds(p, lights, local(23), T0) == {}
+    assert cmds(p, lights, local(23), T0 + timedelta(seconds=5)) == {
+        "light.veilleuse": {"transition": 1, "brightness_pct": 30, "rgb_color": [0, 0, 255]}
+    }
+    # The adaptive lighting leaves its color alone.
+    assert "light.veilleuse" in lights.overrides
+    # By day: the main light; the afternoon: nothing.
+    p = PresenceController(s)
+    cmds(p, lights, local(11), T0)
+    assert list(cmds(p, lights, local(11), T0 + timedelta(seconds=6))) == ["light.couloir"]
+    p = PresenceController(s)
+    cmds(p, lights, local(15), T0)
+    assert cmds(p, lights, local(15), T0 + timedelta(seconds=6)) == {}

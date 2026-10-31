@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0
+
+### What's new
+- **Indicator lights and displays** of the devices (`display` on a climate, fan or purifier item): an on/off indicator light or switch, a display brightness `number` (off: its minimum) or a brightness `select` (off: its off option, such as `Off` or `Fermer`). They are turned off in the `control.display_off` / `display_on` hours (the quiet night when unset) and during the naps of their room, and back on after, at the brightness or option they had. Smart Comfort acts only when these hours or naps start or end, like a timed automation: one turned back on by hand stays on until the next change. Discover finds them among the device's entities (settings entities included). Panel: on each device, and a **Displays off** line in the Schedule tab.
+- **Back to normal at a set time** (`reset_at` on a device item): at this time the device goes back to its normal state (closed preset or mode, temperature control) and its manual pause ends — the purifier back to Auto at 20:40 even after it was set to Favorite by hand.
+- Lights on presence: a **color** per slot (`color`, RGB: a blue night light), kept until the light is turned off, and **`on_after`**: the seconds a presence must last before the lights are turned on (someone passing by the sensor doesn't count).
+- Panel: the presets, modes and fan modes are set on each device only (picked from the device's own list); the global ones are no longer in Settings, as they depend on the device. They stay valid in YAML.
+
 ## 1.3.0
 
 ### What's new

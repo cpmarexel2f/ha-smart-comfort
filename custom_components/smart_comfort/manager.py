@@ -38,6 +38,7 @@ from .const import (
     STORAGE_VERSION,
 )
 from .control import Command, Controller, DeviceState, RoomContext
+from .displays import DisplayController, DisplayState
 from .engine import Clear, Digest, Engine, Gates, RoomReading
 from .lighting import LightController, LightState, PresenceController
 from .message import format_text, render
@@ -126,6 +127,13 @@ def air_level(state: State | None) -> float | None:
     return value
 
 
+def _number(value: Any) -> float | None:
+    try:
+        return None if value is None else float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def present(state: State | None) -> bool:
     """Someone is home according to a zone, person, tracker, group or boolean entity. Unknown: yes."""
     if state is None or state.state in BAD_STATES:
@@ -148,6 +156,7 @@ class SmartComfort:
         self.controller = Controller(settings)
         self.lights = LightController(settings)
         self.presence = PresenceController(settings)
+        self.displays = DisplayController(settings)
         self.store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self.notifications_enabled = True
         self.control_enabled = True
@@ -172,6 +181,7 @@ class SmartComfort:
         self.engine.restore(data.get("engine") or {})
         self.controller.restore(data.get("control") or {})
         self.lights.restore(data.get("lighting") or {})
+        self.displays.restore(data.get("displays") or {})
         if (last := data.get("last_notification")) is not None:
             self.last_notification = last
         # Switches: known before the first evaluation, not only once the switch entities are restored.
@@ -249,6 +259,7 @@ class SmartComfort:
             "engine": self.engine.as_dict(),
             "control": self.controller.as_dict(),
             "lighting": self.lights.as_dict(),
+            "displays": self.displays.as_dict(),
             "last_notification": self.last_notification,
             "notifications_enabled": self.notifications_enabled,
             "control_enabled": self.control_enabled,
@@ -333,6 +344,10 @@ class SmartComfort:
         if not rooms or self._stopped:
             return False
         self.hass.async_create_task(self.async_evaluate())
+        if new is not None and new.state == "on":
+            for room in rooms:
+                if room.presence.on_after > 0:
+                    self._unsubs.append(async_call_later(self.hass, room.presence.on_after + 0.5, self._debounced))
         if new is not None and new.state == "off":
             for room in rooms:
                 delay = room.presence.off_after * 60 + 1
@@ -361,6 +376,7 @@ class SmartComfort:
                 brightness=round(raw * 100 / 255) if isinstance(raw, (int, float)) else None,
                 kelvin=state.attributes.get("color_temp_kelvin"),
                 dimmable=bool(modes - {"onoff"}) if modes else raw is not None,
+                colored=bool(modes & {"hs", "rgb", "rgbw", "rgbww", "xy"}),
                 min_kelvin=state.attributes.get("min_color_temp_kelvin") if warm else None,
                 max_kelvin=state.attributes.get("max_color_temp_kelvin") if warm else None,
             )
@@ -499,6 +515,21 @@ class SmartComfort:
             )
         return out
 
+    def display_states(self, room: Room) -> dict[str, DisplayState]:
+        out: dict[str, DisplayState] = {}
+        for entity_id in room.displays:
+            state = self.hass.states.get(entity_id)
+            if state is None or state.state in BAD_STATES:
+                continue
+            out[entity_id] = DisplayState(
+                domain=state.domain,
+                value=state.state,
+                options=tuple(state.attributes.get("options") or ()),
+                minimum=_number(state.attributes.get("min")),
+                maximum=_number(state.attributes.get("max")),
+            )
+        return out
+
     # Evaluation.
 
     def gates(self, now: datetime) -> Gates:
@@ -522,6 +553,8 @@ class SmartComfort:
             handled: set[str] = set()
             lighting = self.lighting_enabled and self.settings.lighting_enabled
             elevation = self.sun_elevation()
+            if reset := self.controller.reset_due(dt_util.as_local(now)):
+                _LOGGER.debug("Back to the normal state: %s", ", ".join(reset))
             for room in self.settings.rooms:
                 if lighting and room.lights:
                     commands += self.lights.evaluate(
@@ -544,6 +577,8 @@ class SmartComfort:
                 states = self.device_states(room)
                 if self.control_enabled:
                     commands += self.controller.evaluate(now, local, room, ctx, states)
+                    if room.displays:
+                        commands += self.displays.evaluate(dt_util.as_local(now), room, self.display_states(room))
                 if self.controller.handled(room, states):
                     handled.add(room.id)
                 reading.handled = room.id in handled
@@ -578,6 +613,7 @@ class SmartComfort:
             self.controller.command_failed(cmd, now)
             if cmd.domain == "light":
                 self.lights.targets.pop(cmd.entity_id, None)  # Sent again at the next evaluation.
+            self.displays.wanted.pop(cmd.entity_id, None)
             return False
         self.hass.bus.async_fire(
             EVENT_CONTROL,

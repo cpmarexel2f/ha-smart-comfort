@@ -119,13 +119,19 @@
           "manual_override": "Pausa tras cambio manual",
           "suppress_when_handled": "Sin alerta si se gestiona",
           "night_start": "Noche tranquila desde",
-          "night_end": "Noche tranquila hasta"
+          "night_end": "Noche tranquila hasta",
+          "display": "Indicador o pantalla",
+          "reset_at": "Vuelta a lo normal a las",
+          "display_off": "Pantallas apagadas desde",
+          "display_on": "Pantallas encendidas desde"
         },
         "data_description": {
           "start": "Ventiladores y purificadores van al máximo al abrir solo entre estas horas. Ambas vacías: todo el día.",
           "manual_override": "Minutos que se deja en paz un aparato cambiado a mano. 0: nunca.",
           "suppress_when_handled": "Sin alerta «demasiado calor» si Smart Comfort ha encendido el aire o el ventilador de la estancia.",
-          "night_start": "Entre estas horas los aparatos usan sus ajustes de noche (velocidad, modo o ventilación más silenciosos) y no hay impulso de ventana."
+          "night_start": "Entre estas horas los aparatos usan sus ajustes de noche (velocidad, modo o ventilación más silenciosos) y no hay impulso de ventana.",
+          "display": "Apagado en las horas «Pantallas apagadas» de la pestaña Horarios y durante las siestas de la habitación, encendido después.",
+          "reset_at": "A esta hora el aparato vuelve a su estado normal, incluso tras un cambio manual (un purificador de nuevo en auto…)."
         },
         "sections": {
           "climate": {

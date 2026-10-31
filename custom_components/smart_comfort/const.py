@@ -123,6 +123,15 @@ CONF_NIGHT_FAN_MODE: Final = "night_fan_mode"
 CONF_NIGHT_PERCENTAGE: Final = "night_percentage"
 CONF_NIGHT_PRESET: Final = "night_preset"
 CONF_NIGHT_MODE: Final = "night_mode"
+# Indicator light or display of a device, off in its hours; time a device goes back to its normal state.
+CONF_DISPLAY: Final = "display"
+CONF_DISPLAY_OFF: Final = "display_off"
+CONF_DISPLAY_ON: Final = "display_on"
+CONF_RESET_AT: Final = "reset_at"
+# Presence lights: the color of a slot, the seconds a presence must last before they turn on.
+CONF_COLOR: Final = "color"
+CONF_ON_AFTER: Final = "on_after"
+DISPLAY_DOMAINS: Final = ("light", "switch", "number", "select")
 
 # Alert kinds, in display order.
 KIND_TOO_HOT: Final = "too_hot"
@@ -272,6 +281,9 @@ DEFAULT_CONTROL: Final[dict] = {
     # Quiet night: the night settings of each device apply in these hours, and no window boost.
     CONF_NIGHT_START: "22:00",
     CONF_NIGHT_END: "07:00",
+    # Indicator lights and displays of the devices: off in these hours (the quiet night when unset).
+    CONF_DISPLAY_OFF: None,
+    CONF_DISPLAY_ON: None,
     CONF_CLIMATE: {
         CONF_COOL_ABOVE: 23.0,
         CONF_OFF_BELOW: 21.0,
@@ -280,6 +292,8 @@ DEFAULT_CONTROL: Final[dict] = {
         CONF_CLOSED_FOR: 2,
         CONF_OFF_ON_OPEN: 1,
         CONF_NIGHT_FAN_MODE: None,
+        CONF_DISPLAY: None,
+        CONF_RESET_AT: None,
     },
     CONF_FANS: {
         CONF_ON_ABOVE: 23.0,
@@ -291,6 +305,8 @@ DEFAULT_CONTROL: Final[dict] = {
         CONF_OFF_PRESET: None,
         CONF_NIGHT_PERCENTAGE: None,
         CONF_NIGHT_PRESET: None,
+        CONF_DISPLAY: None,
+        CONF_RESET_AT: None,
     },
     CONF_PURIFIERS: {
         CONF_OPEN_PERCENTAGE: 100,
@@ -303,6 +319,8 @@ DEFAULT_CONTROL: Final[dict] = {
         CONF_NIGHT_PERCENTAGE: None,
         CONF_NIGHT_PRESET: None,
         CONF_NIGHT_MODE: None,
+        CONF_DISPLAY: None,
+        CONF_RESET_AT: None,
     },
 }
 

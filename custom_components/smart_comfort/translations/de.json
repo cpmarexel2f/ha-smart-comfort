@@ -119,13 +119,19 @@
           "manual_override": "Manuelle Übersteuerung",
           "suppress_when_handled": "Keine Meldung, wenn behandelt",
           "night_start": "Ruhige Nacht ab",
-          "night_end": "Ruhige Nacht bis"
+          "night_end": "Ruhige Nacht bis",
+          "display": "Kontrollleuchte oder Display",
+          "reset_at": "Zurück zum Normalzustand um",
+          "display_off": "Anzeigen aus ab",
+          "display_on": "Anzeigen an ab"
         },
         "data_description": {
           "start": "Lüfter und Luftreiniger laufen beim Öffnen nur zwischen diesen Zeiten auf voller Stufe. Beide leer: ganztägig.",
           "manual_override": "Minuten, die ein von Hand geändertes Gerät in Ruhe gelassen wird. 0: nie.",
           "suppress_when_handled": "Keine „zu warm“-Meldung für einen Raum, dessen Klimaanlage oder Lüfter Smart Comfort eingeschaltet hat.",
-          "night_start": "Zwischen diesen Zeiten nutzen die Geräte ihre Nachteinstellungen (leisere Stufe, Voreinstellung oder Lüftermodus) und es gibt keinen Fenster-Boost."
+          "night_start": "Zwischen diesen Zeiten nutzen die Geräte ihre Nachteinstellungen (leisere Stufe, Voreinstellung oder Lüftermodus) und es gibt keinen Fenster-Boost.",
+          "display": "Aus in den Stunden „Anzeigen aus“ im Tab Zeitplan und während der Mittagsschläfchen im Raum, danach wieder an.",
+          "reset_at": "Zu dieser Uhrzeit kehrt das Gerät in seinen Normalzustand zurück, auch nach einer manuellen Änderung (ein Luftreiniger wieder auf Auto…)."
         },
         "sections": {
           "climate": {

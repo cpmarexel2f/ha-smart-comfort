@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
@@ -41,10 +42,17 @@ class House:
         device: str | None = None,
         area: str | None = None,
         platform: str = "test",
+        category: EntityCategory | None = None,
         **attrs,
     ):
         entry = self.entities.async_get_or_create(
-            domain, platform, object_id, suggested_object_id=object_id, device_id=device, config_entry=self.entry
+            domain,
+            platform,
+            object_id,
+            suggested_object_id=object_id,
+            device_id=device,
+            config_entry=self.entry,
+            entity_category=category,
         )
         if area:
             self.entities.async_update_entity(entry.entity_id, area_id=area)
@@ -73,6 +81,9 @@ def build(hass: HomeAssistant) -> House:
     fan = h.device("Tower fan", living)
     h.entity("fan", "living_fan", "off", fan, preset_modes=["Natural Wind", "Straight Wind", "Smart"])
     h.entity("sensor", "fan_temperature", "23", fan, device_class="temperature")
+    # Its display brightness, a setting of the device.
+    h.entity("number", "living_fan_display_brightness", "100", fan, category=EntityCategory.CONFIG, min=0, max=100)
+    h.entity("switch", "living_fan_child_lock", "off", fan, category=EntityCategory.CONFIG)
     purifier = h.device("Air Purifier 4", living, model="zhimi.purifier")
     h.entity("fan", "living_purifier", "on", purifier, preset_modes=["auto"])
     h.entity("select", "living_purifier_mode", "automatic", purifier, options=["automatic", "manual"])
@@ -85,13 +96,10 @@ def build(hass: HomeAssistant) -> House:
     h.entity("sensor", "bedroom_temperature", "19", area=bedroom, device_class="temperature")
     h.entity("binary_sensor", "bedroom_door", "off", area=bedroom, device_class="door")
     h.entity("binary_sensor", "bedroom_motion", "off", area=bedroom, device_class="motion")
-    h.entity(
-        "fan",
-        "bedroom_purifier",
-        "on",
-        h.device("Purificateur chambre", bedroom),
-        preset_modes=["Auto", "Sleep", "Favorite"],
-    )
+    bedroom_purifier = h.device("Purificateur chambre", bedroom)
+    h.entity("fan", "bedroom_purifier", "on", bedroom_purifier, preset_modes=["Auto", "Sleep", "Favorite"])
+    # Its indicator light (on/off): the display, not a lamp of the room.
+    h.entity("light", "bedroom_purifier_indicator_light", "on", bedroom_purifier, supported_color_modes=["onoff"])
     # Garden: outdoor. Hall: a door only.
     h.entity("sensor", "garden_temperature", "9", area=garden, device_class="temperature")
     h.entity("sensor", "garden_noise", "50", area=garden, device_class="sound_pressure")
@@ -133,6 +141,7 @@ async def test_discover_rooms(hass: HomeAssistant) -> None:
             "preset": "Natural Wind",
             "off_preset": "Natural Wind",
             "open_preset": "Straight Wind",
+            "display": "number.living_fan_display_brightness",
         }
     ]
     assert living["purifiers"] == [
@@ -141,6 +150,7 @@ async def test_discover_rooms(hass: HomeAssistant) -> None:
             "mode_select": "select.living_purifier_mode",
             "open_mode": "manual",
             "closed_mode": "automatic",
+            "display": "select.living_purifier_brightness",
         }
     ]
     bedroom = by_name["Bedroom"]
@@ -153,6 +163,7 @@ async def test_discover_rooms(hass: HomeAssistant) -> None:
             "open_preset": "Favorite",
             "closed_preset": "Auto",
             "night_preset": "Sleep",
+            "display": "light.bedroom_purifier_indicator_light",
         }
     ]
 
@@ -184,7 +195,13 @@ async def test_merge_keeps_what_is_set(hass: HomeAssistant) -> None:
     assert living["co2"] == "sensor.living_co2"  # filled in
     # Device already there: its own setting kept, the missing ones filled in.
     assert living["fans"] == [
-        {"entity_id": "fan.living_fan", "preset": "Smart", "off_preset": "Natural Wind", "open_preset": "Straight Wind"}
+        {
+            "entity_id": "fan.living_fan",
+            "preset": "Smart",
+            "off_preset": "Natural Wind",
+            "open_preset": "Straight Wind",
+            "display": "number.living_fan_display_brightness",
+        }
     ]
     assert "outdoor_noise" not in merged
     assert living["area"] == "living_room"

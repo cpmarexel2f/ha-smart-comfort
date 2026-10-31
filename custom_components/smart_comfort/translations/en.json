@@ -119,13 +119,19 @@
           "manual_override": "Manual override",
           "suppress_when_handled": "No alert when handled",
           "night_start": "Quiet night from",
-          "night_end": "Quiet night until"
+          "night_end": "Quiet night until",
+          "display": "Indicator light or display",
+          "reset_at": "Back to normal at",
+          "display_off": "Displays off from",
+          "display_on": "Displays on from"
         },
         "data_description": {
           "start": "Fans and purifiers go to full speed when an opening opens only between these times. Both empty: all day.",
           "manual_override": "Minutes a device changed by hand is left alone. 0: never paused.",
           "suppress_when_handled": "No “too hot” alert for a room whose air conditioner or fan Smart Comfort has turned on.",
-          "night_start": "Between these times the devices use their night settings (quieter speed, preset or fan mode) and there is no window boost for them."
+          "night_start": "Between these times the devices use their night settings (quieter speed, preset or fan mode) and there is no window boost for them.",
+          "display": "Turned off in the \"Displays off\" hours of the Schedule tab and during the naps of the room, back on after.",
+          "reset_at": "At this time the device goes back to its normal state, even after a change by hand (a purifier back to auto…)."
         },
         "sections": {
           "climate": {

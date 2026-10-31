@@ -29,6 +29,7 @@ from homeassistant.helpers import entity_registry as er
 
 from . import const as k
 from .config import slugify
+from .displays import off_option
 
 # Words of outdoor areas and sensors, in slug form (several languages).
 OUTDOOR_WORDS = (
@@ -83,6 +84,20 @@ TRACKED = (
     k.CONF_FANS,
     k.CONF_PURIFIERS,
     k.CONF_LIGHTS,
+)
+# Indicator lights and displays of the devices (slug form).
+DISPLAY_WORDS = (
+    "indicator",
+    "voyant",
+    "display",
+    "ecran",
+    "screen",
+    "brightness",
+    "luminosite",
+    "helligkeit",
+    "anzeige",
+    "pantalla",
+    "brillo",
 )
 # Bedrooms: a quiet morning for their lights.
 BEDROOM_WORDS = ("chambre", "bedroom", "schlafzimmer", "kinderzimmer", "dormitorio", "habitacion", "nursery")
@@ -258,7 +273,11 @@ def _collect(
     by_device: dict[str, list[_Entity]] = {}
     unassigned: list[_Entity] = []
     for entry in er.async_get(hass).entities.values():
-        if entry.disabled_by or entry.hidden_by or entry.entity_category is not None:
+        if entry.disabled_by or entry.hidden_by:
+            continue
+        # Settings of a device (its display…): only among its entities, not in the room.
+        setting = entry.entity_category is not None
+        if setting and not (entry.device_id and entry.domain in k.DISPLAY_DOMAINS):
             continue
         device = devices.async_get(entry.device_id) if entry.device_id else None
         state = hass.states.get(entry.entity_id)
@@ -276,8 +295,10 @@ def _collect(
             entry.platform,
         )
         if entry.device_id:
-            device_domains.setdefault(entry.device_id, set()).add(entry.domain)
             by_device.setdefault(entry.device_id, []).append(ent)
+            if setting:
+                continue
+            device_domains.setdefault(entry.device_id, set()).add(entry.domain)
         area_id = entry.area_id or (device.area_id if device else None)
         if area_id in areas:
             areas[area_id].entities.append(ent)
@@ -298,6 +319,32 @@ def _best(candidates: list[_Entity], by_device: dict[str, list[_Entity]]) -> str
         return None
     best = max(candidates, key=score)
     return best.entity_id
+
+
+def _display(entity: _Entity, by_device: dict[str, list[_Entity]], used: set[str]) -> str | None:
+    """The indicator light or display of a device: an on/off light, a switch, a brightness or a select."""
+    for sibling in sorted(by_device.get(entity.device_id or "", []), key=lambda e: e.entity_id):
+        if sibling.domain not in k.DISPLAY_DOMAINS or sibling.entity_id in used:
+            continue
+        if not (_has(sibling.entity_id, DISPLAY_WORDS) or _has(sibling.name, DISPLAY_WORDS)):
+            continue
+        attributes = sibling.attributes
+        if sibling.domain == "light" and set(attributes.get("supported_color_modes") or ["onoff"]) != {"onoff"}:
+            continue
+        if sibling.domain == "select" and off_option(list(attributes.get("options") or [])) is None:
+            continue
+        return sibling.entity_id
+    return None
+
+
+def _with_display(
+    item: str | dict[str, Any], entity: _Entity, by_device: dict[str, list[_Entity]]
+) -> str | dict[str, Any]:
+    used = {item.get(k.CONF_MODE_SELECT)} if isinstance(item, dict) else set()
+    if (display := _display(entity, by_device, {u for u in used if u})) is None:
+        return item
+    found = item if isinstance(item, dict) else {k.CONF_ENTITY_ID: item}
+    return {**found, k.CONF_DISPLAY: display}
 
 
 def _fan(entity: _Entity) -> str | dict[str, Any]:
@@ -431,15 +478,16 @@ def discover_rooms(hass: HomeAssistant) -> Found:
             e for e in area.entities if e.domain == "climate" and "cool" in (e.attributes.get("hvac_modes") or [])
         ]
         if coolers:
-            room[k.CONF_CLIMATE] = _climate(min(coolers, key=lambda e: e.entity_id))
+            cooler = min(coolers, key=lambda e: e.entity_id)
+            room[k.CONF_CLIMATE] = _with_display(_climate(cooler), cooler, by_device)
         fans, purifiers = [], []
         for e in sorted((e for e in area.entities if e.domain == "fan"), key=lambda e: e.entity_id):
             if "climate" in device_domains.get(e.device_id or "", set()):
                 continue  # The fan of an air conditioner.
             if _is_purifier(e, by_device):
-                purifiers.append(_purifier(e, by_device))
+                purifiers.append(_with_display(_purifier(e, by_device), e, by_device))
             else:
-                fans.append(_fan(e))
+                fans.append(_with_display(_fan(e), e, by_device))
         if fans:
             room[k.CONF_FANS] = fans
         if purifiers:

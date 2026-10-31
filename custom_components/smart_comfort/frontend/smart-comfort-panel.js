@@ -146,6 +146,8 @@ const STRINGS = {
     sched_morning_help: "From the end of the night: bedroom lights stay dimmer.",
     sched_boost: "Window boost",
     sched_boost_help: "Fans and purifiers at full speed while a window is open. Both empty: all day.",
+    sched_displays: "Displays off",
+    sched_displays_help: "Indicator lights and displays of the devices off (and during the naps of their room). Empty: the quiet night.",
     sched_from: "From",
     sched_to: "Until",
     sched_morning_end: "Until",
@@ -181,6 +183,8 @@ const STRINGS = {
     presence_max_lux: "Only below",
     presence_max_lux_help: "No light turned on when the room is brighter than this.",
     presence_off_after: "Off after nobody for",
+    presence_on_after: "On after a presence of",
+    presence_on_after_help: "Someone just passing by the sensor doesn't turn the lights on.",
     presence_not_during_naps: "Off during the naps",
     presence_not_during_naps_help: "These lights are not turned on while a room of the house has its nap.",
     slots_help: "Slots, in order: the first one that applies to a light decides — kept off, or turned on at its brightness.",
@@ -189,6 +193,7 @@ const STRINGS = {
     slot_lights_help: "Empty: all the presence lights.",
     slot_off: "Don't turn on",
     slot_brightness: "Brightness",
+    slot_color: "Color",
   },
   fr: {
     outdoor_noise: "Bruit extérieur",
@@ -293,6 +298,8 @@ const STRINGS = {
     sched_morning_help: "À partir de la fin de la nuit : les lumières des chambres restent moins fortes.",
     sched_boost: "Boost fenêtre",
     sched_boost_help: "Ventilateurs et purificateurs à fond quand une fenêtre est ouverte. Les deux vides : toute la journée.",
+    sched_displays: "Voyants éteints",
+    sched_displays_help: "Voyants et écrans des appareils éteints (et pendant les siestes de leur pièce). Vide : la nuit calme.",
     sched_from: "De",
     sched_to: "Jusqu'à",
     sched_morning_end: "Jusqu'à",
@@ -328,6 +335,8 @@ const STRINGS = {
     presence_max_lux: "Seulement sous",
     presence_max_lux_help: "Aucune lumière allumée quand la pièce est plus claire que ça.",
     presence_off_after: "Extinction après personne pendant",
+    presence_on_after: "Allumage après une présence de",
+    presence_on_after_help: "Quelqu'un qui passe juste devant le capteur n'allume pas les lumières.",
     presence_not_during_naps: "Éteintes pendant les siestes",
     presence_not_during_naps_help: "Ces lumières ne s'allument pas pendant la sieste d'une pièce de la maison.",
     slots_help: "Créneaux, dans l'ordre : le premier qui s'applique à une lumière décide — laissée éteinte, ou allumée à son intensité.",
@@ -336,6 +345,7 @@ const STRINGS = {
     slot_lights_help: "Vide : toutes les lumières de présence.",
     slot_off: "Ne pas allumer",
     slot_brightness: "Intensité",
+    slot_color: "Couleur",
   },
   de: {
     outdoor_noise: "Außenlärm",
@@ -440,6 +450,8 @@ const STRINGS = {
     sched_morning_help: "Ab dem Ende der Nacht: Schlafzimmerlichter bleiben gedämpft.",
     sched_boost: "Fenster-Boost",
     sched_boost_help: "Lüfter und Luftreiniger auf voller Stufe bei offenem Fenster. Beide leer: den ganzen Tag.",
+    sched_displays: "Anzeigen aus",
+    sched_displays_help: "Kontrollleuchten und Displays der Geräte aus (auch während der Mittagsschläfchen im Raum). Leer: die Nachtruhe.",
     sched_from: "Von",
     sched_to: "Bis",
     sched_morning_end: "Bis",
@@ -475,6 +487,8 @@ const STRINGS = {
     presence_max_lux: "Nur unter",
     presence_max_lux_help: "Kein Licht wird eingeschaltet, wenn der Raum heller ist.",
     presence_off_after: "Aus nach niemand seit",
+    presence_on_after: "An nach Anwesenheit von",
+    presence_on_after_help: "Wer nur am Sensor vorbeigeht, schaltet die Lichter nicht ein.",
     presence_not_during_naps: "Aus beim Mittagsschlaf",
     presence_not_during_naps_help: "Diese Lichter gehen nicht an, solange ein Raum des Hauses Mittagsschlaf hält.",
     slots_help: "Zeitfenster der Reihe nach: das erste, das für ein Licht gilt, entscheidet – aus lassen oder mit seiner Helligkeit einschalten.",
@@ -483,6 +497,7 @@ const STRINGS = {
     slot_lights_help: "Leer: alle Anwesenheitslichter.",
     slot_off: "Nicht einschalten",
     slot_brightness: "Helligkeit",
+    slot_color: "Farbe",
   },
   es: {
     outdoor_noise: "Ruido exterior",
@@ -587,6 +602,8 @@ const STRINGS = {
     sched_morning_help: "Desde el final de la noche: las luces de los dormitorios siguen más tenues.",
     sched_boost: "Refuerzo por ventana",
     sched_boost_help: "Ventiladores y purificadores al máximo con una ventana abierta. Ambos vacíos: todo el día.",
+    sched_displays: "Pantallas apagadas",
+    sched_displays_help: "Indicadores y pantallas de los aparatos apagados (y durante las siestas de su habitación). Vacío: la noche tranquila.",
     sched_from: "Desde",
     sched_to: "Hasta",
     sched_morning_end: "Hasta",
@@ -622,6 +639,8 @@ const STRINGS = {
     presence_max_lux: "Solo por debajo de",
     presence_max_lux_help: "No se enciende ninguna luz si la estancia está más iluminada.",
     presence_off_after: "Apagado tras nadie durante",
+    presence_on_after: "Encendido tras una presencia de",
+    presence_on_after_help: "Alguien que solo pasa delante del sensor no enciende las luces.",
     presence_not_during_naps: "Apagadas durante las siestas",
     presence_not_during_naps_help: "Estas luces no se encienden mientras una estancia de la casa está en siesta.",
     slots_help: "Franjas, en orden: la primera que se aplica a una luz decide — apagada, o encendida con su brillo.",
@@ -630,6 +649,7 @@ const STRINGS = {
     slot_lights_help: "Vacío: todas las luces de presencia.",
     slot_off: "No encender",
     slot_brightness: "Brillo",
+    slot_color: "Color",
   },
 };
 
@@ -707,6 +727,11 @@ const text = { text: {} };
 const bool = { boolean: {} };
 const time = { time: {} };
 const entity = (domain, extra = {}) => ({ entity: { domain, ...extra } });
+// Every device: its indicator light or display, and a time to go back to its normal state.
+const EQUIPMENT = [
+  { name: "display", selector: entity(["light", "switch", "number", "select"]) },
+  { name: "reset_at", selector: time },
+];
 const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const kelvin = { number: { mode: "box", step: 100, min: 1500, max: 10000, unit_of_measurement: "K" } };
 const level = { number: { mode: "box", step: 1, min: 1, max: 100, unit_of_measurement: "%" } };
@@ -1538,29 +1563,20 @@ class SmartComfortPanel extends HTMLElement {
         { name: "cool_above", selector: num("°C") },
         { name: "off_below", selector: num("°C") },
         { name: "setpoint", selector: num("°C", { step: 0.5 }) },
-        { name: "fan_mode", selector: text },
         { name: "closed_for", selector: minutes() },
         { name: "off_on_open", selector: minutes() },
-        { name: "night_fan_mode", selector: text },
       ]),
       sec("fans", [
         { name: "on_above", selector: num("°C") },
         { name: "off_below", selector: num("°C") },
         { name: "percentage", selector: percent },
-        { name: "preset", selector: text },
         { name: "open_percentage", selector: percent },
-        { name: "open_preset", selector: text },
-        { name: "off_preset", selector: text },
         { name: "night_percentage", selector: percent },
-        { name: "night_preset", selector: text },
       ]),
       sec("purifiers", [
         { name: "open_percentage", selector: percent },
-        { name: "open_preset", selector: text },
-        { name: "closed_preset", selector: text },
         { name: "keep_on", selector: bool },
         { name: "night_percentage", selector: percent },
-        { name: "night_preset", selector: text },
       ]),
     ];
   }
@@ -1593,6 +1609,14 @@ class SmartComfortPanel extends HTMLElement {
       { key: "night", icon: "mdi:weather-night", start: control.night_start, end: control.night_end },
       { key: "morning", icon: "mdi:weather-sunset-up", start: control.night_end || "00:00", end: lighting.morning_end },
       { key: "boost", icon: "mdi:window-open-variant", start: control.start, end: control.end },
+      {
+        key: "displays",
+        icon: "mdi:led-off",
+        // Unset: the quiet night.
+        start: control.display_off && control.display_on ? control.display_off : control.night_start,
+        end: control.display_off && control.display_on ? control.display_on : control.night_end,
+        own: { start: control.display_off, end: control.display_on },
+      },
     ];
   }
 
@@ -1665,7 +1689,7 @@ class SmartComfortPanel extends HTMLElement {
       );
       edit.append(box);
     };
-    const [quiet, night, morning, boost] = rows;
+    const [quiet, night, morning, boost, displays] = rows;
     block(quiet, range, { start: quiet.start, end: quiet.end }, (v) => {
       for (const [key, value] of [["quiet_start", v.start], ["quiet_end", v.end]]) {
         if (isEmpty(value)) delete this._draft[key];
@@ -1680,6 +1704,9 @@ class SmartComfortPanel extends HTMLElement {
     );
     block(boost, range, { start: boost.start, end: boost.end }, (v) =>
       this._setSection("control", { start: v.start || null, end: v.end || null })
+    );
+    block(displays, range, displays.own, (v) =>
+      this._setSection("control", { display_off: v.start || null, display_on: v.end || null })
     );
     content.append(edit);
   }
@@ -2304,7 +2331,7 @@ class SmartComfortPanel extends HTMLElement {
       return;
     }
     const presence = (room.presence = room.presence || { sensors: [] });
-    const fields = ["sensors", "lights", "lux", "max_lux", "off_after", "not_during_naps"];
+    const fields = ["sensors", "lights", "lux", "max_lux", "on_after", "off_after", "not_during_naps"];
     const line = this._el("div", "device-item");
     line.append(
       this._form(
@@ -2315,7 +2342,10 @@ class SmartComfortPanel extends HTMLElement {
             { name: "lux", selector: entity("sensor", { device_class: "illuminance" }) },
             { name: "max_lux", selector: num("lx", { min: 0, step: 1 }) },
           ]),
-          { name: "off_after", selector: { number: { mode: "box", step: 0.5, min: 0, max: 1440, unit_of_measurement: "min" } } },
+          grid([
+            { name: "on_after", selector: { number: { mode: "box", step: 1, min: 0, max: 600, unit_of_measurement: "s" } } },
+            { name: "off_after", selector: { number: { mode: "box", step: 0.5, min: 0, max: 1440, unit_of_measurement: "min" } } },
+          ]),
           { name: "not_during_naps", selector: entity("light", { multiple: true }) },
         ],
         { off_after: 2, ...Object.fromEntries(fields.filter((f) => f in presence).map((f) => [f, presence[f]])) },
@@ -2326,7 +2356,7 @@ class SmartComfortPanel extends HTMLElement {
           }
         },
         (f) => this._t(`presence_${f.name}`),
-        (f) => (["lights", "not_during_naps", "max_lux"].includes(f.name) ? this._t(`presence_${f.name}_help`) : undefined)
+        (f) => (["lights", "not_during_naps", "max_lux", "on_after"].includes(f.name) ? this._t(`presence_${f.name}_help`) : undefined)
       ),
       this._iconButton("mdi:delete-outline", this._t("presence_remove"), () => {
         delete room.presence;
@@ -2346,7 +2376,7 @@ class SmartComfortPanel extends HTMLElement {
       { name: "days", selector: days },
       { name: "lights", selector: entity("light", { multiple: true }) },
       { name: "off", selector: bool },
-      ...(slot.off ? [] : [{ name: "brightness", selector: level }]),
+      ...(slot.off ? [] : [{ name: "brightness", selector: level }, { name: "color", selector: { color_rgb: {} } }]),
     ];
     if (slots.length) body.append(this._el("div", "help", this._t("slots_help")));
     slots.forEach((slot, i) => {
@@ -2466,6 +2496,7 @@ class SmartComfortPanel extends HTMLElement {
                 { name: "closed_for", selector: minutes() },
                 { name: "off_on_open", selector: minutes() },
                 { name: "night_fan_mode", selector: this._choice(this._attr(entityId, "fan_modes")) },
+                ...EQUIPMENT,
               ],
             },
           ]
@@ -2511,6 +2542,7 @@ class SmartComfortPanel extends HTMLElement {
                 { name: "off_preset", selector: this._choice(presets) },
                 { name: "night_percentage", selector: percent },
                 { name: "night_preset", selector: this._choice(presets) },
+                ...EQUIPMENT,
               ],
             },
           ]
@@ -2546,6 +2578,7 @@ class SmartComfortPanel extends HTMLElement {
                 { name: "keep_on", selector: bool },
                 { name: "night_percentage", selector: percent },
                 { name: "night_preset", selector: this._choice(presets) },
+                ...EQUIPMENT,
               ],
             },
           ]
@@ -2763,6 +2796,7 @@ const STYLE = `
   .tl-bar.night .tl-seg { background: #5c6bc0; }
   .tl-bar.morning .tl-seg { background: var(--warning-color, #ffa600); }
   .tl-bar.boost .tl-seg { background: var(--success-color, #43a047); }
+  .tl-bar.displays .tl-seg { background: #78909c; }
   .tl-now { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--error-color, #db4437); }
   .sched-row { padding: 12px 0; border-top: 1px solid var(--divider-color); }
   .card-header + .sched-row { border-top: none; padding-top: 0; }

@@ -119,13 +119,19 @@
           "manual_override": "Reprise manuelle",
           "suppress_when_handled": "Pas d'alerte si traité",
           "night_start": "Nuit calme à partir de",
-          "night_end": "Nuit calme jusqu'à"
+          "night_end": "Nuit calme jusqu'à",
+          "display": "Voyant ou écran",
+          "reset_at": "Retour à la normale à",
+          "display_off": "Voyants éteints à partir de",
+          "display_on": "Voyants rallumés à partir de"
         },
         "data_description": {
           "start": "Ventilateurs et purificateurs passent à fond à l'ouverture d'une fenêtre seulement entre ces heures. Les deux vides : toute la journée.",
           "manual_override": "Minutes pendant lesquelles un appareil modifié à la main est laissé tranquille. 0 : jamais.",
           "suppress_when_handled": "Pas d'alerte « trop chaud » pour une pièce dont Smart Comfort a allumé la clim ou le ventilateur.",
-          "night_start": "Entre ces heures, les appareils utilisent leurs réglages de nuit (vitesse, mode ou ventilation plus silencieux) et n'ont pas de boost fenêtre."
+          "night_start": "Entre ces heures, les appareils utilisent leurs réglages de nuit (vitesse, mode ou ventilation plus silencieux) et n'ont pas de boost fenêtre.",
+          "display": "Éteint pendant les heures « Voyants éteints » de l'onglet Horaires et pendant les siestes de la pièce, rallumé après.",
+          "reset_at": "À cette heure, l'appareil revient à son état normal, même après un changement à la main (un purificateur en auto…)."
         },
         "sections": {
           "climate": {

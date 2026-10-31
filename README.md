@@ -30,9 +30,11 @@ Comfort automations built with a cooldown keep notifying every couple of hours a
   - **air purifiers**: boost while a window is open during the day (preset, speed, or a mode select such as `manual`/`automatic`), back to normal when closed (the closed preset / mode, or else the state it had before the boost), and optionally **kept on** (turned back on after a power cut)
   - commands are sent only when the target changes and the device isn't already in that state; a device changed **by hand** is left alone for an hour (configurable)
   - a room whose air conditioner or fan Smart Comfort has turned on gets no "too hot" alert (a device turned on by hand doesn't count)
+  - **indicator lights and displays** of the devices (an on/off indicator light or switch, a display brightness, a brightness select such as bright / dim / off) turned off in their hours (the quiet night by default) and during the naps of their room, and back on after at the brightness or option they had; found by Discover
+  - **back to normal at a set time**, per device (`reset_at`): the purifier back to its automatic mode at 20:40, even after a change by hand
   - **quiet night**: in the night hours (22:00–07:00 by default), devices with night settings run quieter — a fan at a lower speed or a sleep preset, a purifier in its sleep preset or mode, an air conditioner in its silent fan mode — and get no window boost; the day settings (or the state before the night) come back in the morning
 - **Adaptive lighting**: the dimmable lights of each room that are on get the brightness of the moment — day with the sun up, evening once it is down, night in the quiet night hours — at once when turned on, then gradually; optionally the warmth too (color temperature, can be turned off). Smart Comfort never turns a light on or off, night lights are only set at night, and a light changed by hand is left alone until it is turned off
-- **Lights on presence**, per room: lights turned on when someone comes in (only when the room is dark enough, with a light level sensor) at the brightness of the moment, and off once nobody is left for a while; slots keep some lights off (weekday mornings…) or set their brightness (a dim entrance at night), lights chosen to stay off during the naps of the house, night lights only at night, and a light turned off by hand stays off until the room is empty
+- **Lights on presence**, per room: lights turned on when someone comes in (only when the room is dark enough, with a light level sensor) at the brightness of the moment, and off once nobody is left for a while; slots keep some lights off (weekday mornings…) or set their brightness (a dim entrance at night), lights chosen to stay off during the naps of the house, night lights only at night, a color per slot (a blue night light), a presence that must last a few seconds (someone passing by doesn't count), and a light turned off by hand stays off until the room is empty
 - **Outdoors**: outdoor places (garden, terrace…) with their temperature, air quality and noise sensors, plus sensors in no area (weather entity, a city air quality index such as Atmo France)
 - **Noise**: a sound level sensor per room (noisy room alert), and outdoor noise sensors: no suggestion to open the windows while it is noisy outside, and an alert to close them when they are open in the noise
 - **Outdoor air quality**: an index from 1 (good) to 6 (extremely poor) — European indexes (Atmo, EAQI) as is, US AQI by its bands, text states (good, poor…) — the worst sensor counts: no suggestion to open the windows while the air is poor, and an alert to close them when they are open then
@@ -259,7 +261,7 @@ Each alert also takes `enabled`, `hysteresis` (how far back past the threshold t
 
 ### Device control
 
-The first five rows (`enabled`, `start` / `end`, `manual_override`, `suppress_when_handled`, `night_start` / `night_end`) are global: set them under `control:` only. The `climate.*`, `fans.*` and `purifiers.*` options are set under `control:` for every room, under `rooms[].control:` for one room, and on the device item itself for one device (without the `climate.` / `fans.` / `purifiers.` prefix).
+The first six rows (`enabled`, `start` / `end`, `manual_override`, `suppress_when_handled`, `night_start` / `night_end`, `display_off` / `display_on`) are global: set them under `control:` only. The `climate.*`, `fans.*` and `purifiers.*` options are set under `control:` for every room, under `rooms[].control:` for one room, and on the device item itself for one device (without the `climate.` / `fans.` / `purifiers.` prefix).
 
 | Option | Default | Description |
 |---|---|---|
@@ -268,6 +270,9 @@ The first five rows (`enabled`, `start` / `end`, `manual_override`, `suppress_wh
 | `manual_override` | 60 min | A device changed by hand is left alone this long, then its target is applied again. 0: never paused |
 | `suppress_when_handled` | `true` | No "too hot" alert for a room whose air conditioner or fan is running on Smart Comfort's command |
 | `night_start` / `night_end` | 22:00 / 07:00 | Quiet night hours: devices with night settings use them, and get no window boost |
+| `display_off` / `display_on` | the quiet night | Hours the indicator lights and displays of the devices are off (e.g. 20:00 / 10:00) |
+| `display` | none | On a device item: its indicator light or display — a `light` or `switch` (on/off), a `number` (off: its minimum), a `select` (off: its off option, such as `Off` or `Fermer`). Off in the display hours and during the naps of the room; Smart Comfort acts only when these start or end, so one turned back on by hand stays on until the next change |
+| `reset_at` | none | On a device item: a time it goes back to its normal state (closed preset / mode, temperature control), its manual pause ended |
 | `climate.cool_above` / `off_below` | 23 / 21 °C | Cool above, turn off below |
 | `climate.setpoint` / `fan_mode` | 22 °C / none | Setpoint and fan mode when cooling |
 | `climate.closed_for` / `off_on_open` | 2 / 1 min | Openings closed for this long before cooling; off when one stays open this long |
@@ -284,6 +289,23 @@ The first five rows (`enabled`, `start` / `end`, `manual_override`, `suppress_wh
 | `purifiers.night_percentage` / `night_preset` / `night_mode` | none | At night: speed, preset, mode select option (e.g. `Sleep`). An off purifier stays off; the state before the night comes back in the morning (or the closed preset / mode) |
 
 An air conditioner in another mode than `cool` or `off` (heat, dry…) is left alone by the temperature control, but turned off when an opening stays open.
+
+Presets and modes depend on each device: set them on the device item (Discover picks them from the device's own list), not under `control:`. The panel offers them per device only.
+
+```yaml
+      fans:
+        - entity_id: fan.living_fan
+          preset: Naturel
+          open_preset: Standard
+          display: number.living_fan_screen_brightness
+      purifiers:
+        - entity_id: fan.bedroom_purifier
+          open_preset: Favorite
+          closed_preset: Auto
+          night_preset: Sleep
+          display: light.bedroom_purifier_indicator_light
+          reset_at: "20:40"          # back to Auto, even after a change by hand
+```
 
 Thresholds and messages are in °C; sensors in °F or K are converted. An opening unavailable for 10 minutes (dead battery…) is left out of its room instead of blocking its alerts and devices (`ignored_openings` attribute of the room sensor). The problems of a sensor removed from a room end.
 
@@ -337,9 +359,10 @@ Set per room under `rooms[].presence:` (in the panel: room → Lighting → Ligh
 | `sensors` | required | Presence, occupancy or motion `binary_sensor`s: someone is there while one of them is on |
 | `lights` | the room's | The lights turned on and off; any light can be added (the hallway's from the entrance) |
 | `lux` / `max_lux` | none | A light level sensor, and the level above which no light is turned on |
+| `on_after` | 0 s | Seconds a presence must last before the lights are turned on |
 | `off_after` | 2 min | Minutes with nobody before the lights are turned off (decimals allowed) |
 | `not_during_naps` | none | Lights not turned on while a room of the house has its nap (`rooms[].naps`) |
-| `slots` | none | `start`, `end`, optional `days` and `lights` (all when none), then `off: true` (not turned on) or `brightness` (in %). The first slot that applies to a light decides |
+| `slots` | none | `start`, `end`, optional `days` and `lights` (all when none), then `off: true` (not turned on) or `brightness` (in %) and `color` (RGB, for the color lights). The first slot that applies to a light decides |
 
 A light is turned on only when none of the presence lights is already on, at the brightness of the moment (adaptive lighting) unless a slot sets one; a night light only at night and during the naps. Every presence light that is on is turned off once nobody is left. A presence light turned off by hand while someone is there is not turned back on until the room is empty.
 
@@ -357,7 +380,20 @@ A light is turned on only when none of the presence lights is already on, at the
           - { start: "06:30", end: "08:00", days: [mon, tue, wed, thu, fri], off: true }
           - { start: "20:00", end: "09:00", lights: [light.entrance], brightness: 20 }
           - { start: "20:00", end: "09:00", lights: [light.hallway], off: true }
+    - name: Hallway
+      lights: [light.hallway, { entity_id: light.hallway_night_light, night_only: true }]
+      presence:
+        sensors: [binary_sensor.hallway_occupancy]
+        on_after: 5                  # someone passing by doesn't count
+        off_after: 0.2
+        slots:
+          - { start: "20:00", end: "10:00", lights: [light.hallway_night_light], brightness: 30, color: [0, 0, 255] }
+          - { start: "20:00", end: "10:00", lights: [light.hallway], off: true }
+          - { start: "10:00", end: "20:00", lights: [light.hallway_night_light], off: true }
+          - { start: "13:30", end: "17:00", off: true }
 ```
+
+A slot color, like a slot brightness, is kept until the light is turned off (the adaptive lighting leaves it alone).
 
 ### Entities
 
