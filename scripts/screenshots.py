@@ -18,6 +18,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 COMPONENT = ROOT / "custom_components/smart_comfort"
 PANEL_JS = (COMPONENT / "frontend/smart-comfort-panel.js").read_text()
+CARD_JS = (COMPONENT / "frontend/smart-comfort-activity-card.js").read_text()
 TRANSLATIONS = json.loads((COMPONENT / "translations/en.json").read_text())
 DOMAIN = "smart_comfort"
 NOW = "2026-10-24T11:45:00Z"
@@ -115,6 +116,11 @@ ICONS = {
     "thermometer-high": "M15 13V5A3 3 0 0 0 9 5V13A5 5 0 1 0 15 13M12 4A1 1 0 0 1 13 5H11A1 1 0 0 1 12 4Z",
     "window-closed-variant": "M21 20V2H3V20H1V23H23V20M19 4V11H13V4M5 4H11V11H5M5 20V13H11V20M13 20V13H19V20Z",
     "code-braces": "M8,3A2,2 0 0,0 6,5V9A2,2 0 0,1 4,11H3V13H4A2,2 0 0,1 6,15V19A2,2 0 0,0 8,21H10V19H8V14A2,2 0 0,0 6,12A2,2 0 0,0 8,10V5H10V3M16,3A2,2 0 0,1 18,5V9A2,2 0 0,0 20,11H21V13H20A2,2 0 0,0 18,15V19A2,2 0 0,1 16,21H14V19H16V14A2,2 0 0,1 18,12A2,2 0 0,1 16,10V5H14V3H16Z",
+    "history": "M13.5,8H12V13L16.28,15.54L17,14.33L13.5,12.25V8M13,3A9,9 0 0,0 4,12H1L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3",
+    "hand-back-right-outline": "M21 7C21 5.62 19.88 4.5 18.5 4.5C18.33 4.5 18.16 4.5 18 4.55V4C18 2.62 16.88 1.5 15.5 1.5C15.27 1.5 15.04 1.53 14.83 1.59C14.46 .66 13.56 0 12.5 0C11.27 0 10.25 .89 10.04 2.06C9.87 2 9.69 2 9.5 2C8.12 2 7 3.12 7 4.5V10.39C6.66 10.08 6.24 9.85 5.78 9.73L5 9.5C4.18 9.29 3.31 9.61 2.82 10.35C2.44 10.92 2.42 11.66 2.67 12.3L5.23 18.73C6.5 21.91 9.57 24 13 24C17.42 24 21 20.42 21 16V7M19 16C19 19.31 16.31 22 13 22C10.39 22 8.05 20.41 7.09 18L4.5 11.45L5 11.59C5.5 11.71 5.85 12.05 6 12.5L7 15H9V4.5C9 4.22 9.22 4 9.5 4S10 4.22 10 4.5V12H12V2.5C12 2.22 12.22 2 12.5 2S13 2.22 13 2.5V12H15V4C15 3.72 15.22 3.5 15.5 3.5S16 3.72 16 4V12H18V7C18 6.72 18.22 6.5 18.5 6.5S19 6.72 19 7V16Z",
+    "motion-sensor-off": "M11.4 8.2H15V10H13.2L11.4 8.2M19.67 1H18.33C18.33 3.58 20.42 5.67 23 5.67V4.33C21.16 4.33 19.67 2.84 19.67 1M21 1C21 2.11 21.9 3 23 3V1H21M17 1H15.67C15.67 5.05 18.95 8.33 23 8.33V7C19.69 7 17 4.31 17 1M10 3.8C11 3.8 11.8 3 11.8 2S11 .2 10 .2 8.2 1 8.2 2 9 3.8 10 3.8M2.39 1.73L1.11 3L3.46 5.35L2 5.8V11H3.8V7.33L5.05 6.94L5.68 7.57L2 22H3.8L6.67 13.89L9 17V22H10.8V15.59L8.31 11.05L8.5 10.37L20.84 22.73L22.11 21.46L2.39 1.73M9.38 4.87C9.08 4.37 8.54 4.03 7.92 4.03C7.75 4.03 7.58 4.06 7.42 4.11L7.34 4.14L11.35 8.15L9.38 4.87Z",
+    "clock-check-outline": "M23.5 17L18.5 22L15 18.5L16.5 17L18.5 19L22 15.5L23.5 17M13.1 19.9C12.7 20 12.4 20 12 20C7.6 20 4 16.4 4 12S7.6 4 12 4 20 7.6 20 12C20 12.4 20 12.7 19.9 13.1C20.6 13.2 21.2 13.4 21.8 13.7C21.9 13.1 22 12.6 22 12C22 6.5 17.5 2 12 2S2 6.5 2 12C2 17.5 6.5 22 12 22C12.6 22 13.2 21.9 13.7 21.8C13.4 21.3 13.2 20.6 13.1 19.9M15.6 14.1L12.5 12.3V7H11V13L14.5 15.1C14.8 14.7 15.2 14.4 15.6 14.1Z",
+    "bell-check-outline": "M17.75 21.16L15 18.16L16.16 17L17.75 18.59L21.34 15L22.5 16.41L17.75 21.16M10 21H12.8C13.04 21.41 13.33 21.79 13.65 22.13C13.29 22.66 12.69 23 12 23C10.9 23 10 22.11 10 21M3 20V19L5 17V11C5 7.9 7.03 5.18 10 4.29V4C10 2.9 10.9 2 12 2C13.11 2 14 2.9 14 4V4.29C16.97 5.18 19 7.9 19 11V12.08L18 12L17 12.08V11C17 8.24 14.76 6 12 6C9.24 6 7 8.24 7 11V18H12C12 18.7 12.12 19.37 12.34 20H3Z",
     "led-off": "M12,6A4,4 0 0,0 8,10V16H6V18H9V23H11V18H13V23H15V18H18V16H16V10A4,4 0 0,0 12,6Z",
     "led-on": "M11,0V4H13V0H11M18.3,2.29L15.24,5.29L16.64,6.71L19.7,3.71L18.3,2.29M5.71,2.29L4.29,3.71L7.29,6.71L8.71,5.29L5.71,2.29M12,6A4,4 0 0,0 8,10V16H6V18H9V23H11V18H13V23H15V18H18V16H16V10A4,4 0 0,0 12,6M2,9V11H6V9H2M18,9V11H22V9H18Z",
     "window-open-variant": "M21 20V2H3V20H1V23H23V20M19 4V11H17V4M5 4H7V11H5M5 20V13H7V20M9 20V4H15V20M17 20V13H19V20Z",
@@ -605,6 +611,80 @@ def config(options):
     }
 
 
+# The activity of the morning, most recent first (NOW is 11:45).
+ACTIVITY = [
+    {
+        "at": "2026-10-24T11:41:00+00:00",
+        "kind": "device",
+        "entity_id": "fan.bedroom_purifier",
+        "room": "Bedroom",
+        "target": "boost",
+        "data": {"preset_mode": "boost"},
+    },
+    {
+        "at": "2026-10-24T11:20:00+00:00",
+        "kind": "manual",
+        "entity_id": "light.living_room",
+        "room": "Living Room",
+        "until": "2026-10-24T12:20:00+00:00",
+    },
+    {
+        "at": "2026-10-24T10:58:00+00:00",
+        "kind": "notified",
+        "severity": "warning",
+        "title": "Living Room is too hot",
+        "message": "28.4 °C — the air conditioner is cooling",
+    },
+    {
+        "at": "2026-10-24T10:57:00+00:00",
+        "kind": "device",
+        "entity_id": "climate.living_room_ac",
+        "room": "Living Room",
+        "target": "cool",
+        "data": {"hvac_mode": "cool", "temperature": 22},
+    },
+    {
+        "at": "2026-10-24T10:00:00+00:00",
+        "kind": "display",
+        "entity_id": "light.bedroom_purifier_indicator",
+        "room": "Bedroom",
+        "target": "display_on",
+    },
+    {
+        "at": "2026-10-24T08:12:00+00:00",
+        "kind": "presence_off",
+        "entity_id": "light.entrance",
+        "room": "Entrance",
+        "target": "off",
+    },
+    {
+        "at": "2026-10-24T08:09:00+00:00",
+        "kind": "presence_on",
+        "entity_id": "light.entrance",
+        "room": "Entrance",
+        "target": "presence",
+        "data": {"brightness_pct": 20},
+    },
+    {
+        "at": "2026-10-24T07:30:00+00:00",
+        "kind": "lighting",
+        "entity_id": "light.living_room",
+        "room": "Living Room",
+        "target": "80 %",
+        "data": {"brightness_pct": 80},
+    },
+    {"at": "2026-10-23T20:40:00+00:00", "kind": "reset", "entity_id": "fan.bedroom_purifier", "room": "Bedroom"},
+    {
+        "at": "2026-10-23T20:00:00+00:00",
+        "kind": "display",
+        "entity_id": "light.bedroom_purifier_indicator",
+        "room": "Bedroom",
+        "target": "display_off",
+    },
+    {"at": "2026-10-23T19:15:00+00:00", "kind": "cleared"},
+]
+
+
 def mock(options, status):
     states = {
         entity_id: {
@@ -631,6 +711,7 @@ def mock(options, status):
         "config": config(options),
         "status": status,
         "discover": {"options": DISCOVERED, "report": REPORT},
+        "activity": ACTIVITY,
         "translations": {
             "options": flatten(TRANSLATIONS["options"], f"component.{DOMAIN}.options"),
             "selector": flatten(TRANSLATIONS["selector"], f"component.{DOMAIN}.selector"),
@@ -655,8 +736,9 @@ MOUNT = """async ([data, tab]) => {
             throw new Error(`unexpected ${msg.type}`);
         },
         connection: {
-            subscribeMessage: (callback) => {
-                setTimeout(() => callback({ status: data.status }), 0);
+            subscribeMessage: (callback, msg) => {
+                const answer = msg?.type === "smart_comfort/activity" ? { entries: data.activity } : { status: data.status };
+                setTimeout(() => callback(answer), 0);
                 return Promise.resolve(() => {});
             },
         },
@@ -748,6 +830,7 @@ SHOTS = [
         "height": 1300,
     },
     {"file": "panel-schedule", "options": SAVED, "status": STATUS, "tab": "schedule", "height": 1100},
+    {"file": "panel-activity", "options": SAVED, "status": STATUS, "tab": "activity", "height": 900},
     {"file": "panel-yaml", "options": SAVED, "status": STATUS, "tab": "yaml_tab", "height": 1100},
     {
         "file": "panel-lighting",
@@ -779,6 +862,7 @@ def render(browser, shot, theme):
     page.goto(URL)
     page.add_script_tag(content=HA_ELEMENTS)
     page.add_script_tag(content=PANEL_JS)
+    page.add_script_tag(content=CARD_JS, type="module")
     page.evaluate(MOUNT, [mock(shot["options"], shot["status"]), shot["tab"]])
     for click in shot.get("clicks", []):
         page.evaluate(CLICK, list(click))

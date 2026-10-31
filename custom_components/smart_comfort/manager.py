@@ -18,6 +18,7 @@ from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
 from homeassistant.util.unit_conversion import TemperatureConverter
 
+from .activity import CLEARED, MANUAL, NOTIFIED, RESET, Activity
 from .config import Room, Settings, in_window, slugify
 from .const import (
     ACTION_ACK,
@@ -33,6 +34,7 @@ from .const import (
     SEVERITY_CRITICAL,
     SEVERITY_INFO,
     SEVERITY_WARNING,
+    SIGNAL_ACTIVITY,
     SIGNAL_UPDATE,
     STORAGE_KEY,
     STORAGE_VERSION,
@@ -134,6 +136,10 @@ def _number(value: Any) -> float | None:
         return None
 
 
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value is not None else None
+
+
 def present(state: State | None) -> bool:
     """Someone is home according to a zone, person, tracker, group or boolean entity. Unknown: yes."""
     if state is None or state.state in BAD_STATES:
@@ -157,6 +163,7 @@ class SmartComfort:
         self.lights = LightController(settings)
         self.presence = PresenceController(settings)
         self.displays = DisplayController(settings)
+        self.activity = Activity(settings)
         self.store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self.notifications_enabled = True
         self.control_enabled = True
@@ -182,6 +189,7 @@ class SmartComfort:
         self.controller.restore(data.get("control") or {})
         self.lights.restore(data.get("lighting") or {})
         self.displays.restore(data.get("displays") or {})
+        self.activity.restore(data.get("activity"))
         if (last := data.get("last_notification")) is not None:
             self.last_notification = last
         # Switches: known before the first evaluation, not only once the switch entities are restored.
@@ -260,6 +268,7 @@ class SmartComfort:
             "control": self.controller.as_dict(),
             "lighting": self.lights.as_dict(),
             "displays": self.displays.as_dict(),
+            "activity": self.activity.as_dict(),
             "last_notification": self.last_notification,
             "notifications_enabled": self.notifications_enabled,
             "control_enabled": self.control_enabled,
@@ -309,6 +318,7 @@ class SmartComfort:
         if changed and entity_id in self.controller.targets:
             _LOGGER.debug("Manual change of %s, control paused", entity_id)
             self.controller.manual_change(entity_id, now)
+            self._log(now, MANUAL, entity_id, until=_iso(self.controller.overrides.get(entity_id)))
 
     @callback
     def _light_changed(self, entity_id: str, old: State | None, new: State | None) -> bool:
@@ -335,6 +345,7 @@ class SmartComfort:
         if any(old.attributes.get(k) != new.attributes.get(k) for k in keys):
             _LOGGER.debug("Manual change of %s, lighting paused", entity_id)
             self.lights.manual_change(entity_id, now)
+            self._log(now, MANUAL, entity_id, until=_iso(self.lights.overrides.get(entity_id)))
         return False
 
     @callback
@@ -555,6 +566,8 @@ class SmartComfort:
             elevation = self.sun_elevation()
             if reset := self.controller.reset_due(dt_util.as_local(now)):
                 _LOGGER.debug("Back to the normal state: %s", ", ".join(reset))
+                for entity_id in reset:
+                    self._log(now, RESET, entity_id)
             occupied = {r.id for r in self.settings.rooms if r.presence and self.room_present(r)}
             for room in self.settings.rooms:
                 if lighting and room.lights:
@@ -587,7 +600,10 @@ class SmartComfort:
                 readings[room.id] = reading
             self.engine.evaluate(now, readings, self.outdoor())
             self.handled = handled
-            failed = {c.device for c in commands if not await self._command(c, now)}
+            sent = [(c, await self._command(c, now)) for c in commands]
+            failed = {c.device for c, ok in sent if not ok}
+            if sent:
+                async_dispatcher_send(self.hass, SIGNAL_ACTIVITY, self.activity.commands(now, sent))
             for device in {c.device for c in commands if c.device} - failed:
                 self.controller.command_succeeded(device)
             result = self.engine.step(now, self.gates(now), handled)
@@ -628,6 +644,11 @@ class SmartComfort:
             context=context,
         )
         return True
+
+    @callback
+    def _log(self, now: datetime, kind: str, entity_id: str | None = None, **extra: Any) -> None:
+        """One activity entry, sent to the panel and the activity cards."""
+        async_dispatcher_send(self.hass, SIGNAL_ACTIVITY, [self.activity.add(now, kind, entity_id, **extra)])
 
     # Notifications.
 
@@ -698,12 +719,14 @@ class SmartComfort:
             "alerts": digest.keys,
         }
         self.hass.bus.async_fire(EVENT_NOTIFIED, {**self.last_notification})
+        self._log(now, NOTIFIED, title=title, message=message, severity=digest.severity)
         return True
 
     async def _clear(self) -> None:
         # Only the Companion app understands it: other notifiers would show the text "clear_notification".
         if mobile := [s for s in self.settings.notify if self._companion(s)]:
             await self._notify({"message": "clear_notification", "data": {"tag": self.settings.tag}}, mobile)
+        self._log(dt_util.utcnow(), CLEARED)
 
     def _companion(self, service: str) -> bool:
         """A Companion app notifier, or a notify group (usually of phones, which forwards to them)."""

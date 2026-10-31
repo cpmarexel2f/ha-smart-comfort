@@ -117,7 +117,10 @@ async def test_panel_registered(hass: HomeAssistant) -> None:
     # The frontend itself isn't needed (its package may not be installed): only its panel registry.
     hass.config.components.add("frontend")
     hass.http = Mock(async_register_static_paths=AsyncMock())
+    hass.data["frontend_extra_module_url"] = extra = Mock()
     await _setup(hass)
+    # The activity card, on every dashboard.
+    assert extra.add.call_args.args[0].startswith("/smart_comfort_static/smart-comfort-activity-card.js?v=")
     paths = hass.http.async_register_static_paths.call_args.args[0]
     assert paths[0].url_path == "/smart_comfort_static"
     panels = hass.data["frontend_panels"]

@@ -384,3 +384,6 @@ PANEL_URL: Final = "smart-comfort"
 PANEL_ICON: Final = "mdi:home-thermometer"
 # Dispatched after every evaluation and setup/unload of the entry (configuration panel status).
 SIGNAL_UPDATE: Final = f"{DOMAIN}_update"
+# New activity entries (a list), for the panel and the activity card.
+SIGNAL_ACTIVITY: Final = f"{DOMAIN}_activity"
+ACTIVITY_SIZE: Final = 300

@@ -50,6 +50,7 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_save_config)
     websocket_api.async_register_command(hass, ws_subscribe)
     websocket_api.async_register_command(hass, ws_discover)
+    websocket_api.async_register_command(hass, ws_activity)
 
 
 @websocket_api.require_admin
@@ -136,3 +137,22 @@ def ws_discover(hass: HomeAssistant, connection: websocket_api.ActiveConnection,
     """The options being edited, with the rooms found in the areas merged in (not saved)."""
     options, report = merge(msg["options"], discover_rooms(hass))
     connection.send_result(msg["id"], {"options": options, "report": report.as_dict()})
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): f"{k.DOMAIN}/activity", vol.Optional("limit", default=50): vol.All(int, vol.Range(1, 500))}
+)
+@callback
+def ws_activity(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """The latest activity entries (most recent first), then every new one as it comes. Any user (the card)."""
+
+    @callback
+    def added(entries: list[dict[str, Any]]) -> None:
+        if entries:
+            connection.send_message(websocket_api.event_message(msg["id"], {"added": entries}))
+
+    connection.subscriptions[msg["id"]] = async_dispatcher_connect(hass, k.SIGNAL_ACTIVITY, added)
+    connection.send_result(msg["id"])
+    manager = _manager(hass)
+    entries = manager.activity.as_list(msg["limit"]) if manager is not None else []
+    connection.send_message(websocket_api.event_message(msg["id"], {"entries": entries}))

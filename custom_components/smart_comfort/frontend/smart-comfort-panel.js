@@ -135,6 +135,8 @@ const STRINGS = {
     alerts_help: "Defaults for every room; each room can customize its own.",
     schedule: "Schedule",
     settings: "Settings",
+    activity: "Activity",
+    activity_help: "What Smart Comfort did and why, live: devices, lights, notifications, changes by hand. A line opens its entity.",
     yaml_tab: "YAML",
     yaml_help: "Only the configuration of Smart Comfort, as it goes under smart_comfort: in configuration.yaml (the defaults are not repeated).",
     yaml_help_unsaved: "Only the configuration of Smart Comfort, as it goes under smart_comfort: in configuration.yaml (the defaults are not repeated). Includes the changes not saved yet.",
@@ -293,6 +295,8 @@ const STRINGS = {
     alerts_help: "Réglages par défaut de toutes les pièces ; chaque pièce peut personnaliser les siens.",
     schedule: "Horaires",
     settings: "Réglages",
+    activity: "Activité",
+    activity_help: "Ce que Smart Comfort a fait et pourquoi, en direct : appareils, lumières, notifications, changements à la main. Une ligne ouvre son entité.",
     yaml_tab: "YAML",
     yaml_help: "Uniquement la configuration de Smart Comfort, telle qu'elle se met sous smart_comfort: dans configuration.yaml (les valeurs par défaut ne sont pas répétées).",
     yaml_help_unsaved: "Uniquement la configuration de Smart Comfort, telle qu'elle se met sous smart_comfort: dans configuration.yaml (les valeurs par défaut ne sont pas répétées). Inclut les modifications pas encore enregistrées.",
@@ -451,6 +455,8 @@ const STRINGS = {
     alerts_help: "Standard für alle Räume; jeder Raum kann eigene Werte setzen.",
     schedule: "Zeitplan",
     settings: "Einstellungen",
+    activity: "Aktivität",
+    activity_help: "Was Smart Comfort getan hat und warum, live: Geräte, Lichter, Benachrichtigungen, Änderungen von Hand. Eine Zeile öffnet ihre Entität.",
     yaml_tab: "YAML",
     yaml_help: "Nur die Konfiguration von Smart Comfort, wie sie unter smart_comfort: in configuration.yaml gehört (Standardwerte werden nicht wiederholt).",
     yaml_help_unsaved: "Nur die Konfiguration von Smart Comfort, wie sie unter smart_comfort: in configuration.yaml gehört (Standardwerte werden nicht wiederholt). Enthält noch nicht gespeicherte Änderungen.",
@@ -609,6 +615,8 @@ const STRINGS = {
     alerts_help: "Ajustes por defecto de todas las estancias; cada estancia puede personalizar los suyos.",
     schedule: "Horarios",
     settings: "Ajustes",
+    activity: "Actividad",
+    activity_help: "Lo que Smart Comfort ha hecho y por qué, en directo: aparatos, luces, notificaciones, cambios a mano. Una línea abre su entidad.",
     yaml_tab: "YAML",
     yaml_help: "Solo la configuración de Smart Comfort, tal como va bajo smart_comfort: en configuration.yaml (los valores por defecto no se repiten).",
     yaml_help_unsaved: "Solo la configuración de Smart Comfort, tal como va bajo smart_comfort: en configuration.yaml (los valores por defecto no se repiten). Incluye los cambios aún no guardados.",
@@ -677,7 +685,7 @@ const STRINGS = {
   },
 };
 
-const TABS = ["overview", "rooms", "outdoors", "alerts", "schedule", "settings", "yaml_tab"];
+const TABS = ["overview", "activity", "rooms", "outdoors", "alerts", "schedule", "settings", "yaml_tab"];
 // Addresses of the tabs of earlier versions.
 const OLD_TABS = { notifications: "settings", control: "settings" };
 
@@ -847,6 +855,7 @@ class SmartComfortPanel extends HTMLElement {
     const first = !this._hass;
     this._hass = hass;
     for (const form of this._forms) form.hass = hass;
+    if (this._activity) this._activity.hass = hass;
     if (first) this._init();
   }
 
@@ -1103,6 +1112,7 @@ class SmartComfortPanel extends HTMLElement {
     if (!content) return;
     content.innerHTML = "";
     this._forms = [];
+    this._activity = null;
     if (this._message) {
       content.append(this._el("div", `banner ${this._message.type}`, this._message.text));
     }
@@ -1121,8 +1131,25 @@ class SmartComfortPanel extends HTMLElement {
       schedule: () => this._renderSchedule(content),
       settings: () => this._renderSettings(content),
       yaml_tab: () => this._renderYaml(content),
+      activity: () => this._renderActivity(content),
     }[this._tab];
     render();
+  }
+
+  /** Everything Smart Comfort did and why, live, by day, with filters. */
+  _renderActivity(content) {
+    const card = this._card(this._t("activity"), "mdi:history");
+    card.append(this._el("div", "help", this._t("activity_help")));
+    // The activity card, loaded on every page of Home Assistant by the integration.
+    const list = document.createElement("smart-comfort-activity-card");
+    card.append(list);
+    content.append(card);
+    customElements.whenDefined("smart-comfort-activity-card").then(() => {
+      if (!list.isConnected) return;
+      list.setConfig({ panel: true });
+      list.hass = this._hass;
+      this._activity = list;
+    });
   }
 
   // YAML: the configuration of the integration, as it goes under `smart_comfort:` in configuration.yaml.
