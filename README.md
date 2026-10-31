@@ -85,22 +85,32 @@ Changes are checked and saved with **Save** (or dropped with **Discard**); the i
 
 Each tab has its own address, e.g. `/smart-comfort/rooms`.
 
-![Overview of the Smart Comfort panel](screenshots/panel-overview.png)
+| Overview of the Smart Comfort panel | Dark mode |
+|---|---|
+| ![Overview of the Smart Comfort panel](screenshots/panel-overview.png) | ![Overview of the Smart Comfort panel, dark mode](screenshots/panel-overview-dark.png) |
 
 <details>
 <summary>More screenshots</summary>
 
-![Discover offered in the overview while nothing is set up](screenshots/panel-start.png)
+| Discover offered in the overview while nothing is set up | Dark mode |
+|---|---|
+| ![Discover offered in the overview while nothing is set up](screenshots/panel-start.png) | ![Discover offered in the overview while nothing is set up, dark mode](screenshots/panel-start-dark.png) |
 
-![Rooms found by Discover, before saving](screenshots/panel-discover.png)
+| Rooms found by Discover, before saving | Dark mode |
+|---|---|
+| ![Rooms found by Discover, before saving](screenshots/panel-discover.png) | ![Rooms found by Discover, before saving, dark mode](screenshots/panel-discover-dark.png) |
 
-![A room in the Smart Comfort panel](screenshots/panel-room.png)
+| A room in the Smart Comfort panel | Dark mode |
+|---|---|
+| ![A room in the Smart Comfort panel](screenshots/panel-room.png) | ![A room in the Smart Comfort panel, dark mode](screenshots/panel-room-dark.png) |
 
-![The outdoor places, below the rooms](screenshots/panel-outdoors.png)
+| The outdoor places, below the rooms | Dark mode |
+|---|---|
+| ![The outdoor places, below the rooms](screenshots/panel-outdoors.png) | ![The outdoor places, below the rooms, dark mode](screenshots/panel-outdoors-dark.png) |
 
-![Alert settings in the Smart Comfort panel](screenshots/panel-alerts.png)
-
-![Overview in dark mode](screenshots/panel-overview-dark.png)
+| Alert settings in the Smart Comfort panel | Dark mode |
+|---|---|
+| ![Alert settings in the Smart Comfort panel](screenshots/panel-alerts.png) | ![Alert settings in the Smart Comfort panel, dark mode](screenshots/panel-alerts-dark.png) |
 
 </details>
 
@@ -312,6 +322,8 @@ pip install -r requirements_test.txt && pytest
 ```
 
 The engine (`engine.py`), the device decisions (`control.py`) and the texts (`message.py`) are plain Python, tested without Home Assistant.
+
+The screenshots are rendered by `python scripts/screenshots.py` (Playwright and Chromium: the panel with mock data, in the light and the dark theme). On a pull request that changes the panel or the script, the **Screenshots** workflow renders them and commits them to the branch.
 
 ### Releasing
 
