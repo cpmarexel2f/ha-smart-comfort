@@ -9,6 +9,7 @@ from homeassistant.util import dt as dt_util
 
 from .config import Room
 from .engine import HANDLED_KINDS, Episode
+from .lighting import phase
 
 if TYPE_CHECKING:
     from .manager import SmartComfort
@@ -54,6 +55,17 @@ def room_info(manager: SmartComfort, room: Room, now: datetime) -> dict[str, Any
             }
             for d in room.devices
         },
+        "lighting_phase": phase(manager.settings, dt_util.as_local(now), manager.sun_elevation(), room),
+        "presence": manager.room_present(room),
+        "lights": {
+            light.entity_id: {
+                "target": target.label() if (target := manager.lights.targets.get(light.entity_id)) else None,
+                "override_until": until.isoformat()
+                if (until := manager.lights.overrides.get(light.entity_id)) and until > now
+                else None,
+            }
+            for light in room.lights
+        },
     }
 
 
@@ -68,7 +80,19 @@ def status(manager: SmartComfort, now: datetime) -> dict[str, Any]:
         "outdoor_air": manager.outdoor_air(),
         "night": manager.settings.night(dt_util.as_local(now).time()),
         "rooms": [{"name": r.name, **room_info(manager, r, now)} for r in manager.settings.rooms],
+        "outdoors": [
+            {
+                "name": o.name,
+                "temperature": manager.outdoor(o.temperature),
+                "air_quality": manager.outdoor_air(o.air_quality),
+                "noise": manager.outdoor_noise(o.noise),
+                "sensors": [*o.temperature, *o.air_quality, *o.noise],
+            }
+            for o in manager.settings.outdoors
+        ],
         "notifications_enabled": manager.notifications_enabled,
         "control_enabled": manager.control_enabled,
+        "lighting_enabled": manager.lighting_enabled,
+        "lighting_phase": phase(manager.settings, dt_util.as_local(now), manager.sun_elevation()),
         "last_notification": manager.last_notification,
     }

@@ -1,5 +1,95 @@
 # Changelog
 
+## 1.7.2
+
+### Fixes
+- Activity tab: a light command that could not be sent is now under the **Lights** filter, not under Devices (an indicator light stays with the devices).
+- Activity card and tab: a line that opens its entity can now be reached with Tab and opened with Enter or Space, and keeps the focus when a new entry comes in; the filters keep it too when one is chosen.
+- Activity tab: the active filter is tinted like the other active states of the panel instead of a filled button, with text readable in light and dark themes.
+
+## 1.7.1
+
+### Fixes
+- Activity card: on a dashboard, each new entry no longer shows up twice, and leaving the view now closes its live updates (one of them stayed open on the server every time the view was shown).
+- Activity card and tab: a command that could not be sent now says which one in words (a presence light, an indicator, a brightness) instead of a raw key like `t_presence`.
+- Snooze and acknowledge actions: **bad air outside** can now be picked in the kinds of the action editor.
+- Lights on presence: the checks scheduled when a presence sensor changes are forgotten once done, instead of piling up in memory until the next reload.
+
+## 1.7.0
+
+### What's new
+- Lights on presence: **`off_after` per slot** — the minutes with nobody before the lights are turned off while the slot applies (a bathroom off after 2 minutes by day, 22 from 17:00). Panel: on each slot.
+
+## 1.6.0
+
+### What's new
+- **Activity** tab in the panel: what Smart Comfort did and why, live and by day — devices to their target (cooling, window boost, night mode, back to normal, turned back on…), lights (brightness of the moment, on with presence, off with nobody), indicator lights off and on, notifications sent and cleared, changes by hand that pause a device or a light, reset times, failed commands — with filters; a line opens its entity. The last 300 entries are kept across restarts.
+- **Activity card** (`custom:smart-comfort-activity-card`), added to the dashboards by the integration: the latest entries, live, for any user, optionally for some kinds or one room.
+
+## 1.5.2
+
+### Fixes
+- YAML: an unquoted `off: true` in a presence slot (read as a `false` key by YAML 1.1) no longer makes the configuration invalid.
+
+## 1.5.1
+
+### What's new
+- Panel: a **YAML** tab with the configuration of Smart Comfort only, as it goes under `smart_comfort:` in `configuration.yaml`, and a **Copy** button.
+- **`smart_comfort.get_config`** action: returns the options in use (rooms, alerts, control, lighting), to copy into the YAML or check what is set.
+
+## 1.5.0
+
+### What's new
+- Lights on presence: **`transition`**, the seconds of the fade when the lights are turned on and off (10 s, like a presence automation).
+
+### Fixes
+- A light that is a presence light of two rooms (the hallway's, from the entrance and the hallway) is no longer turned off by one room while someone is in the other, and a light on because of the other room no longer stops a room from turning its own lights on.
+
+## 1.4.0
+
+### What's new
+- **Indicator lights and displays** of the devices (`display` on a climate, fan or purifier item): an on/off indicator light or switch, a display brightness `number` (off: its minimum) or a brightness `select` (off: its off option, such as `Off` or `Fermer`). They are turned off in the `control.display_off` / `display_on` hours (the quiet night when unset) and during the naps of their room, and back on after, at the brightness or option they had. Smart Comfort acts only when these hours or naps start or end, like a timed automation: one turned back on by hand stays on until the next change. Discover finds them among the device's entities (settings entities included). Panel: on each device, and a **Displays off** line in the Schedule tab.
+- **Back to normal at a set time** (`reset_at` on a device item): at this time the device goes back to its normal state (closed preset or mode, temperature control) and its manual pause ends — the purifier back to Auto at 20:40 even after it was set to Favorite by hand.
+- Lights on presence: a **color** per slot (`color`, RGB: a blue night light), kept until the light is turned off, and **`on_after`**: the seconds a presence must last before the lights are turned on (someone passing by the sensor doesn't count).
+- Panel: the presets, modes and fan modes are set on each device only (picked from the device's own list); the global ones are no longer in Settings, as they depend on the device. They stay valid in YAML.
+
+## 1.3.0
+
+### What's new
+- **Lights on presence**, per room (`rooms[].presence`): its presence sensors turn its lights on when someone comes in — only when the room is dark enough with a light level sensor (`lux`, `max_lux`), at the brightness of the moment — and off after `off_after` minutes with nobody (2 by default). Any light can be added (the hallway's from the entrance). **Slots** keep some lights off (weekday mornings…) or turn them on at a set brightness (a dim entrance at night); `not_during_naps` lists the lights left off while a room of the house has its nap; night lights only at night and during the naps. A light already on is left as it is, and one turned off by hand while someone is there stays off until the room is empty. Never added by Discover. Panel: room → Lighting → Lights on presence; the presence of each room in the status.
+
+## 1.2.1
+
+### What's new
+- Panel: the rooms and outdoor places show their icon — the icon of their Home Assistant area, or else one from their name (bedroom, living room, kitchen, bathroom, office, hallway, garden, terrace…, in English, French, German and Spanish) — in the Rooms and Outdoors tabs and on their cards in the overview, where it turns orange while the room has an alert.
+
+## 1.2.0
+
+### What's new
+- **Simpler panel**, organized by subject: **Overview**, **Rooms**, **Outdoors**, **Alerts**, **Schedule**, **Settings**. Nothing is removed and the options are the same (no migration).
+  - **Rooms**: each room folds into sections — Sensors, Windows and doors, Devices, Lighting (lights, quiet morning, naps), Alerts — each with a one-line summary. Only what the room has is shown; **+** buttons add the rest (a CO₂ sensor, a fan, a light, a nap…), and a room's alerts list only those it customizes, with a menu to customize another one. A light's night-light switch is folded with its other settings.
+  - **Outdoors** (new tab): the outdoor places and the other outdoor sensors (moved from Notifications), together.
+  - **Schedule** (new tab): the quiet hours, quiet night, quiet morning and window boost on one 24-hour line with the time now, and their times in one place (they were spread over three tabs).
+  - **Settings**: notifications, device control and adaptive lighting, with the rarely changed settings under **Advanced**; the brightness of each moment on one row, the warmth values only when the warmth is on.
+  - **Alerts**: one line per alert with its state, threshold and severity; hysteresis, delay and escalation under **Advanced**.
+  - Shorter texts; the discovery is explained in one line, with the details on demand.
+
+## 1.1.0
+
+### What's new
+- **Adaptive lighting**: the dimmable lights of a room (`rooms[].lights`) that are on get the brightness of the moment — day with the sun up (100 %), evening once it is down (60 %, a blend in between), night in the quiet night hours (15 %) — at once when turned on, then gradually (`transition`, 120 s). The warmth follows too (4000 / 2700 / 2200 K) for the lights that support it, and can be turned off (`warmth: false`). Smart Comfort never turns a light on or off; night lights (`night_only`) are only set at night; a light changed by hand is left alone until it is turned off (or for `manual_override`). Settings under `lighting:`, per room and per light; **Adaptive lighting** switch.
+- **Quiet morning** for the bedrooms: their lights stay dimmer (40 %) from the end of the night until `morning_end` (09:30), set by Discover on the bedrooms (`lighting.quiet_morning`), and per room in the panel.
+- **Naps** per room (`rooms[].naps`: start, end, optional days): the lights are dimmed (15 %) in these slots, night lights included. Never added by Discover; set in the panel (room → Lighting of this room) or in YAML.
+- Discover adds the dimmable lights of each room (not the indicators of devices nor the floodlights of cameras; a light group stands for its members) and flags the night lights; a room with lights only is now worth following.
+- Panel: lights in the rooms (with their own settings), an **Adaptive lighting** card in the Device control tab, the target of each light and an Adaptive lighting switch in the overview. Options flow: lights in the room form.
+
+## 1.0.1
+
+### Fixes
+- Discover no longer adds the rooms with nothing to follow — no comfort sensor (temperature, CO₂, humidity, noise), air conditioner, fan nor purifier, such as a hallway with only its door — nor the outdoor areas without a sensor. Rooms already set up stay.
+- Panel: the outdoor places appear in the overview with their values and each of their sensors, and the Notifications tab says which outdoor places add their sensors to the outdoor fields (empty once Discover has moved them to the places).
+- Discover no longer takes the temperature of a machine for the room's: the sensors of NAS, internet boxes, servers, UPS, printers (by their integration), and those named CPU, disk, fridge, freezer, battery… are left out, in the rooms and outdoors.
+
 ## 1.0.0
 
 ### What's new

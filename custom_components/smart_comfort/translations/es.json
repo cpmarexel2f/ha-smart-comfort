@@ -119,13 +119,19 @@
           "manual_override": "Pausa tras cambio manual",
           "suppress_when_handled": "Sin alerta si se gestiona",
           "night_start": "Noche tranquila desde",
-          "night_end": "Noche tranquila hasta"
+          "night_end": "Noche tranquila hasta",
+          "display": "Indicador o pantalla",
+          "reset_at": "Vuelta a lo normal a las",
+          "display_off": "Pantallas apagadas desde",
+          "display_on": "Pantallas encendidas desde"
         },
         "data_description": {
           "start": "Ventiladores y purificadores van al máximo al abrir solo entre estas horas. Ambas vacías: todo el día.",
           "manual_override": "Minutos que se deja en paz un aparato cambiado a mano. 0: nunca.",
           "suppress_when_handled": "Sin alerta «demasiado calor» si Smart Comfort ha encendido el aire o el ventilador de la estancia.",
-          "night_start": "Entre estas horas los aparatos usan sus ajustes de noche (velocidad, modo o ventilación más silenciosos) y no hay impulso de ventana."
+          "night_start": "Entre estas horas los aparatos usan sus ajustes de noche (velocidad, modo o ventilación más silenciosos) y no hay impulso de ventana.",
+          "display": "Apagado en las horas «Pantallas apagadas» de la pestaña Horarios y durante las siestas de la habitación, encendido después.",
+          "reset_at": "A esta hora el aparato vuelve a su estado normal, incluso tras un cambio manual (un purificador de nuevo en auto…)."
         },
         "sections": {
           "climate": {
@@ -183,7 +189,8 @@
           "openings": "Ventanas y puertas",
           "climate": "Aire acondicionado",
           "fans": "Ventiladores",
-          "purifiers": "Purificadores de aire"
+          "purifiers": "Purificadores de aire",
+          "lights": "Luces"
         },
         "description": "Sensores y aparatos de la estancia. Deje vacío lo que no tenga.",
         "sections": {
@@ -204,6 +211,9 @@
               "purifier_keep_on": "Mantener encendidos los purificadores"
             }
           }
+        },
+        "data_description": {
+          "lights": "Luces regulables: su brillo sigue el momento del día mientras están encendidas (iluminación adaptativa)."
         }
       },
       "room": {
@@ -217,7 +227,8 @@
           "openings": "Ventanas y puertas",
           "climate": "Aire acondicionado",
           "fans": "Ventiladores",
-          "purifiers": "Purificadores de aire"
+          "purifiers": "Purificadores de aire",
+          "lights": "Luces"
         },
         "description": "Sensores y aparatos de la estancia. Deje vacío lo que no tenga.",
         "sections": {
@@ -238,6 +249,9 @@
               "purifier_keep_on": "Mantener encendidos los purificadores"
             }
           }
+        },
+        "data_description": {
+          "lights": "Luces regulables: su brillo sigue el momento del día mientras están encendidas (iluminación adaptativa)."
         }
       },
       "outdoor": {
@@ -259,6 +273,39 @@
         "title": "Eliminar estancias",
         "data": {
           "rooms": "Estancias"
+        }
+      },
+      "lighting": {
+        "title": "Iluminación adaptativa",
+        "data": {
+          "enabled": "Iluminación adaptativa",
+          "day": "Brillo de día",
+          "evening": "Brillo por la tarde",
+          "night": "Brillo de noche",
+          "warmth": "Adaptar la calidez",
+          "day_kelvin": "Calidez de día",
+          "evening_kelvin": "Calidez por la tarde",
+          "night_kelvin": "Calidez de noche",
+          "transition": "Transición",
+          "night_only": "Luz nocturna",
+          "morning": "Brillo por la mañana",
+          "morning_kelvin": "Calidez por la mañana",
+          "morning_end": "Fin de la mañana",
+          "quiet_morning": "Mañana suave",
+          "nap": "Brillo durante la siesta",
+          "nap_kelvin": "Calidez durante la siesta"
+        },
+        "data_description": {
+          "day": "Con el sol arriba (más de 6°).",
+          "evening": "Una vez puesto el sol (menos de −6°); entre ambos, una mezcla.",
+          "night": "En las horas de noche tranquila (pestaña Horarios).",
+          "warmth": "También la temperatura de color, para las luces que la admiten. Desactivado: solo el brillo.",
+          "transition": "Segundos de los cambios graduales; una luz recién encendida toma su brillo de inmediato.",
+          "night_only": "Ajustada solo en las horas de noche (sin tocar de día).",
+          "morning": "En las estancias con mañana suave (dormitorios), hasta el final de la mañana (pestaña Horarios).",
+          "morning_end": "Hasta cuándo los dormitorios mantienen su brillo de la mañana.",
+          "quiet_morning": "Luces más tenues por la mañana, hasta el final de la mañana (pestaña Horarios).",
+          "nap": "Durante las franjas de siesta de una estancia."
         }
       }
     },
@@ -346,6 +393,9 @@
       },
       "control": {
         "name": "Control de aparatos"
+      },
+      "lighting": {
+        "name": "Iluminación adaptativa"
       }
     },
     "button": {
@@ -403,6 +453,10 @@
     "notify_now": {
       "name": "Notificar ahora",
       "description": "Envía todos los problemas actuales en una notificación, ignorando las horas de silencio y la agrupación."
+    },
+    "get_config": {
+      "name": "Obtener la configuración",
+      "description": "Devuelve las opciones en uso (habitaciones, alertas, control, iluminación), para copiarlas al YAML o comprobar lo configurado."
     }
   },
   "common": {

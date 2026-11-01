@@ -18,6 +18,7 @@ from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
 from homeassistant.util.unit_conversion import TemperatureConverter
 
+from .activity import CLEARED, MANUAL, NOTIFIED, RESET, Activity
 from .config import Room, Settings, in_window, slugify
 from .const import (
     ACTION_ACK,
@@ -33,12 +34,15 @@ from .const import (
     SEVERITY_CRITICAL,
     SEVERITY_INFO,
     SEVERITY_WARNING,
+    SIGNAL_ACTIVITY,
     SIGNAL_UPDATE,
     STORAGE_KEY,
     STORAGE_VERSION,
 )
 from .control import Command, Controller, DeviceState, RoomContext
+from .displays import DisplayController, DisplayState
 from .engine import Clear, Digest, Engine, Gates, RoomReading
+from .lighting import LightController, LightState, PresenceController
 from .message import format_text, render
 
 _LOGGER = logging.getLogger(__name__)
@@ -125,6 +129,17 @@ def air_level(state: State | None) -> float | None:
     return value
 
 
+def _number(value: Any) -> float | None:
+    try:
+        return None if value is None else float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value is not None else None
+
+
 def present(state: State | None) -> bool:
     """Someone is home according to a zone, person, tracker, group or boolean entity. Unknown: yes."""
     if state is None or state.state in BAD_STATES:
@@ -145,15 +160,22 @@ class SmartComfort:
         self.settings = settings
         self.engine = Engine(settings)
         self.controller = Controller(settings)
+        self.lights = LightController(settings)
+        self.presence = PresenceController(settings)
+        self.displays = DisplayController(settings)
+        self.activity = Activity(settings)
         self.store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
         self.notifications_enabled = True
         self.control_enabled = True
+        self.lighting_enabled = True
         self.started_at: datetime | None = None
         self.last_notification: dict[str, Any] | None = None
         self.handled: set[str] = set()
         self._texts: dict[str, str] = {}
         self._listeners: list[Callable[[], None]] = []
         self._unsubs: list[CALLBACK_TYPE] = []
+        # Presence checks to come (on_after, off delay): each one forgets itself once done.
+        self._presence_checks: set[CALLBACK_TYPE] = set()
         self._debounce: CALLBACK_TYPE | None = None
         self._lock = asyncio.Lock()
         self._contexts: deque[str] = deque(maxlen=200)
@@ -167,11 +189,15 @@ class SmartComfort:
         data = self.hass.data.get(DOMAIN, {}).pop("state", None) or await self.store.async_load() or {}
         self.engine.restore(data.get("engine") or {})
         self.controller.restore(data.get("control") or {})
+        self.lights.restore(data.get("lighting") or {})
+        self.displays.restore(data.get("displays") or {})
+        self.activity.restore(data.get("activity"))
         if (last := data.get("last_notification")) is not None:
             self.last_notification = last
         # Switches: known before the first evaluation, not only once the switch entities are restored.
         self.notifications_enabled = bool(data.get("notifications_enabled", True))
         self.control_enabled = bool(data.get("control_enabled", True))
+        self.lighting_enabled = bool(data.get("lighting_enabled", True))
         await self._load_texts()
         # The startup grace period counts from now when Home Assistant is starting, not on a reload.
         self.started_at = dt_util.utcnow() if starting else None
@@ -187,6 +213,9 @@ class SmartComfort:
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
+        for cancel in self._presence_checks:
+            cancel()
+        self._presence_checks.clear()
         if self._debounce:
             self._debounce()
             self._debounce = None
@@ -200,7 +229,9 @@ class SmartComfort:
         sensors = {e for r in s.rooms for e in r.sensors} | set(s.outdoor) | set(s.outdoor_noise) | set(s.outdoor_air)
         if s.presence:
             sensors.add(s.presence)
-        devices = {e for r in s.rooms for e in r.devices}
+        devices = {e for r in s.rooms for e in r.devices} | {light.entity_id for r in s.rooms for light in r.lights}
+        devices |= {e for r in s.rooms for e in r.presence_lights()}
+        devices |= {e for r in s.rooms if r.presence for e in (*r.presence.sensors, r.presence.lux) if e}
         selects = {p.mode_select for r in s.rooms for p in r.purifiers if p.mode_select}
         if entities := sorted(sensors | devices | selects):
             self._unsubs.append(async_track_state_change_event(self.hass, entities, self._state_changed))
@@ -240,9 +271,13 @@ class SmartComfort:
         return {
             "engine": self.engine.as_dict(),
             "control": self.controller.as_dict(),
+            "lighting": self.lights.as_dict(),
+            "displays": self.displays.as_dict(),
+            "activity": self.activity.as_dict(),
             "last_notification": self.last_notification,
             "notifications_enabled": self.notifications_enabled,
             "control_enabled": self.control_enabled,
+            "lighting_enabled": self.lighting_enabled,
         }
 
     # Triggers.
@@ -252,6 +287,14 @@ class SmartComfort:
         entity_id: str = event.data["entity_id"]
         if any(entity_id in r.devices for r in self.settings.rooms):
             self._device_changed(entity_id, event.data.get("old_state"), event.data.get("new_state"))
+        if entity_id.startswith("light.") and self._light_changed(
+            entity_id, event.data.get("old_state"), event.data.get("new_state")
+        ):
+            # Just turned on: its brightness at once, not after the debounce.
+            self.hass.async_create_task(self.async_evaluate())
+            return
+        if self._presence_changed(entity_id, event.data.get("new_state")):
+            return
         if self._debounce is None and not self._stopped:
             self._debounce = async_call_later(self.hass, DEBOUNCE, self._debounced)
 
@@ -280,11 +323,103 @@ class SmartComfort:
         if changed and entity_id in self.controller.targets:
             _LOGGER.debug("Manual change of %s, control paused", entity_id)
             self.controller.manual_change(entity_id, now)
+            self._log(now, MANUAL, entity_id, until=_iso(self.controller.overrides.get(entity_id)))
+
+    @callback
+    def _light_changed(self, entity_id: str, old: State | None, new: State | None) -> bool:
+        """A light turned off ends its pause; one changed by hand is paused. True when it was just turned on."""
+        if new is None or new.state in BAD_STATES:
+            return False
+        if new.state == "off":
+            self.lights.turned_off(entity_id)
+            if old is not None and old.state == "on" and new.context.id not in self._contexts:
+                for room in self.settings.rooms:
+                    if entity_id in room.presence_lights() and self.room_present(room):
+                        self.presence.turned_off_by_hand(room)
+            return False
+        if old is None or old.state != "on":
+            return new.context.id not in self._contexts
+        if new.context.id in self._contexts or entity_id not in self.lights.targets:
+            return False
+        now = dt_util.utcnow()
+        # Our transition answers for a while (polled lights report the steps in contexts of their own).
+        grace = max(COMMAND_GRACE, timedelta(seconds=self.settings.transition + 30))
+        if (sent := self._commanded.get(entity_id)) is not None and now - sent < grace:
+            return False
+        keys = ("brightness", "color_temp_kelvin")
+        if any(old.attributes.get(k) != new.attributes.get(k) for k in keys):
+            _LOGGER.debug("Manual change of %s, lighting paused", entity_id)
+            self.lights.manual_change(entity_id, now)
+            self._log(now, MANUAL, entity_id, until=_iso(self.lights.overrides.get(entity_id)))
+        return False
+
+    @callback
+    def _presence_changed(self, entity_id: str, new: State | None) -> bool:
+        """Presence: its lights at once; once it ends, a check when the off delay is over. True when handled."""
+        rooms = [r for r in self.settings.rooms if r.presence and entity_id in r.presence.sensors]
+        if not rooms or self._stopped:
+            return False
+        self.hass.async_create_task(self.async_evaluate())
+        if new is not None and new.state == "on":
+            for room in rooms:
+                if room.presence.on_after > 0:
+                    self._presence_check(room.presence.on_after + 0.5)
+        if new is not None and new.state == "off":
+            for room in rooms:
+                delay = room.presence.off_delay(dt_util.as_local(dt_util.utcnow()), room.presence_lights()) * 60 + 1
+                self._presence_check(delay)
+        return True
+
+    @callback
+    def _presence_check(self, delay: float) -> None:
+        """An evaluation in `delay` seconds, cancelled on stop and forgotten once done."""
+
+        async def check(_now: datetime) -> None:
+            self._presence_checks.discard(cancel)
+            await self.async_evaluate()
+
+        cancel = async_call_later(self.hass, delay, check)
+        self._presence_checks.add(cancel)
+
+    def room_present(self, room: Room) -> bool | None:
+        """Someone in the room by its presence sensors; None when none of them is known."""
+        if room.presence is None:
+            return None
+        states = [self.hass.states.get(e) for e in room.presence.sensors]
+        known = [s for s in states if s is not None and s.state in ("on", "off")]
+        return any(s.state == "on" for s in known) if known else None
+
+    def light_states(self, room: Room) -> dict[str, LightState]:
+        out: dict[str, LightState] = {}
+        for entity_id in dict.fromkeys([light.entity_id for light in room.lights] + list(room.presence_lights())):
+            state = self.hass.states.get(entity_id)
+            if state is None or state.state in BAD_STATES:
+                continue
+            modes = set(state.attributes.get("supported_color_modes") or [])
+            raw = state.attributes.get("brightness")
+            warm = "color_temp" in modes
+            out[entity_id] = LightState(
+                on=state.state == "on",
+                brightness=round(raw * 100 / 255) if isinstance(raw, (int, float)) else None,
+                kelvin=state.attributes.get("color_temp_kelvin"),
+                dimmable=bool(modes - {"onoff"}) if modes else raw is not None,
+                colored=bool(modes & {"hs", "rgb", "rgbw", "rgbww", "xy"}),
+                min_kelvin=state.attributes.get("min_color_temp_kelvin") if warm else None,
+                max_kelvin=state.attributes.get("max_color_temp_kelvin") if warm else None,
+            )
+        return out
+
+    def sun_elevation(self) -> float | None:
+        state = self.hass.states.get("sun.sun")
+        value = state.attributes.get("elevation") if state else None
+        return float(value) if isinstance(value, (int, float)) else None
 
     # Readings.
 
-    def outdoor(self) -> float | None:
-        values = [v for e in self.settings.outdoor if (v := _temperature(self.hass.states.get(e))) is not None]
+    def outdoor(self, entities: tuple[str, ...] | None = None) -> float | None:
+        """Outdoor temperature: the sensors combined as set (min by default), None without one available."""
+        sensors = self.settings.outdoor if entities is None else entities
+        values = [v for e in sensors if (v := _temperature(self.hass.states.get(e))) is not None]
         if not values:
             return None
         if self.settings.aggregate == "max":
@@ -293,14 +428,16 @@ class SmartComfort:
             return round(sum(values) / len(values), 2)
         return min(values)
 
-    def outdoor_noise(self) -> float | None:
+    def outdoor_noise(self, entities: tuple[str, ...] | None = None) -> float | None:
         """Mean of the outdoor noise sensors (dB), None without one available."""
-        values = [v for e in self.settings.outdoor_noise if (v := _float(self.hass.states.get(e))) is not None]
+        sensors = self.settings.outdoor_noise if entities is None else entities
+        values = [v for e in sensors if (v := _float(self.hass.states.get(e))) is not None]
         return round(sum(values) / len(values), 1) if values else None
 
-    def outdoor_air(self) -> float | None:
+    def outdoor_air(self, entities: tuple[str, ...] | None = None) -> float | None:
         """Worst level of the outdoor air quality sensors, None without one available."""
-        values = [v for e in self.settings.outdoor_air if (v := air_level(self.hass.states.get(e))) is not None]
+        sensors = self.settings.outdoor_air if entities is None else entities
+        values = [v for e in sensors if (v := air_level(self.hass.states.get(e))) is not None]
         return max(values) if values else None
 
     def _outdoor_gone(self, settled: bool) -> bool:
@@ -405,6 +542,21 @@ class SmartComfort:
             )
         return out
 
+    def display_states(self, room: Room) -> dict[str, DisplayState]:
+        out: dict[str, DisplayState] = {}
+        for entity_id in room.displays:
+            state = self.hass.states.get(entity_id)
+            if state is None or state.state in BAD_STATES:
+                continue
+            out[entity_id] = DisplayState(
+                domain=state.domain,
+                value=state.state,
+                options=tuple(state.attributes.get("options") or ()),
+                minimum=_number(state.attributes.get("min")),
+                maximum=_number(state.attributes.get("max")),
+            )
+        return out
+
     # Evaluation.
 
     def gates(self, now: datetime) -> Gates:
@@ -426,18 +578,48 @@ class SmartComfort:
             readings: dict[str, RoomReading] = {}
             commands: list[Command] = []
             handled: set[str] = set()
+            lighting = self.lighting_enabled and self.settings.lighting_enabled
+            elevation = self.sun_elevation()
+            if reset := self.controller.reset_due(dt_util.as_local(now)):
+                _LOGGER.debug("Back to the normal state: %s", ", ".join(reset))
+                for entity_id in reset:
+                    self._log(now, RESET, entity_id)
+            occupied = {r.id for r in self.settings.rooms if r.presence and self.room_present(r)}
             for room in self.settings.rooms:
+                if lighting and room.lights:
+                    commands += self.lights.evaluate(
+                        now, dt_util.as_local(now), elevation, room, self.light_states(room)
+                    )
+                if room.presence is not None:
+                    # After the adaptive lighting, which forgets the lights it sees off.
+                    commands += self.presence.evaluate(
+                        now,
+                        dt_util.as_local(now),
+                        elevation,
+                        room,
+                        self.room_present(room),
+                        _float(self.hass.states.get(room.presence.lux)) if room.presence.lux else None,
+                        self.light_states(room),
+                        self.lights,
+                        adaptive=lighting,
+                        kept=self.presence.kept(room, occupied),
+                    )
                 reading, ctx = self.reading(room, now)
                 states = self.device_states(room)
                 if self.control_enabled:
                     commands += self.controller.evaluate(now, local, room, ctx, states)
+                    if room.displays:
+                        commands += self.displays.evaluate(dt_util.as_local(now), room, self.display_states(room))
                 if self.controller.handled(room, states):
                     handled.add(room.id)
                 reading.handled = room.id in handled
                 readings[room.id] = reading
             self.engine.evaluate(now, readings, self.outdoor())
             self.handled = handled
-            failed = {c.device for c in commands if not await self._command(c, now)}
+            sent = [(c, await self._command(c, now)) for c in commands]
+            failed = {c.device for c, ok in sent if not ok}
+            if sent:
+                async_dispatcher_send(self.hass, SIGNAL_ACTIVITY, self.activity.commands(now, sent))
             for device in {c.device for c in commands if c.device} - failed:
                 self.controller.command_succeeded(device)
             result = self.engine.step(now, self.gates(now), handled)
@@ -463,6 +645,9 @@ class SmartComfort:
         except Exception as err:  # noqa: BLE001 - one failing device doesn't stop the others
             _LOGGER.warning("%s.%s on %s failed: %s", cmd.domain, cmd.service, cmd.entity_id, err)
             self.controller.command_failed(cmd, now)
+            if cmd.domain == "light":
+                self.lights.targets.pop(cmd.entity_id, None)  # Sent again at the next evaluation.
+            self.displays.wanted.pop(cmd.entity_id, None)
             return False
         self.hass.bus.async_fire(
             EVENT_CONTROL,
@@ -475,6 +660,11 @@ class SmartComfort:
             context=context,
         )
         return True
+
+    @callback
+    def _log(self, now: datetime, kind: str, entity_id: str | None = None, **extra: Any) -> None:
+        """One activity entry, sent to the panel and the activity cards."""
+        async_dispatcher_send(self.hass, SIGNAL_ACTIVITY, [self.activity.add(now, kind, entity_id, **extra)])
 
     # Notifications.
 
@@ -545,12 +735,14 @@ class SmartComfort:
             "alerts": digest.keys,
         }
         self.hass.bus.async_fire(EVENT_NOTIFIED, {**self.last_notification})
+        self._log(now, NOTIFIED, title=title, message=message, severity=digest.severity)
         return True
 
     async def _clear(self) -> None:
         # Only the Companion app understands it: other notifiers would show the text "clear_notification".
         if mobile := [s for s in self.settings.notify if self._companion(s)]:
             await self._notify({"message": "clear_notification", "data": {"tag": self.settings.tag}}, mobile)
+        self._log(dt_util.utcnow(), CLEARED)
 
     def _companion(self, service: str) -> bool:
         """A Companion app notifier, or a notify group (usually of phones, which forwards to them)."""
@@ -611,5 +803,13 @@ class SmartComfort:
     @callback
     def set_control(self, enabled: bool) -> None:
         self.control_enabled = enabled
+        self.save()
+        self._update_listeners()
+
+    @callback
+    def set_lighting(self, enabled: bool) -> None:
+        self.lighting_enabled = enabled
+        if not enabled:
+            self.lights.targets.clear()  # Applied again from scratch when turned back on.
         self.save()
         self._update_listeners()

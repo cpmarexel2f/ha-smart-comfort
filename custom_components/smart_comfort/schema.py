@@ -34,6 +34,12 @@ def notify_service(value: Any) -> str:
     return f"notify.{name}"
 
 
+# Every device: its indicator light or display, and a time to go back to its normal state.
+EQUIPMENT = {
+    vol.Optional(k.CONF_DISPLAY): vol.Any(None, cv.entity_domain(list(k.DISPLAY_DOMAINS))),
+    vol.Optional(k.CONF_RESET_AT): time_string,
+}
+
 ALERT = vol.Schema(
     {
         vol.Optional(k.CONF_ENABLED): cv.boolean,
@@ -59,6 +65,7 @@ CLIMATE = {
     vol.Optional(k.CONF_CLOSED_FOR): MINUTES,
     vol.Optional(k.CONF_OFF_ON_OPEN): MINUTES,
     vol.Optional(k.CONF_NIGHT_FAN_MODE): OPT_STR,
+    **EQUIPMENT,
 }
 FAN = {
     vol.Optional(k.CONF_ON_ABOVE): vol.Any(None, NUMBER),
@@ -70,6 +77,7 @@ FAN = {
     vol.Optional(k.CONF_OFF_PRESET): OPT_STR,
     vol.Optional(k.CONF_NIGHT_PERCENTAGE): vol.Any(None, PERCENT),
     vol.Optional(k.CONF_NIGHT_PRESET): OPT_STR,
+    **EQUIPMENT,
 }
 PURIFIER = {
     vol.Optional(k.CONF_OPEN_PERCENTAGE): vol.Any(None, PERCENT),
@@ -82,6 +90,7 @@ PURIFIER = {
     vol.Optional(k.CONF_NIGHT_PERCENTAGE): vol.Any(None, PERCENT),
     vol.Optional(k.CONF_NIGHT_PRESET): OPT_STR,
     vol.Optional(k.CONF_NIGHT_MODE): OPT_STR,
+    **EQUIPMENT,
 }
 DEVICE_SECTIONS = vol.Schema(
     {
@@ -99,6 +108,8 @@ CONTROL = DEVICE_SECTIONS.extend(
         vol.Optional(k.CONF_SUPPRESS_HANDLED): cv.boolean,
         vol.Optional(k.CONF_NIGHT_START): time_string,
         vol.Optional(k.CONF_NIGHT_END): time_string,
+        vol.Optional(k.CONF_DISPLAY_OFF): time_string,
+        vol.Optional(k.CONF_DISPLAY_ON): time_string,
     }
 )
 
@@ -110,6 +121,73 @@ def _devices(domain: str, extra: dict) -> vol.All:
     )
     return vol.All(cv.ensure_list, [item])
 
+
+LIGHTING_LEVELS = {
+    vol.Optional(k.CONF_DAY): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional(k.CONF_EVENING): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional(k.CONF_NIGHT): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional(k.CONF_WARMTH): cv.boolean,
+    vol.Optional(k.CONF_DAY_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
+    vol.Optional(k.CONF_EVENING_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
+    vol.Optional(k.CONF_NIGHT_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
+    vol.Optional(k.CONF_MORNING): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional(k.CONF_MORNING_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
+    vol.Optional(k.CONF_QUIET_MORNING): cv.boolean,
+    vol.Optional(k.CONF_NAP): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+    vol.Optional(k.CONF_NAP_KELVIN): vol.All(vol.Coerce(int), vol.Range(min=1500, max=10000)),
+}
+TIME_SLOT = {
+    vol.Required("start"): time_string,
+    vol.Required("end"): time_string,
+    vol.Optional(k.CONF_DAYS): vol.All(cv.ensure_list, [vol.In(k.WEEKDAYS)]),
+}
+NAP = vol.Schema(TIME_SLOT)
+LIGHTING = vol.Schema(
+    {
+        vol.Optional(k.CONF_ENABLED): cv.boolean,
+        vol.Optional(k.CONF_TRANSITION): vol.All(vol.Coerce(int), vol.Range(min=0, max=3600)),
+        vol.Optional(k.CONF_MORNING_END): time_string,
+        **LIGHTING_LEVELS,
+    }
+)
+LIGHT = {vol.Optional(k.CONF_NIGHT_ONLY): cv.boolean, **LIGHTING_LEVELS}
+
+
+def _off_key(value: Any) -> Any:
+    """YAML 1.1 reads an unquoted `off:` key as False: back to "off"."""
+    if isinstance(value, dict) and False in value:
+        value = {(k.CONF_OFF if key is False else key): v for key, v in value.items()}
+    return value
+
+
+PRESENCE_SLOT = vol.All(
+    _off_key,
+    vol.Schema(
+        {
+            **TIME_SLOT,
+            vol.Optional(k.CONF_LIGHTS): cv.entity_ids,
+            vol.Optional(k.CONF_BRIGHTNESS): vol.Any(None, vol.All(vol.Coerce(int), vol.Range(min=1, max=100))),
+            vol.Optional(k.CONF_OFF): cv.boolean,
+            vol.Optional(k.CONF_OFF_AFTER): vol.Any(None, vol.All(NUMBER, vol.Range(min=0, max=k.MAX_MINUTES))),
+            vol.Optional(k.CONF_COLOR): vol.Any(
+                None, vol.All(cv.ensure_list, vol.Length(min=3, max=3), [vol.All(vol.Coerce(int), vol.Range(0, 255))])
+            ),
+        }
+    ),
+)
+PRESENCE = vol.Schema(
+    {
+        vol.Required(k.CONF_SENSORS): cv.entity_ids,
+        vol.Optional(k.CONF_LIGHTS): cv.entity_ids,
+        vol.Optional(k.CONF_LUX): vol.Any(None, cv.entity_id),
+        vol.Optional(k.CONF_MAX_LUX): vol.Any(None, NUMBER),
+        vol.Optional(k.CONF_OFF_AFTER): vol.All(NUMBER, vol.Range(min=0, max=k.MAX_MINUTES)),
+        vol.Optional(k.CONF_ON_AFTER): vol.All(NUMBER, vol.Range(min=0, max=600)),
+        vol.Optional(k.CONF_TRANSITION): vol.Any(None, vol.All(NUMBER, vol.Range(min=0, max=300))),
+        vol.Optional(k.CONF_NOT_DURING_NAPS): cv.entity_ids,
+        vol.Optional(k.CONF_SLOTS): vol.All(cv.ensure_list, [PRESENCE_SLOT]),
+    }
+)
 
 ROOM = vol.Schema(
     {
@@ -129,6 +207,10 @@ ROOM = vol.Schema(
         ),
         vol.Optional(k.CONF_FANS): _devices("fan", FAN),
         vol.Optional(k.CONF_PURIFIERS): _devices("fan", PURIFIER),
+        vol.Optional(k.CONF_LIGHTS): _devices("light", LIGHT),
+        vol.Optional(k.CONF_LIGHTING): vol.Schema(LIGHTING_LEVELS),
+        vol.Optional(k.CONF_NAPS): vol.All(cv.ensure_list, [NAP]),
+        vol.Optional(k.CONF_PRESENCE_LIGHTS): PRESENCE,
         vol.Optional(k.CONF_ALERTS): ALERTS,
         vol.Optional(k.CONF_CONTROL): DEVICE_SECTIONS,
     }
@@ -167,6 +249,7 @@ OPTIONS = vol.Schema(
         vol.Optional(k.CONF_CONTROL): CONTROL,
         vol.Optional(k.CONF_ROOMS): vol.All(cv.ensure_list, [ROOM]),
         vol.Optional(k.CONF_OUTDOORS): vol.All(cv.ensure_list, [OUTDOOR]),
+        vol.Optional(k.CONF_LIGHTING): LIGHTING,
     }
 )
 

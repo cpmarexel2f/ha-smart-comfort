@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
@@ -41,10 +42,17 @@ class House:
         device: str | None = None,
         area: str | None = None,
         platform: str = "test",
+        category: EntityCategory | None = None,
         **attrs,
     ):
         entry = self.entities.async_get_or_create(
-            domain, platform, object_id, suggested_object_id=object_id, device_id=device, config_entry=self.entry
+            domain,
+            platform,
+            object_id,
+            suggested_object_id=object_id,
+            device_id=device,
+            config_entry=self.entry,
+            entity_category=category,
         )
         if area:
             self.entities.async_update_entity(entry.entity_id, area_id=area)
@@ -55,6 +63,9 @@ class House:
 def build(hass: HomeAssistant) -> House:
     h = House(hass)
     living, bedroom, garden, hall = h.area("Living room"), h.area("Bedroom"), h.area("Garden"), h.area("Hall")
+    # Nothing to follow: no room, no outdoor place.
+    h.area("Kitchen")
+    h.area("Balcony")
     station = h.device("Weather station", living)
     h.entity("sensor", "living_temperature", "21", station, device_class="temperature", state_class="measurement")
     h.entity("sensor", "living_humidity", "50", station, device_class="humidity")
@@ -70,6 +81,9 @@ def build(hass: HomeAssistant) -> House:
     fan = h.device("Tower fan", living)
     h.entity("fan", "living_fan", "off", fan, preset_modes=["Natural Wind", "Straight Wind", "Smart"])
     h.entity("sensor", "fan_temperature", "23", fan, device_class="temperature")
+    # Its display brightness, a setting of the device.
+    h.entity("number", "living_fan_display_brightness", "100", fan, category=EntityCategory.CONFIG, min=0, max=100)
+    h.entity("switch", "living_fan_child_lock", "off", fan, category=EntityCategory.CONFIG)
     purifier = h.device("Air Purifier 4", living, model="zhimi.purifier")
     h.entity("fan", "living_purifier", "on", purifier, preset_modes=["auto"])
     h.entity("select", "living_purifier_mode", "automatic", purifier, options=["automatic", "manual"])
@@ -82,14 +96,11 @@ def build(hass: HomeAssistant) -> House:
     h.entity("sensor", "bedroom_temperature", "19", area=bedroom, device_class="temperature")
     h.entity("binary_sensor", "bedroom_door", "off", area=bedroom, device_class="door")
     h.entity("binary_sensor", "bedroom_motion", "off", area=bedroom, device_class="motion")
-    h.entity(
-        "fan",
-        "bedroom_purifier",
-        "on",
-        h.device("Purificateur chambre", bedroom),
-        preset_modes=["Auto", "Sleep", "Favorite"],
-    )
-    # Garden: outdoor. Hall: a door, no comfort sensor.
+    bedroom_purifier = h.device("Purificateur chambre", bedroom)
+    h.entity("fan", "bedroom_purifier", "on", bedroom_purifier, preset_modes=["Auto", "Sleep", "Favorite"])
+    # Its indicator light (on/off): the display, not a lamp of the room.
+    h.entity("light", "bedroom_purifier_indicator_light", "on", bedroom_purifier, supported_color_modes=["onoff"])
+    # Garden: outdoor. Hall: a door only.
     h.entity("sensor", "garden_temperature", "9", area=garden, device_class="temperature")
     h.entity("sensor", "garden_noise", "50", area=garden, device_class="sound_pressure")
     h.entity("sensor", "garden_aqi", "42", area=garden, device_class="aqi")
@@ -113,9 +124,8 @@ async def test_discover_rooms(hass: HomeAssistant) -> None:
     ]
     assert found.outdoor == found.outdoor_noise == found.outdoor_air == []
     by_name = {r["name"]: r for r in rooms}
-    # Every area but the outdoor ones, even without a comfort sensor (the hall has a door only).
-    assert sorted(by_name) == ["Bedroom", "Hall", "Living room"]
-    assert by_name["Hall"] == {"name": "Hall", "area": "hall", "openings": ["binary_sensor.hall_door"]}
+    # The areas with something to follow: not the hall (a door only) nor the empty kitchen.
+    assert sorted(by_name) == ["Bedroom", "Living room"]
     living = by_name["Living room"]
     assert living["area"] == "living_room"
     assert living["temperature"] == "sensor.living_temperature"
@@ -131,6 +141,7 @@ async def test_discover_rooms(hass: HomeAssistant) -> None:
             "preset": "Natural Wind",
             "off_preset": "Natural Wind",
             "open_preset": "Straight Wind",
+            "display": "number.living_fan_display_brightness",
         }
     ]
     assert living["purifiers"] == [
@@ -139,6 +150,7 @@ async def test_discover_rooms(hass: HomeAssistant) -> None:
             "mode_select": "select.living_purifier_mode",
             "open_mode": "manual",
             "closed_mode": "automatic",
+            "display": "select.living_purifier_brightness",
         }
     ]
     bedroom = by_name["Bedroom"]
@@ -151,6 +163,7 @@ async def test_discover_rooms(hass: HomeAssistant) -> None:
             "open_preset": "Favorite",
             "closed_preset": "Auto",
             "night_preset": "Sleep",
+            "display": "light.bedroom_purifier_indicator_light",
         }
     ]
 
@@ -170,7 +183,7 @@ async def test_merge_keeps_what_is_set(hass: HomeAssistant) -> None:
         ],
     }
     merged, report = merge(options, found)
-    assert report.added == ["Bedroom", "Hall"]
+    assert report.added == ["Bedroom"]
     assert report.updated == ["Living Room"]
     # The garden added as an outdoor place: its sensor leaves the top-level list, the other one stays.
     assert report.outdoors_added == ["Garden"]
@@ -182,7 +195,13 @@ async def test_merge_keeps_what_is_set(hass: HomeAssistant) -> None:
     assert living["co2"] == "sensor.living_co2"  # filled in
     # Device already there: its own setting kept, the missing ones filled in.
     assert living["fans"] == [
-        {"entity_id": "fan.living_fan", "preset": "Smart", "off_preset": "Natural Wind", "open_preset": "Straight Wind"}
+        {
+            "entity_id": "fan.living_fan",
+            "preset": "Smart",
+            "off_preset": "Natural Wind",
+            "open_preset": "Straight Wind",
+            "display": "number.living_fan_display_brightness",
+        }
     ]
     assert "outdoor_noise" not in merged
     assert living["area"] == "living_room"
@@ -212,7 +231,7 @@ async def test_discover_command(hass: HomeAssistant, hass_ws_client) -> None:
     assert msg["success"], msg
     result = msg["result"]
     assert result["report"] == {
-        "added": ["Bedroom", "Hall", "Living room"],
+        "added": ["Bedroom", "Living room"],
         "updated": [],
         "outdoors_added": ["Garden"],
         "outdoors_updated": [],
@@ -228,7 +247,7 @@ async def test_discover_command(hass: HomeAssistant, hass_ws_client) -> None:
     assert msg["success"], msg
     await hass.async_block_till_done()
     settings = entry.runtime_data.settings
-    assert [r.name for r in settings.rooms] == ["Bedroom", "Hall", "Living room"]
+    assert [r.name for r in settings.rooms] == ["Bedroom", "Living room"]
     assert settings.outdoor == ("sensor.garden_temperature",)
     assert settings.outdoor_air == ("sensor.garden_aqi",)
     assert settings.outdoor_noise == ("sensor.garden_noise",)
@@ -251,6 +270,12 @@ async def test_outdoor_places(hass: HomeAssistant) -> None:
     h.entity("sensor", "atmo_qualite_globale_pollen_rennes", "1", atmo, platform="atmofrance")
     h.entity("sensor", "air_quality", "0", platform="spook")
     h.entity("sensor", "nas_temperature", "50", device_class="temperature")
+    # Machines in the living room: a NAS (its integration), a box (its name), a fridge.
+    nas = h.device("UGREEN NAS", living, model="DXP480T Plus")
+    h.entity("sensor", "ugreen_nas_cpu_temperature", "52", nas, platform="ugreen", device_class="temperature")
+    h.entity("sensor", "freebox_temperature_1", "55", h.device("Freebox v9", living), device_class="temperature")
+    h.entity("sensor", "frigo_temperature", "4", h.device("Frigo", living), device_class="temperature")
+    h.entity("sensor", "station_humidity", "50", h.device("Station", living), device_class="humidity")
     # The outdoor unit of an air conditioner: inside the house, not the outdoor temperature.
     ac = h.device("Climatiseur", living)
     h.entity("climate", "climatiseur", "off", ac, hvac_modes=["off", "cool"])
@@ -258,6 +283,8 @@ async def test_outdoor_places(hass: HomeAssistant) -> None:
     hass.states.async_set("weather.home", "sunny", {"temperature": 8})
     found = discover_rooms(hass)
     assert [r["name"] for r in found.rooms] == ["Séjour"]
+    # The room's own sensor, never a machine's (NAS, box, fridge), even with nothing else around.
+    assert found.rooms[0]["temperature"] == "sensor.station_temperature"
     assert found.outdoors == [
         {
             "name": "Terrasse",
@@ -304,3 +331,56 @@ async def test_outdoor_weather(hass: HomeAssistant) -> None:
         merged, report = merge(options, found)
         assert "weather.home" not in merged.get("outdoor_temperature", [])
         assert report.outdoor == []
+
+
+async def test_machines_only(hass: HomeAssistant) -> None:
+    """An area with only machine temperatures (NAS, box) is not a room."""
+    h = House(hass)
+    office = h.area("Bureau")
+    nas = h.device("UGREEN NAS", office)
+    h.entity("sensor", "ugreen_nas_pool_1_disk_1_temperature", "51", nas, platform="ugreen", device_class="temperature")
+    h.entity("sensor", "freebox_temperature_cpu_0", "58", h.device("Freebox", office), device_class="temperature")
+    assert discover_rooms(hass).rooms == []
+
+
+async def test_discover_lights(hass: HomeAssistant) -> None:
+    """Dimmable lamps only: not a device's indicator, a camera's floodlight, an on/off light; night lights flagged."""
+    h = House(hass)
+    living, hallway = h.area("Séjour"), h.area("Couloir")
+    dim = {"supported_color_modes": ["brightness"]}
+    h.entity("light", "salon", "off", area=living, **dim)
+    h.entity("light", "aqara_night_light", "off", area=living, supported_color_modes=["color_temp"])
+    h.entity("light", "spot", "off", area=living, supported_color_modes=["onoff"])
+    purifier = h.device("Purificateur", living)
+    h.entity("fan", "purificateur", "on", purifier)
+    h.entity("light", "purificateur_indicator_light", "on", purifier, **dim)
+    camera = h.device("Caméra Séjour", living)
+    h.entity("camera", "camera_sejour", "idle", camera)
+    h.entity("light", "camera_sejour_floodlight", "off", camera, **dim)
+    # A light group stands for its members.
+    h.entity("light", "couloir_group", "off", area=hallway, entity_id=["light.couloir_1", "light.couloir_2"], **dim)
+    h.entity("light", "couloir_1", "off", area=hallway, **dim)
+    h.entity("light", "couloir_2", "off", area=hallway, **dim)
+    rooms = {r["name"]: r for r in discover_rooms(hass).rooms}
+    # A room with lights only is worth following now.
+    assert rooms["Couloir"] == {"name": "Couloir", "area": "couloir", "lights": ["light.couloir_group"]}
+    assert rooms["Séjour"]["lights"] == [{"entity_id": "light.aqara_night_light", "night_only": True}, "light.salon"]
+    # Discovering again completes the room without doubling its lights.
+    merged, report = merge(
+        {"rooms": [{"name": "Séjour", "area": "sejour", "lights": ["light.salon"]}]}, discover_rooms(hass)
+    )
+    assert merged["rooms"][0]["lights"] == ["light.salon", {"entity_id": "light.aqara_night_light", "night_only": True}]
+    assert report.updated == ["Séjour"]
+
+
+async def test_discover_bedroom_lights(hass: HomeAssistant) -> None:
+    """A bedroom gets a quiet morning for its lights, and no nap (set by hand)."""
+    h = House(hass)
+    h.entity("light", "chambre_lea", "off", area=h.area("Chambre Léa"), supported_color_modes=["brightness"])
+    room = discover_rooms(hass).rooms[0]
+    assert room["lighting"] == {"quiet_morning": True}
+    assert "naps" not in room
+    # Already set to no quiet morning: kept.
+    options = {"rooms": [{"name": "Chambre Léa", "area": "chambre_lea", "lighting": {"quiet_morning": False}}]}
+    merged, _ = merge(options, discover_rooms(hass))
+    assert merged["rooms"][0]["lighting"] == {"quiet_morning": False}

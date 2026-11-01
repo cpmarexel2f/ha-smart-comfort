@@ -92,6 +92,8 @@ class Controller:
         # Failed commands: (target, not retried before) and number of failures in a row, by device.
         self.retry: dict[str, tuple[str, datetime]] = {}
         self.failures: dict[str, int] = {}
+        # Local date and time of the last check of the reset times.
+        self.last_local: datetime | None = None
 
     def update_settings(self, settings: Settings) -> None:
         self.settings = settings
@@ -143,6 +145,35 @@ class Controller:
         """Every command of the device was sent: failures in a row start over."""
         self.failures.pop(device, None)
         self.retry.pop(device, None)
+
+    def reset_due(self, local: datetime) -> list[str]:
+        """Devices whose reset time has come since the last check: pause and target forgotten.
+
+        The target is then applied again at once (the purifier back to its closed preset or mode…), even
+        after a change by hand. `local`: the local date and time.
+        """
+        last, self.last_local = self.last_local, local
+        if last is None or local <= last:
+            return []
+        reset = []
+        for room in self.settings.rooms:
+            for device in room.equipment():
+                if device.reset_at is None:
+                    continue
+                at = local.replace(
+                    hour=device.reset_at.hour,
+                    minute=device.reset_at.minute,
+                    second=device.reset_at.second,
+                    microsecond=0,
+                )
+                if at > local:
+                    at -= timedelta(days=1)
+                if last < at <= local:
+                    self.overrides.pop(device.entity_id, None)
+                    self.targets.pop(device.entity_id, None)
+                    self.retry.pop(device.entity_id, None)
+                    reset.append(device.entity_id)
+        return reset
 
     def manual_change(self, entity_id: str, now: datetime) -> None:
         """A device was changed by someone else than Smart Comfort."""

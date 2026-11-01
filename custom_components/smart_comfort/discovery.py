@@ -1,6 +1,9 @@
 """Discovery: rooms from the Home Assistant areas, with their sensors and devices.
 
-Every area that is not outdoors becomes a room, with what it has: sensors, openings, devices.
+Every area that is not outdoors and has something to follow (a comfort sensor, an air conditioner, a fan, a
+purifier or a dimmable light) becomes a room, with what it has: sensors, openings, devices, lights (not the
+indicators of devices nor the floodlights of cameras; night lights set at night only). The others (a hallway
+with only its door, a room with nothing) are left out, and so are the outdoor areas without a sensor.
 Sensors and openings that belong to an air conditioner, fan or purifier are left out (internal
 temperatures, filter states…), and so are the heating thermostats (a climate without cooling).
 The outdoor areas become outdoor places, with their temperature, air quality and noise sensors. Outdoor
@@ -26,6 +29,7 @@ from homeassistant.helpers import entity_registry as er
 
 from . import const as k
 from .config import slugify
+from .displays import off_option
 
 # Words of outdoor areas and sensors, in slug form (several languages).
 OUTDOOR_WORDS = (
@@ -70,8 +74,132 @@ MANUAL_WORDS = ("manual", "manuel", "favorite", "favori", "manuell")
 QUIET_WORDS = ("sleep", "silent", "quiet", "night", "nuit", "nacht", "noche", "schlaf", "sommeil", "leise")
 LOW_WORDS = ("low", "bas", "faible", "niedrig", "bajo", "min")
 # Domains of the devices whose own sensors are not room sensors.
+# What makes a room worth following: a comfort sensor or a device (openings alone are not enough).
+TRACKED = (
+    k.CONF_TEMPERATURE,
+    k.CONF_CO2,
+    k.CONF_HUMIDITY,
+    k.CONF_NOISE,
+    k.CONF_CLIMATE,
+    k.CONF_FANS,
+    k.CONF_PURIFIERS,
+    k.CONF_LIGHTS,
+)
+# Indicator lights and displays of the devices (slug form).
+DISPLAY_WORDS = (
+    "indicator",
+    "voyant",
+    "display",
+    "ecran",
+    "screen",
+    "brightness",
+    "luminosite",
+    "helligkeit",
+    "anzeige",
+    "pantalla",
+    "brillo",
+)
+# Bedrooms: a quiet morning for their lights.
+BEDROOM_WORDS = ("chambre", "bedroom", "schlafzimmer", "kinderzimmer", "dormitorio", "habitacion", "nursery")
+# Night lights: only set in the night hours.
+NIGHT_LIGHT_WORDS = ("veilleuse", "night_light", "nightlight", "nachtlicht", "luz_nocturna", "luz_de_noche")
+# Lights that are not lamps: the indicator of a device, the floodlight of a camera.
+NOT_LAMP_WORDS = ("indicator", "voyant", "floodlight", "projecteur", "status_light", "led_indicator")
+# Integrations of machines whose temperatures are not the room's (NAS, boxes, servers, UPS, printers…).
+EQUIPMENT_PLATFORMS = frozenset(
+    {
+        "ugreen",
+        "synology_dsm",
+        "qnap",
+        "qnap_qsw",
+        "truenas",
+        "unraid",
+        "freebox",
+        "livebox",
+        "bbox",
+        "sfr_box",
+        "fritz",
+        "fritzbox_callmonitor",
+        "netgear",
+        "unifi",
+        "tplink_omada",
+        "systemmonitor",
+        "glances",
+        "proxmoxve",
+        "hddtemp",
+        "nut",
+        "apcupsd",
+        "octoprint",
+        "ipp",
+        "hpprinter",
+        "brother",
+        "snmp",
+        "esxi_stats",
+    }
+)
+# Words (whole words of the entity id or name) of machine and appliance temperatures.
+EQUIPMENT_WORDS = frozenset(
+    {
+        "cpu",
+        "gpu",
+        "soc",
+        "chipset",
+        "motherboard",
+        "processor",
+        "processeur",
+        "disk",
+        "disque",
+        "hdd",
+        "ssd",
+        "nvme",
+        "nas",
+        "server",
+        "serveur",
+        "router",
+        "routeur",
+        "freebox",
+        "livebox",
+        "bbox",
+        "modem",
+        "switch",
+        "printer",
+        "imprimante",
+        "ups",
+        "onduleur",
+        "inverter",
+        "battery",
+        "batterie",
+        "coil",
+        "pipe",
+        "discharge",
+        "compressor",
+        "compresseur",
+        "boiler",
+        "chaudiere",
+        "fridge",
+        "refrigerator",
+        "refrigerateur",
+        "frigo",
+        "freezer",
+        "congelateur",
+        "oven",
+        "four",
+        "aquarium",
+        "probe",
+        "nvr",
+        "camera",
+    }
+)
 BUSY_DOMAINS = {"climate", "fan", "humidifier", "water_heater", "vacuum"}
 OPENING_CLASSES = {"window", "door", "opening"}
+
+
+def _equipment(e: _Entity) -> bool:
+    """A sensor of a machine (NAS, box, server, printer, fridge…), not of the air around it."""
+    if e.platform in EQUIPMENT_PLATFORMS:
+        return True
+    tokens = set(slugify(f"{e.entity_id} {e.name}").split("_"))
+    return bool(tokens & EQUIPMENT_WORDS)
 
 
 def _has(text: str, words: tuple[str, ...]) -> bool:
@@ -145,7 +273,11 @@ def _collect(
     by_device: dict[str, list[_Entity]] = {}
     unassigned: list[_Entity] = []
     for entry in er.async_get(hass).entities.values():
-        if entry.disabled_by or entry.hidden_by or entry.entity_category is not None:
+        if entry.disabled_by or entry.hidden_by:
+            continue
+        # Settings of a device (its display…): only among its entities, not in the room.
+        setting = entry.entity_category is not None
+        if setting and not (entry.device_id and entry.domain in k.DISPLAY_DOMAINS):
             continue
         device = devices.async_get(entry.device_id) if entry.device_id else None
         state = hass.states.get(entry.entity_id)
@@ -163,8 +295,10 @@ def _collect(
             entry.platform,
         )
         if entry.device_id:
-            device_domains.setdefault(entry.device_id, set()).add(entry.domain)
             by_device.setdefault(entry.device_id, []).append(ent)
+            if setting:
+                continue
+            device_domains.setdefault(entry.device_id, set()).add(entry.domain)
         area_id = entry.area_id or (device.area_id if device else None)
         if area_id in areas:
             areas[area_id].entities.append(ent)
@@ -185,6 +319,32 @@ def _best(candidates: list[_Entity], by_device: dict[str, list[_Entity]]) -> str
         return None
     best = max(candidates, key=score)
     return best.entity_id
+
+
+def _display(entity: _Entity, by_device: dict[str, list[_Entity]], used: set[str]) -> str | None:
+    """The indicator light or display of a device: an on/off light, a switch, a brightness or a select."""
+    for sibling in sorted(by_device.get(entity.device_id or "", []), key=lambda e: e.entity_id):
+        if sibling.domain not in k.DISPLAY_DOMAINS or sibling.entity_id in used:
+            continue
+        if not (_has(sibling.entity_id, DISPLAY_WORDS) or _has(sibling.name, DISPLAY_WORDS)):
+            continue
+        attributes = sibling.attributes
+        if sibling.domain == "light" and set(attributes.get("supported_color_modes") or ["onoff"]) != {"onoff"}:
+            continue
+        if sibling.domain == "select" and off_option(list(attributes.get("options") or [])) is None:
+            continue
+        return sibling.entity_id
+    return None
+
+
+def _with_display(
+    item: str | dict[str, Any], entity: _Entity, by_device: dict[str, list[_Entity]]
+) -> str | dict[str, Any]:
+    used = {item.get(k.CONF_MODE_SELECT)} if isinstance(item, dict) else set()
+    if (display := _display(entity, by_device, {u for u in used if u})) is None:
+        return item
+    found = item if isinstance(item, dict) else {k.CONF_ENTITY_ID: item}
+    return {**found, k.CONF_DISPLAY: display}
 
 
 def _fan(entity: _Entity) -> str | dict[str, Any]:
@@ -233,6 +393,22 @@ def _is_purifier(entity: _Entity, by_device: dict[str, list[_Entity]]) -> bool:
     return any(s.device_class in ("pm25", "aqi", "pm10") for s in siblings)
 
 
+def _is_lamp(e: _Entity, device_domains: dict[str, set[str]]) -> bool:
+    """A dimmable lamp: not on/off only, not a device's indicator or a camera's floodlight."""
+    if "camera" in device_domains.get(e.device_id or "", set()) or e.platform in EQUIPMENT_PLATFORMS:
+        return False
+    if _has(e.entity_id, NOT_LAMP_WORDS) or _has(e.name, NOT_LAMP_WORDS):
+        return False
+    modes = set(e.attributes.get("supported_color_modes") or [])
+    return bool(modes - {"onoff"})
+
+
+def _light(e: _Entity) -> str | dict[str, Any]:
+    if _has(e.entity_id, NIGHT_LIGHT_WORDS) or _has(e.name, NIGHT_LIGHT_WORDS):
+        return {k.CONF_ENTITY_ID: e.entity_id, k.CONF_NIGHT_ONLY: True}
+    return e.entity_id
+
+
 def _is_air(e: _Entity, outdoor: bool = False) -> bool:
     """An air quality index sensor (in no area: a city one, like Atmo France, not a forecast nor pollen)."""
     if e.device_class == "aqi" and (not outdoor or e.platform in AIR_PLATFORMS):
@@ -256,7 +432,7 @@ def discover_rooms(hass: HomeAssistant) -> Found:
     rooms = found.rooms
     # Sensors in no area: an outdoor module named so, a city air quality index.
     for e in sorted(unassigned, key=lambda e: e.entity_id):
-        if e.domain != "sensor" or busy(e):
+        if e.domain != "sensor" or busy(e) or _equipment(e):
             continue
         if _is_air(e, outdoor=True):
             found.outdoor_air.append(e.entity_id)
@@ -266,7 +442,7 @@ def discover_rooms(hass: HomeAssistant) -> Found:
             elif e.device_class == "sound_pressure":
                 found.outdoor_noise.append(e.entity_id)
     for area in sorted(areas, key=lambda a: a.name.casefold()):
-        sensors = [e for e in area.entities if e.domain == "sensor" and not busy(e)]
+        sensors = [e for e in area.entities if e.domain == "sensor" and not busy(e) and not _equipment(e)]
         temps = [e for e in sensors if e.device_class == "temperature"]
         if _has(area.name, OUTDOOR_WORDS) or _has(area.area_id, OUTDOOR_WORDS):
             place: dict[str, Any] = {k.CONF_NAME: area.name, k.CONF_AREA: area.area_id}
@@ -277,7 +453,8 @@ def discover_rooms(hass: HomeAssistant) -> Found:
             ):
                 if items:
                     place[key] = sorted(e.entity_id for e in items)
-            found.outdoors.append(place)
+            if len(place) > 2:  # Not without a sensor.
+                found.outdoors.append(place)
             continue
         indoor = [e for e in temps if not _has(e.name, OUTDOOR_WORDS) and not _has(e.entity_id, OUTDOOR_WORDS)]
         room: dict[str, Any] = {k.CONF_NAME: area.name, k.CONF_AREA: area.area_id}
@@ -301,20 +478,30 @@ def discover_rooms(hass: HomeAssistant) -> Found:
             e for e in area.entities if e.domain == "climate" and "cool" in (e.attributes.get("hvac_modes") or [])
         ]
         if coolers:
-            room[k.CONF_CLIMATE] = _climate(min(coolers, key=lambda e: e.entity_id))
+            cooler = min(coolers, key=lambda e: e.entity_id)
+            room[k.CONF_CLIMATE] = _with_display(_climate(cooler), cooler, by_device)
         fans, purifiers = [], []
         for e in sorted((e for e in area.entities if e.domain == "fan"), key=lambda e: e.entity_id):
             if "climate" in device_domains.get(e.device_id or "", set()):
                 continue  # The fan of an air conditioner.
             if _is_purifier(e, by_device):
-                purifiers.append(_purifier(e, by_device))
+                purifiers.append(_with_display(_purifier(e, by_device), e, by_device))
             else:
-                fans.append(_fan(e))
+                fans.append(_with_display(_fan(e), e, by_device))
         if fans:
             room[k.CONF_FANS] = fans
         if purifiers:
             room[k.CONF_PURIFIERS] = purifiers
-        rooms.append(room)
+        lights = [e for e in area.entities if e.domain == "light" and not busy(e) and _is_lamp(e, device_domains)]
+        # A light group in the room stands for its members.
+        members = {m for e in lights for m in (e.attributes.get("entity_id") or [])}
+        if found_lights := [_light(e) for e in sorted(lights, key=lambda e: e.entity_id) if e.entity_id not in members]:
+            room[k.CONF_LIGHTS] = found_lights
+            if _has(area.name, BEDROOM_WORDS) or _has(area.area_id, BEDROOM_WORDS):
+                # Bedrooms: dimmer lights in the morning (their naps are set by hand).
+                room[k.CONF_LIGHTING] = {k.CONF_QUIET_MORNING: True}
+        if any(key in room for key in TRACKED):
+            rooms.append(room)
     if not found.outdoor and not any(p.get(k.CONF_TEMPERATURE) for p in found.outdoors):
         # No outdoor temperature sensor: the weather entity's.
         found.outdoor = sorted(s.entity_id for s in hass.states.async_all("weather"))[:1]
@@ -354,10 +541,16 @@ def merge(options: dict[str, Any], found: Found) -> tuple[dict[str, Any], Report
             if key in new and not match.get(key):
                 match[key] = new[key]
                 changed = True
+        if lighting := new.get(k.CONF_LIGHTING):
+            own = match.setdefault(k.CONF_LIGHTING, {})
+            for key, value in lighting.items():
+                if key not in own:
+                    own[key] = value
+                    changed = True
         if match.get(k.CONF_CLIMATE) and _item_id(match[k.CONF_CLIMATE]) == _item_id(new.get(k.CONF_CLIMATE, "")):
             match[k.CONF_CLIMATE], completed = _complete(match[k.CONF_CLIMATE], new[k.CONF_CLIMATE])
             changed = changed or completed
-        for key in (k.CONF_OPENINGS, k.CONF_FANS, k.CONF_PURIFIERS):
+        for key in (k.CONF_OPENINGS, k.CONF_FANS, k.CONF_PURIFIERS, k.CONF_LIGHTS):
             current = _list(match.get(key))
             found_items = {_item_id(i): i for i in new.get(key, [])}
             completed_items = []

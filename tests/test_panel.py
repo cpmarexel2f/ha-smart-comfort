@@ -117,7 +117,10 @@ async def test_panel_registered(hass: HomeAssistant) -> None:
     # The frontend itself isn't needed (its package may not be installed): only its panel registry.
     hass.config.components.add("frontend")
     hass.http = Mock(async_register_static_paths=AsyncMock())
+    hass.data["frontend_extra_module_url"] = extra = Mock()
     await _setup(hass)
+    # The activity card, on every dashboard.
+    assert extra.add.call_args.args[0].startswith("/smart_comfort_static/smart-comfort-activity-card.js?v=")
     paths = hass.http.async_register_static_paths.call_args.args[0]
     assert paths[0].url_path == "/smart_comfort_static"
     panels = hass.data["frontend_panels"]
@@ -136,3 +139,35 @@ async def test_panel_registered(hass: HomeAssistant) -> None:
     assert await hass.config_entries.async_remove(entry.entry_id)
     await hass.async_block_till_done()
     assert PANEL_URL not in hass.data["frontend_panels"]
+
+
+async def test_status_outdoors(hass: HomeAssistant) -> None:
+    """Each outdoor place in the status: its values and its sensors."""
+    from homeassistant.util import dt as dt_util
+
+    from custom_components.smart_comfort.status import status
+
+    hass.states.async_set("sensor.ext1", "16.5", {"unit_of_measurement": "°C"})
+    hass.states.async_set("sensor.ext2", "16.8", {"unit_of_measurement": "°C"})
+    hass.states.async_set("sensor.atmo", "2")
+    entry = await _setup(hass)
+    hass.config_entries.async_update_entry(
+        entry,
+        options={
+            **OPTIONS,
+            "outdoor_air_quality": ["sensor.atmo"],
+            "outdoors": [{"name": "Terrasse", "temperature": ["sensor.ext1", "sensor.ext2"]}],
+        },
+    )
+    await hass.async_block_till_done()
+    result = status(entry.runtime_data, dt_util.utcnow())
+    assert result["outdoor_temperature"] == 16.5
+    assert result["outdoors"] == [
+        {
+            "name": "Terrasse",
+            "temperature": 16.5,
+            "air_quality": None,
+            "noise": None,
+            "sensors": ["sensor.ext1", "sensor.ext2"],
+        }
+    ]

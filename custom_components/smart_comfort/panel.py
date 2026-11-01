@@ -12,6 +12,8 @@ from .const import DOMAIN, PANEL_ICON, PANEL_URL, TITLE
 STATIC_URL = f"/{DOMAIN}_static"
 FRONTEND_DIR = Path(__file__).parent / "frontend"
 MODULE = "smart-comfort-panel.js"
+# The activity card, loaded on every dashboard.
+CARD = "smart-comfort-activity-card.js"
 ELEMENT = "smart-comfort-panel"
 
 
@@ -32,9 +34,12 @@ async def async_register_panel(hass: HomeAssistant) -> None:
 
         await hass.http.async_register_static_paths([StaticPathConfig(STATIC_URL, str(FRONTEND_DIR), False)])
         data["static_registered"] = True
+    version = await hass.async_add_executor_job(_version)
+    if not data.get("card_registered") and frontend.DATA_EXTRA_MODULE_URL in hass.data:
+        frontend.add_extra_js_url(hass, f"{STATIC_URL}/{CARD}?v={version}")
+        data["card_registered"] = True
     if PANEL_URL in hass.data.get(frontend.DATA_PANELS, {}):
         return
-    version = await hass.async_add_executor_job(_version)
     frontend.async_register_built_in_panel(
         hass,
         component_name="custom",

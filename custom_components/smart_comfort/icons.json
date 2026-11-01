@@ -22,7 +22,8 @@
     },
     "switch": {
       "notifications": { "default": "mdi:bell", "state": { "off": "mdi:bell-off" } },
-      "control": { "default": "mdi:air-conditioner", "state": { "off": "mdi:hand-back-right-off" } }
+      "control": { "default": "mdi:air-conditioner", "state": { "off": "mdi:hand-back-right-off" } },
+      "lighting": { "default": "mdi:lightbulb-auto", "state": { "off": "mdi:lightbulb-off-outline" } }
     },
     "button": {
       "notify_now": { "default": "mdi:bell-badge" },

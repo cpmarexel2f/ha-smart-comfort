@@ -119,13 +119,19 @@
           "manual_override": "Manuelle Übersteuerung",
           "suppress_when_handled": "Keine Meldung, wenn behandelt",
           "night_start": "Ruhige Nacht ab",
-          "night_end": "Ruhige Nacht bis"
+          "night_end": "Ruhige Nacht bis",
+          "display": "Kontrollleuchte oder Display",
+          "reset_at": "Zurück zum Normalzustand um",
+          "display_off": "Anzeigen aus ab",
+          "display_on": "Anzeigen an ab"
         },
         "data_description": {
           "start": "Lüfter und Luftreiniger laufen beim Öffnen nur zwischen diesen Zeiten auf voller Stufe. Beide leer: ganztägig.",
           "manual_override": "Minuten, die ein von Hand geändertes Gerät in Ruhe gelassen wird. 0: nie.",
           "suppress_when_handled": "Keine „zu warm“-Meldung für einen Raum, dessen Klimaanlage oder Lüfter Smart Comfort eingeschaltet hat.",
-          "night_start": "Zwischen diesen Zeiten nutzen die Geräte ihre Nachteinstellungen (leisere Stufe, Voreinstellung oder Lüftermodus) und es gibt keinen Fenster-Boost."
+          "night_start": "Zwischen diesen Zeiten nutzen die Geräte ihre Nachteinstellungen (leisere Stufe, Voreinstellung oder Lüftermodus) und es gibt keinen Fenster-Boost.",
+          "display": "Aus in den Stunden „Anzeigen aus“ im Tab Zeitplan und während der Mittagsschläfchen im Raum, danach wieder an.",
+          "reset_at": "Zu dieser Uhrzeit kehrt das Gerät in seinen Normalzustand zurück, auch nach einer manuellen Änderung (ein Luftreiniger wieder auf Auto…)."
         },
         "sections": {
           "climate": {
@@ -183,7 +189,8 @@
           "openings": "Fenster und Türen",
           "climate": "Klimaanlage",
           "fans": "Lüfter",
-          "purifiers": "Luftreiniger"
+          "purifiers": "Luftreiniger",
+          "lights": "Lichter"
         },
         "description": "Sensoren und Geräte des Raums. Leer lassen, was er nicht hat.",
         "sections": {
@@ -204,6 +211,9 @@
               "purifier_keep_on": "Luftreiniger eingeschaltet halten"
             }
           }
+        },
+        "data_description": {
+          "lights": "Dimmbare Lichter: ihre Helligkeit folgt der Tageszeit, solange sie an sind (adaptive Beleuchtung)."
         }
       },
       "room": {
@@ -217,7 +227,8 @@
           "openings": "Fenster und Türen",
           "climate": "Klimaanlage",
           "fans": "Lüfter",
-          "purifiers": "Luftreiniger"
+          "purifiers": "Luftreiniger",
+          "lights": "Lichter"
         },
         "description": "Sensoren und Geräte des Raums. Leer lassen, was er nicht hat.",
         "sections": {
@@ -238,6 +249,9 @@
               "purifier_keep_on": "Luftreiniger eingeschaltet halten"
             }
           }
+        },
+        "data_description": {
+          "lights": "Dimmbare Lichter: ihre Helligkeit folgt der Tageszeit, solange sie an sind (adaptive Beleuchtung)."
         }
       },
       "outdoor": {
@@ -259,6 +273,39 @@
         "title": "Räume entfernen",
         "data": {
           "rooms": "Räume"
+        }
+      },
+      "lighting": {
+        "title": "Adaptive Beleuchtung",
+        "data": {
+          "enabled": "Adaptive Beleuchtung",
+          "day": "Helligkeit am Tag",
+          "evening": "Helligkeit am Abend",
+          "night": "Helligkeit in der Nacht",
+          "warmth": "Lichtfarbe anpassen",
+          "day_kelvin": "Lichtfarbe am Tag",
+          "evening_kelvin": "Lichtfarbe am Abend",
+          "night_kelvin": "Lichtfarbe in der Nacht",
+          "transition": "Übergang",
+          "night_only": "Nachtlicht",
+          "morning": "Helligkeit am Morgen",
+          "morning_kelvin": "Lichtfarbe am Morgen",
+          "morning_end": "Ende des Vormittags",
+          "quiet_morning": "Sanfter Morgen",
+          "nap": "Helligkeit beim Mittagsschlaf",
+          "nap_kelvin": "Lichtfarbe beim Mittagsschlaf"
+        },
+        "data_description": {
+          "day": "Bei Sonne über 6°.",
+          "evening": "Sobald die Sonne unter −6° steht; dazwischen gemischt.",
+          "night": "In den Nachtruhestunden (Reiter Zeitplan).",
+          "warmth": "Auch die Farbtemperatur, für Lichter, die sie unterstützen. Aus: nur Helligkeit.",
+          "transition": "Sekunden der schrittweisen Änderungen; ein gerade eingeschaltetes Licht erhält seine Helligkeit sofort.",
+          "night_only": "Nur in den Nachtstunden eingestellt (tagsüber unberührt).",
+          "morning": "In Räumen mit sanftem Morgen (Schlafzimmer), bis zum Ende des Vormittags (Reiter Zeitplan).",
+          "morning_end": "Bis wann die Schlafzimmer ihre Morgenhelligkeit behalten.",
+          "quiet_morning": "Gedämpftes Licht am Morgen, bis zum Ende des Vormittags (Reiter Zeitplan).",
+          "nap": "In den Mittagsschlafzeiten eines Raums."
         }
       }
     },
@@ -346,6 +393,9 @@
       },
       "control": {
         "name": "Gerätesteuerung"
+      },
+      "lighting": {
+        "name": "Adaptive Beleuchtung"
       }
     },
     "button": {
@@ -403,6 +453,10 @@
     "notify_now": {
       "name": "Jetzt benachrichtigen",
       "description": "Sendet alle aktuellen Probleme in einer Benachrichtigung, ohne Ruhezeit und Sammelfenster."
+    },
+    "get_config": {
+      "name": "Konfiguration abrufen",
+      "description": "Gibt die aktuellen Optionen zurück (Räume, Warnungen, Steuerung, Beleuchtung), zum Kopieren ins YAML oder zur Kontrolle."
     }
   },
   "common": {
