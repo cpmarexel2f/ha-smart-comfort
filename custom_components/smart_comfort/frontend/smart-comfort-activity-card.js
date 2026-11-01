@@ -173,9 +173,10 @@ const ICONS = {
   failed: "mdi:alert-circle-outline",
 };
 const DEVICE_ICONS = { climate: "mdi:air-conditioner", fan: "mdi:fan" };
-// Filter groups of the Activity tab, and the kinds of the card option.
+// Filter groups of the Activity tab (a failed command goes with what it was sent to: see groupOf),
+// and the kinds of the card option.
 const GROUPS = {
-  devices: ["device", "display", "reset", "failed"],
+  devices: ["device", "display", "reset"],
   lights: ["lighting", "presence_on", "presence_off"],
   notifications: ["notified", "cleared"],
   manual: ["manual"],
@@ -188,6 +189,18 @@ function matches(entry, config) {
   if (!kinds?.length) return true;
   return kinds.some((k) => k === entry.kind || (k === "presence" && entry.kind.startsWith("presence")) || (k === "notified" && entry.kind === "cleared"));
 }
+
+/** Filter group of an entry. A failed command is sorted as it would have been (activity.py kind_of):
+ * an indicator's is a device's, a light's is a light's, the others a device's. */
+function groupOf(entry) {
+  if (entry.kind !== "failed") return Object.keys(GROUPS).find((group) => GROUPS[group].includes(entry.kind));
+  if (entry.target === "display_off" || entry.target === "display_on") return "devices";
+  const domain = (entry.action || entry.entity_id || "").split(".")[0];
+  return domain === "light" ? "lights" : "devices";
+}
+
+/** What keeps the keyboard focus across a render: the same line, or the same filter. */
+const entryKey = (entry) => `${entry.at}|${entry.kind}|${entry.entity_id || ""}|${entry.target || ""}`;
 
 class SmartComfortActivityCard extends HTMLElement {
   static getStubConfig() {
@@ -356,7 +369,7 @@ class SmartComfortActivityCard extends HTMLElement {
   _visible() {
     const config = this._config || {};
     let entries = this._entries.filter((e) => matches(e, config));
-    if (config.panel && this._group !== "all") entries = entries.filter((e) => GROUPS[this._group].includes(e.kind));
+    if (config.panel && this._group !== "all") entries = entries.filter((e) => groupOf(e) === this._group);
     return config.panel ? entries : entries.slice(0, config.limit || 10);
   }
 
@@ -364,6 +377,8 @@ class SmartComfortActivityCard extends HTMLElement {
     if (!this._config) return;
     this._rendered = Boolean(this._hass);
     const root = this.shadowRoot;
+    // Rendered again on each new entry: the line or filter that has the focus gets it back.
+    const focusKey = root.activeElement?.dataset?.key;
     root.innerHTML = `<style>${STYLE}</style>`;
     const card = document.createElement(this._config.panel ? "div" : "ha-card");
     if (!this._config.panel) card.header = this._config.title ?? this._t("title");
@@ -374,11 +389,13 @@ class SmartComfortActivityCard extends HTMLElement {
     if (this._config.panel) body.append(this._chips());
     if (!this._loaded) {
       body.append(this._el("div", "empty", this._t("not_loaded")));
+      this._restoreFocus(body, focusKey);
       return;
     }
     const entries = this._visible();
     if (!entries.length) {
       body.append(this._el("div", "empty", this._t("empty")));
+      this._restoreFocus(body, focusKey);
       return;
     }
     let day = null;
@@ -390,12 +407,21 @@ class SmartComfortActivityCard extends HTMLElement {
       }
       body.append(this._row(entry));
     }
+    this._restoreFocus(body, focusKey);
+  }
+
+  _restoreFocus(body, key) {
+    if (!key) return;
+    const find = (node) => (node.dataset?.key === key ? node : [...(node.children || [])].map(find).find(Boolean));
+    find(body)?.focus();
   }
 
   _chips() {
     const chips = this._el("div", "chips");
     for (const group of ["all", ...Object.keys(GROUPS)]) {
       const chip = this._el("button", `chip${group === this._group ? " active" : ""}`, this._t(group === "all" ? "all" : `group_${group}`));
+      chip.dataset.key = `chip:${group}`;
+      chip.setAttribute("aria-pressed", String(group === this._group));
       chip.addEventListener("click", () => {
         this._group = group;
         this._render();
@@ -421,10 +447,19 @@ class SmartComfortActivityCard extends HTMLElement {
     row.append(badge, main);
     if (entry.entity_id) {
       row.classList.add("clickable");
-      row.addEventListener("click", () => {
+      row.dataset.key = entryKey(entry);
+      row.setAttribute("role", "button");
+      row.setAttribute("tabindex", "0");
+      const open = () => {
         const event = new Event("hass-more-info", { bubbles: true, composed: true });
         event.detail = { entityId: entry.entity_id };
         this.dispatchEvent(event);
+      };
+      row.addEventListener("click", open);
+      row.addEventListener("keydown", (ev) => {
+        if (ev.key !== "Enter" && ev.key !== " ") return;
+        ev.preventDefault();
+        open();
       });
     }
     return row;
@@ -446,7 +481,8 @@ const STYLE = `
   .day { margin: 14px 0 4px; font-size: 13px; font-weight: 500; text-transform: capitalize; color: var(--secondary-text-color); }
   .row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--divider-color); }
   .row:last-child { border-bottom: none; }
-  .row.clickable { cursor: pointer; }
+  .row.clickable { cursor: pointer; border-radius: 4px; }
+  .row.clickable:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
   .badge { flex: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
     background: rgba(var(--rgb-primary-color, 3, 169, 244), 0.12); color: var(--primary-color); --mdc-icon-size: 20px; }
   .row.lighting .badge, .row.presence_on .badge, .row.presence_off .badge { background: rgba(255, 166, 0, 0.14); color: var(--warning-color, #ffa600); }
@@ -461,7 +497,11 @@ const STYLE = `
   .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 4px; }
   .chip { border: 1px solid var(--divider-color); background: none; color: var(--primary-text-color); border-radius: 16px;
     padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
-  .chip.active { background: var(--primary-color); border-color: var(--primary-color); color: var(--text-primary-color, #fff); }
+  .chip:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+  /* Active filter: tinted, not filled, like the other active states of the panel. Its text is the primary
+     colour toward the text colour, readable (WCAG AA) on the tint in light and dark themes. */
+  .chip.active { background: rgba(var(--rgb-primary-color, 3, 169, 244), 0.12); border-color: var(--primary-color);
+    color: color-mix(in srgb, var(--primary-color) 60%, var(--primary-text-color)); }
 `;
 
 if (!customElements.get("smart-comfort-activity-card")) {

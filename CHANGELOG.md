@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.2
+
+### Fixes
+- Activity tab: a light command that could not be sent is now under the **Lights** filter, not under Devices (an indicator light stays with the devices).
+- Activity card and tab: a line that opens its entity can now be reached with Tab and opened with Enter or Space, and keeps the focus when a new entry comes in; the filters keep it too when one is chosen.
+- Activity tab: the active filter is tinted like the other active states of the panel instead of a filled button, with text readable in light and dark themes.
+
 ## 1.7.1
 
 ### Fixes
